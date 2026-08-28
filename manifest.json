@@ -1,0 +1,19 @@
+{
+  "name": "ToDo Notebook — Блокнот Задач",
+  "short_name": "ToDoLercha",
+  "description": "Эстетичный ежедневник и трекер задач в стиле бумажного блокнота",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "display_override": ["fullscreen", "standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#f8f6f4",
+  "theme_color": "#d83a88",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

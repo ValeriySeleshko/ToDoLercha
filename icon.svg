@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f43f5e"/>
+      <stop offset="50%" stop-color="#d83a88"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)"/>
+  <!-- Notebook Sheet Body -->
+  <g filter="url(#shadow)">
+    <rect x="100" y="80" width="312" height="352" rx="24" fill="#fdfbf7"/>
+    <!-- Binder Tabs -->
+    <rect x="80" y="120" width="40" height="24" rx="6" fill="#3b82f6"/>
+    <rect x="80" y="165" width="40" height="24" rx="6" fill="#10b981"/>
+    <rect x="80" y="210" width="40" height="24" rx="6" fill="#f59e0b"/>
+    <!-- Ruled lines -->
+    <line x1="150" y1="160" x2="370" y2="160" stroke="#e2e8f0" stroke-width="6" stroke-linecap="round"/>
+    <line x1="150" y1="210" x2="370" y2="210" stroke="#e2e8f0" stroke-width="6" stroke-linecap="round"/>
+    <line x1="150" y1="260" x2="370" y2="260" stroke="#e2e8f0" stroke-width="6" stroke-linecap="round"/>
+    <line x1="150" y1="310" x2="370" y2="310" stroke="#e2e8f0" stroke-width="6" stroke-linecap="round"/>
+    <line x1="150" y1="360" x2="320" y2="360" stroke="#e2e8f0" stroke-width="6" stroke-linecap="round"/>
+    <!-- Red Margin line -->
+    <line x1="180" y1="95" x2="180" y2="415" stroke="#f43f5e" stroke-width="3" stroke-opacity="0.6"/>
+    <!-- Big Checkmark -->
+    <path d="M230 250 L270 290 L360 190" fill="none" stroke="#d83a88" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
