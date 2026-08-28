@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ToDo Notebook</title>
+  <!-- Google Fonts: PT Serif for authentic ruled notebook text, Inter for UI widgets -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=PT+Serif:ital,wght@0,400;0,700;1,400&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-viewport">
+    <main class="app-frame" id="appFrame">
+      
+      <!-- Top Widgets Header -->
+      <header class="top-widgets-bar">
+        <!-- Widget 1: Date (28 пт) -->
+        <button class="widget-circle" id="widgetDate" title="Текущая дата" aria-label="Дата">
+          <span class="widget-date-num">28</span>
+          <span class="widget-date-day">пт</span>
+        </button>
+
+        <!-- Widget 2: Timer Progress (5h 30m) -->
+        <button class="widget-circle widget-progress" id="widgetTimer" title="Фокус / Таймер" aria-label="Таймер">
+          <svg class="progress-ring" viewBox="0 0 54 54">
+            <circle class="progress-ring-bg" cx="27" cy="27" r="22" />
+            <circle class="progress-ring-fill" cx="27" cy="27" r="22" />
+          </svg>
+          <span class="widget-progress-text">5h 30m</span>
+        </button>
+
+        <!-- Widget 3: Streak / Flame (🔥 15) -->
+        <button class="widget-circle" id="widgetStreak" title="Серия дней" aria-label="Серия дней">
+          <span class="widget-flame-icon">🔥</span>
+          <span class="widget-streak-num">15</span>
+        </button>
+
+        <!-- Widget 4: Medal / Achievement -->
+        <button class="widget-circle" id="widgetMedal" title="Достижения" aria-label="Достижения">
+          <svg class="medal-icon" viewBox="0 0 24 24" fill="none">
+            <!-- Ribbon bar -->
+            <rect x="7.5" y="3" width="9" height="7" rx="0.5" fill="#757982" />
+            <path d="M12 3V10" stroke="#ffffff" stroke-width="1.2" />
+            <!-- Ribbon tails -->
+            <path d="M8 10L6.5 14L12 12.5L17.5 14L16 10H8Z" fill="#b0246b" />
+            <!-- Medal Star -->
+            <polygon points="12,13 13.1,16.2 16.5,16.2 13.7,18.2 14.8,21.5 12,19.5 9.2,21.5 10.3,18.2 7.5,16.2 10.9,16.2" fill="#b0246b" />
+          </svg>
+        </button>
+
+        <!-- Widget 5: Settings Gear -->
+        <button class="widget-circle" id="widgetSettings" title="Настройки" aria-label="Настройки">
+          <svg class="gear-icon" viewBox="0 0 24 24" fill="none" stroke="#4a4e57" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3.2"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+      </header>
+
+      <!-- Folder Tabs Container with Horizontal Scroll -->
+      <div class="tabs-scroll-container">
+        <nav class="folder-tabs-bar" id="folderTabsBar" role="tablist" aria-label="Списки дел">
+          <!-- Dynamic Tabs will be rendered here by JS -->
+        </nav>
+        <!-- Add New Tab Button (+) -->
+        <button class="add-tab-btn" id="addTabBtn" title="Добавить новую вкладку" aria-label="Добавить вкладку">
+          <span>+</span>
+        </button>
+      </div>
+
+      <!-- Lined Notebook Page Container -->
+      <section class="notebook-sheet" id="notebookSheet" role="tabpanel" aria-labelledby="tab-todo">
+        <!-- Left vertical margin pink line -->
+        <div class="margin-line" aria-hidden="true"></div>
+
+        <!-- Ruled notebook lines backdrop -->
+        <div class="ruled-lines-backdrop" id="ruledBackdrop" aria-hidden="true"></div>
+
+        <!-- Notebook Content Tasks Layer -->
+        <div class="notebook-content" id="notebookContent">
+          <!-- Populated dynamically by JavaScript -->
+        </div>
+
+        <!-- Floating Action Button (FAB) -->
+        <div class="fab-wrapper">
+          <button class="fab-button" id="fabAddBtn" title="Добавить задачу" aria-label="Добавить задачу">
+            <span class="fab-plus-icon">+</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Add Task Modal / Dialog -->
+      <div class="modal-backdrop" id="taskModalBackdrop" aria-hidden="true">
+        <div class="modal-sheet modal-sheet-scrollable" id="taskModalSheet" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+          <div class="modal-header">
+            <h2 id="modalTitle">Новая запись</h2>
+            <button class="modal-close-btn" id="modalCloseBtn" aria-label="Закрыть">&times;</button>
+          </div>
+          
+          <form id="newTaskForm" class="modal-form">
+            <!-- Dynamic Form Fields Container -->
+            <div id="dynamicFormFields">
+              <!-- Rendered via JS based on selected tab -->
+            </div>
+
+            <div class="modal-actions">
+              <button type="button" class="btn-cancel" id="modalCancelBtn">Отмена</button>
+              <button type="submit" class="btn-submit" id="modalSubmitBtn">Сохранить</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Add New Tab Modal -->
+      <div class="modal-backdrop" id="newTabModalBackdrop" aria-hidden="true">
+        <div class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="newTabModalTitle">
+          <div class="modal-header">
+            <h2 id="newTabModalTitle">Новая вкладка</h2>
+            <button class="modal-close-btn" id="newTabCloseBtn" aria-label="Закрыть">&times;</button>
+          </div>
+          <form id="newTabForm" class="modal-form">
+            <div class="form-group">
+              <label for="newTabNameInput">Название списка / вкладки</label>
+              <input type="text" id="newTabNameInput" placeholder="Например: Что почитать?" required autocomplete="off">
+            </div>
+            <div class="modal-actions">
+              <button type="button" class="btn-cancel" id="newTabCancelBtn">Отмена</button>
+              <button type="submit" class="btn-submit">Создать вкладку</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Image Lightbox Modal -->
+      <div class="modal-backdrop" id="imageLightboxBackdrop" aria-hidden="true">
+        <div class="lightbox-content">
+          <button class="lightbox-close-btn" id="lightboxCloseBtn" aria-label="Закрыть">&times;</button>
+          <img id="lightboxImg" src="" alt="Просмотр фото" />
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
