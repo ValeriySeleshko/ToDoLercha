@@ -4,16 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ToDo Notebook</title>
-  <!-- Google Fonts: PT Serif for authentic ruled notebook text, Inter for UI widgets -->
+  <!-- Google Fonts: PT Serif, Caveat, Roboto Slab, Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=PT+Serif:ital,wght@0,400;0,700;1,400&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Inter:wght@400;500;600;700;800&family=PT+Serif:ital,wght@0,400;0,700;1,400&family=Roboto+Slab:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="app-viewport">
     <main class="app-frame" id="appFrame">
       
+      <!-- Toast notification -->
+      <div class="app-toast" id="appToast" aria-live="polite"></div>
+
       <!-- Top Widgets Header -->
       <header class="top-widgets-bar">
         <!-- Widget 1: Date (28 пт) -->
@@ -23,12 +26,12 @@
         </button>
 
         <!-- Widget 2: Timer Progress (5h 30m) -->
-        <button class="widget-circle widget-progress" id="widgetTimer" title="Фокус / Таймер" aria-label="Таймер">
-          <svg class="progress-ring" viewBox="0 0 54 54">
-            <circle class="progress-ring-bg" cx="27" cy="27" r="22" />
-            <circle class="progress-ring-fill" cx="27" cy="27" r="22" />
+        <button class="widget-circle widget-progress" id="widgetTimer" title="Загруженность за день (из 16 ч)" aria-label="Загруженность">
+          <svg class="progress-ring" viewBox="0 0 52 52">
+            <circle class="progress-ring-bg" cx="26" cy="26" r="23.5" />
+            <circle class="progress-ring-fill" id="widgetProgressRingFill" cx="26" cy="26" r="23.5" />
           </svg>
-          <span class="widget-progress-text">5h 30m</span>
+          <span class="widget-progress-text" id="widgetProgressText">5h 30m</span>
         </button>
 
         <!-- Widget 3: Streak / Flame (🔥 15) -->
@@ -37,16 +40,15 @@
           <span class="widget-streak-num">15</span>
         </button>
 
-        <!-- Widget 4: Medal / Achievement -->
+        <!-- Widget 4: Trophy / Achievement -->
         <button class="widget-circle" id="widgetMedal" title="Достижения" aria-label="Достижения">
-          <svg class="medal-icon" viewBox="0 0 24 24" fill="none">
-            <!-- Ribbon bar -->
-            <rect x="7.5" y="3" width="9" height="7" rx="0.5" fill="#757982" />
-            <path d="M12 3V10" stroke="#ffffff" stroke-width="1.2" />
-            <!-- Ribbon tails -->
-            <path d="M8 10L6.5 14L12 12.5L17.5 14L16 10H8Z" fill="#b0246b" />
-            <!-- Medal Star -->
-            <polygon points="12,13 13.1,16.2 16.5,16.2 13.7,18.2 14.8,21.5 12,19.5 9.2,21.5 10.3,18.2 7.5,16.2 10.9,16.2" fill="#b0246b" />
+          <svg class="trophy-icon" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+            <path d="M4 22h16" />
+            <path d="M10 14.66V18c0 .55-.45 1-1 1H8c-.55 0-1 .45-1 1v2h10v-2c0-.55-.45-1-1-1h-1c-.55 0-1-.45-1-1v-3.34" />
+            <path d="M6 4h12v6a6 6 0 0 1-12 0V4z" fill="rgba(245, 158, 11, 0.22)" />
+            <circle cx="12" cy="7" r="1.5" fill="#f59e0b" />
           </svg>
         </button>
 
@@ -130,6 +132,365 @@
               <button type="submit" class="btn-submit">Создать вкладку</button>
             </div>
           </form>
+        </div>
+      </div>
+
+      <!-- Edit / Manage Tab Modal (Long-press) -->
+      <div class="modal-backdrop" id="editTabModalBackdrop" aria-hidden="true">
+        <div class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="editTabModalTitle">
+          <div class="modal-header">
+            <h2 id="editTabModalTitle">Настройка вкладки</h2>
+            <button class="modal-close-btn" id="editTabCloseBtn" aria-label="Закрыть">&times;</button>
+          </div>
+          <form id="editTabForm" class="modal-form">
+            <input type="hidden" id="editTabId">
+            
+            <div class="form-group">
+              <label for="editTabTitleInput">Название вкладки</label>
+              <input type="text" id="editTabTitleInput" required autocomplete="off">
+            </div>
+
+            <div class="form-group">
+              <label>Цвет вкладки и листа</label>
+              <div class="tab-color-picker" id="tabColorPicker">
+                <!-- Color swatches rendered via JS -->
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Фон листа блокнота</label>
+              <div class="pattern-selector" id="tabPatternSelector">
+                <button type="button" class="pattern-chip active" data-pattern="lines">
+                  <span class="pattern-icon">📏</span> Линии
+                </button>
+                <button type="button" class="pattern-chip" data-pattern="grid">
+                  <span class="pattern-icon">📐</span> Клетка
+                </button>
+                <button type="button" class="pattern-chip" data-pattern="dots">
+                  <span class="pattern-icon">🔘</span> Точки
+                </button>
+                <button type="button" class="pattern-chip" data-pattern="blank">
+                  <span class="pattern-icon">📄</span> Пустой
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group" id="patternSizeGroup">
+              <div class="pattern-size-header">
+                <label for="tabPatternSizeRange">Размер узора / клеток</label>
+                <span class="pattern-size-val" id="patternSizeVal">32 px</span>
+              </div>
+              <input type="range" id="tabPatternSizeRange" min="10" max="52" step="2" value="32" class="range-slider">
+            </div>
+
+            <div class="form-group">
+              <label>Порядок вкладок</label>
+              <div class="tab-reorder-group">
+                <button type="button" class="btn-reorder" id="btnTabMoveLeft">
+                  <span>⬅️</span> Влево
+                </button>
+                <button type="button" class="btn-reorder" id="btnTabMoveRight">
+                  Вправо <span>➡️</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group" id="deleteTabGroup" style="display: none; margin-top: 14px;">
+              <button type="button" class="btn-danger-block" id="btnDeleteTab">
+                🗑️ Удалить вкладку
+              </button>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 14px;">
+              <button type="button" class="btn-cancel" id="editTabCancelBtn">Отмена</button>
+              <button type="submit" class="btn-submit">Сохранить</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Settings Modal -->
+      <div class="modal-backdrop" id="settingsModalBackdrop" aria-hidden="true">
+        <div class="modal-sheet modal-sheet-scrollable" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+          <div class="modal-header">
+            <h2 id="settingsModalTitle" data-i18n="settings_title">⚙️ Настройки</h2>
+            <button class="modal-close-btn" id="settingsCloseBtn" aria-label="Закрыть">&times;</button>
+          </div>
+
+          <div class="settings-content">
+            <!-- 1. Язык приложения (Circular Badge & Dropdown Submenu) -->
+            <div class="settings-section">
+              <div class="setting-row-flex">
+                <div>
+                  <div class="settings-section-title" style="margin-bottom: 2px;">🌐 <span data-i18n="settings_language">Язык приложения</span></div>
+                  <div class="setting-toggle-desc" data-i18n="settings_language_desc">Интерфейс и даты на выбранном языке</div>
+                </div>
+                <div class="lang-picker-wrapper" id="langPickerWrapper">
+                  <button type="button" class="lang-circle-badge-btn" id="langCircleBadgeBtn" title="Сменить язык / Change language">
+                    <span class="lang-circle-text" id="langBadgeText">РУ</span>
+                    <span class="lang-circle-chevron">▼</span>
+                  </button>
+                  <div class="lang-dropdown-menu" id="langDropdownMenu">
+                    <button type="button" class="lang-dropdown-opt active" data-lang="ru">
+                      <span class="lang-flag">🇷🇺</span>
+                      <span class="lang-name">Русский</span>
+                      <span class="lang-code-tag">РУ</span>
+                      <span class="lang-check-icon">✓</span>
+                    </button>
+                    <button type="button" class="lang-dropdown-opt" data-lang="uk">
+                      <span class="lang-flag">🇺🇦</span>
+                      <span class="lang-name">Українська</span>
+                      <span class="lang-code-tag">УК</span>
+                      <span class="lang-check-icon">✓</span>
+                    </button>
+                    <button type="button" class="lang-dropdown-opt" data-lang="en">
+                      <span class="lang-flag">🇬🇧</span>
+                      <span class="lang-name">English</span>
+                      <span class="lang-code-tag">EN</span>
+                      <span class="lang-check-icon">✓</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Тема оформления -->
+            <div class="settings-section">
+              <div class="settings-section-title">🌓 <span data-i18n="settings_theme">Тема оформления</span></div>
+              <div class="segmented-control" id="themeSelector">
+                <button type="button" class="segmented-btn active" data-theme="light" data-i18n="theme_light">☀️ Светлая</button>
+                <button type="button" class="segmented-btn" data-theme="dark" data-i18n="theme_dark">🌙 Тёмная</button>
+                <button type="button" class="segmented-btn" data-theme="auto" data-i18n="theme_auto">⚙️ Авто</button>
+              </div>
+            </div>
+
+            <!-- 3. Цвет акцента -->
+            <div class="settings-section">
+              <div class="settings-section-title">🎨 <span data-i18n="settings_accent">Цвет акцента</span></div>
+              <div class="accent-color-picker" id="accentColorPicker">
+                <!-- Accent colors rendered via JS -->
+              </div>
+            </div>
+
+            <!-- 4. Шрифт и размер задач -->
+            <div class="settings-section">
+              <div class="settings-section-title">✍️ <span data-i18n="settings_font">Шрифт и размер задач</span></div>
+              <div class="form-group" style="margin-bottom: 12px;">
+                <label for="fontFamilySelect" data-i18n="font_family_label">Шрифт блокнота</label>
+                <select id="fontFamilySelect" class="settings-select">
+                  <option value="'PT Serif', Georgia, serif">📖 PT Serif (Классический)</option>
+                  <option value="'Caveat', cursive, sans-serif">🖋️ Caveat (Рукописный)</option>
+                  <option value="'Inter', sans-serif">🔤 Inter (Современный)</option>
+                  <option value="'Roboto Slab', serif">📜 Roboto Slab (Винтажный)</option>
+                </select>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 0;">
+                <div class="pattern-size-header">
+                  <label for="fontSizeRange" data-i18n="font_size_label">Размер текста задач</label>
+                  <span class="pattern-size-val" id="fontSizeVal">15 px</span>
+                </div>
+                <input type="range" id="fontSizeRange" min="13" max="22" step="1" value="15" class="range-slider">
+                <div class="font-preview-box" id="fontPreviewBox">
+                  <span id="fontPreviewText">Завтрак и кофе • Сдать важный отчет</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. Оповещения и нотификации -->
+            <div class="settings-section">
+              <div class="settings-section-title">🔔 <span data-i18n="settings_notif">Оповещения и звуки</span></div>
+              <div class="setting-toggle-row">
+                <div class="setting-toggle-info">
+                  <div class="setting-toggle-label" data-i18n="notif_browser_label">Уведомления браузера</div>
+                  <div class="setting-toggle-desc" data-i18n="notif_browser_desc">Напоминания о задачах дня</div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="toggleNotifications">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <div class="setting-toggle-row" style="margin-top: 10px;">
+                <div class="setting-toggle-info">
+                  <div class="setting-toggle-label" data-i18n="notif_haptics_label">Тактильный виброотклик</div>
+                  <div class="setting-toggle-desc" data-i18n="notif_haptics_desc">Вибрация при свайпах и тапах</div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="toggleHaptics" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <div class="setting-toggle-row" style="margin-top: 10px;">
+                <div class="setting-toggle-info">
+                  <div class="setting-toggle-label" data-i18n="notif_sound_label">Звуковые щелчки</div>
+                  <div class="setting-toggle-desc" data-i18n="notif_sound_desc">Приятный звук выполнения задачи</div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="toggleSound" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <button type="button" class="btn-secondary-block" id="btnTestNotification" style="margin-top: 10px;">
+                🔔 <span data-i18n="notif_test_btn">Проверить уведомление</span>
+              </button>
+            </div>
+
+            <!-- 6. Синхронизация и бэкап -->
+            <div class="settings-section">
+              <div class="settings-section-title">☁️ <span data-i18n="settings_backup">Синхронизация и бэкап</span></div>
+              <div class="backup-actions-grid">
+                <button type="button" class="btn-backup-action" id="btnExportBackup">
+                  <span class="backup-icon">💾</span>
+                  <span data-i18n="backup_export">Скачать бэкап (JSON)</span>
+                </button>
+                <label class="btn-backup-action">
+                  <span class="backup-icon">📥</span>
+                  <span data-i18n="backup_import">Загрузить из файла</span>
+                  <input type="file" id="importBackupFile" accept=".json" style="display: none;">
+                </label>
+              </div>
+
+              <div class="cloud-sync-card" id="cloudSyncCard" style="margin-top: 10px;">
+                <div class="cloud-sync-header">
+                  <div class="cloud-sync-title">
+                    <span>📁 Google Диск / Облако</span>
+                  </div>
+                  <span class="cloud-status-badge" id="cloudStatusBadge">Готово</span>
+                </div>
+                <div class="cloud-sync-desc" id="cloudLastSyncText">
+                  Резервная копия сохранена локально в вашем браузере
+                </div>
+                <button type="button" class="btn-google-drive" id="btnGoogleDriveSync">
+                  <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                  <span data-i18n="cloud_sync_btn">Синхронизировать сейчас</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-actions" style="margin-top: 16px;">
+            <button type="button" class="btn-submit" id="settingsDoneBtn" style="width: 100%;" data-i18n="btn_done">Готово</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Calendar Modal -->
+      <div class="modal-backdrop" id="calendarModalBackdrop" aria-hidden="true">
+        <div class="modal-sheet modal-sheet-scrollable">
+          <div class="modal-header">
+            <h2>📅 Календарь блокнота</h2>
+            <button class="modal-close-btn" id="calendarCloseBtn" aria-label="Закрыть">&times;</button>
+          </div>
+
+          <div class="calendar-modal-content">
+            <!-- Month Nav Header -->
+            <div class="calendar-month-nav">
+              <button type="button" class="calendar-nav-btn" id="calendarPrevMonth" title="Предыдущий месяц" aria-label="Предыдущий месяц">◀</button>
+              <span class="calendar-month-title" id="calendarMonthTitle">Август 2026</span>
+              <button type="button" class="calendar-nav-btn" id="calendarNextMonth" title="Следующий месяц" aria-label="Следующий месяц">▶</button>
+            </div>
+
+            <!-- Day of week row -->
+            <div class="calendar-weekdays">
+              <span>Пн</span>
+              <span>Вт</span>
+              <span>Ср</span>
+              <span>Чт</span>
+              <span>Пт</span>
+              <span>Сб</span>
+              <span>Вс</span>
+            </div>
+
+            <!-- Calendar Days Grid -->
+            <div class="calendar-days-grid" id="calendarDaysGrid">
+              <!-- Dynamically populated -->
+            </div>
+
+            <!-- Selected Date Info Panel -->
+            <div class="calendar-date-info" id="calendarDateInfo">
+              <div class="calendar-info-header">
+                <span class="calendar-info-date" id="calendarInfoDate">28 августа 2026 (Пятница)</span>
+                <span class="calendar-info-badge" id="calendarInfoBadge">Сегодня</span>
+              </div>
+              <div class="calendar-info-stats" id="calendarInfoStats">
+                Задач на день: 5 • Выполнено: 0
+              </div>
+            </div>
+
+            <!-- Quick Action Buttons -->
+            <div class="calendar-actions-row">
+              <button type="button" class="btn-calendar-today" id="calendarTodayBtn">
+                📍 Сегодня
+              </button>
+              <button type="button" class="btn-calendar-confirm" id="calendarSelectBtn">
+                ✓ Открыть этот день
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Achievements Modal -->
+      <div class="modal-backdrop" id="achievementsModalBackdrop" aria-hidden="true">
+        <div class="modal-sheet modal-sheet-scrollable achievements-sheet">
+          <div class="modal-header">
+            <div class="achievements-header-title">
+              <h2>🏆 Достижения</h2>
+              <span class="achievements-count-badge" id="achievementsUnlockedCount">0 / 12</span>
+            </div>
+            <button class="modal-close-btn" id="achievementsCloseBtn" aria-label="Закрыть">&times;</button>
+          </div>
+
+          <div class="achievements-modal-content">
+            <!-- Overall Progress Bar -->
+            <div class="achievements-progress-overview">
+              <div class="achievements-progress-bar-bg">
+                <div class="achievements-progress-bar-fill" id="achievementsProgressBarFill" style="width: 0%;"></div>
+              </div>
+              <span class="achievements-progress-percent" id="achievementsProgressPercent">0% пройдено</span>
+            </div>
+
+            <!-- Search & Filter Bar -->
+            <div class="achievements-search-bar">
+              <span class="achievements-search-icon">🔍</span>
+              <input type="text" class="achievements-search-input" id="achievementsSearchInput" placeholder="Поиск среди 220+ достижений..." autocomplete="off">
+            </div>
+
+            <!-- Tabs filter (Все / Серии / Задачи / Кино / Покупки / Особые / Открыто) -->
+            <div class="achievements-filter-tabs" id="achievementsFilterTabs">
+              <button type="button" class="achievement-tab-btn active" data-filter="all">Все</button>
+              <button type="button" class="achievement-tab-btn" data-filter="streaks">🔥 Серии</button>
+              <button type="button" class="achievement-tab-btn" data-filter="tasks">📝 Дела</button>
+              <button type="button" class="achievement-tab-btn" data-filter="watch">🎬 Кино</button>
+              <button type="button" class="achievement-tab-btn" data-filter="buy">🛒 Покупки</button>
+              <button type="button" class="achievement-tab-btn" data-filter="special">🌟 Особые</button>
+              <button type="button" class="achievement-tab-btn" data-filter="unlocked">✓ Открыто</button>
+            </div>
+
+            <!-- 2-Column Grid of Achievements -->
+            <div class="achievements-grid" id="achievementsGrid">
+              <!-- Dynamically populated 2-column cards -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- In-App Confirmation Modal -->
+      <div class="modal-backdrop confirmation-backdrop" id="confirmModalBackdrop" aria-hidden="true">
+        <div class="modal-sheet confirmation-sheet" role="dialog" aria-modal="true">
+          <div class="confirm-icon-box">
+            <span class="confirm-icon" id="confirmModalIcon">🗑️</span>
+          </div>
+          <h3 class="confirm-title" id="confirmModalTitle">Удалить вкладку?</h3>
+          <p class="confirm-message" id="confirmModalMessage">Вы уверены, что хотите удалить эту вкладку и все её задачи? Это действие нельзя будет отменить.</p>
+          
+          <div class="confirm-actions">
+            <button type="button" class="btn-cancel confirm-cancel-btn" id="confirmModalCancelBtn">Отмена</button>
+            <button type="button" class="btn-danger-confirm" id="confirmModalApproveBtn">Удалить</button>
+          </div>
         </div>
       </div>
 
