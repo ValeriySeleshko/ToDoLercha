@@ -4,4 +4,9 @@
     <string name="title_activity_main">Plan4U</string>
     <string name="package_name">com.plan4u.app</string>
     <string name="custom_url_scheme">com.plan4u.app</string>
+    <string name="widget_priority_title">Plan4U • Важные дела</string>
+    <string name="widget_priority_description">Виджет важных дел и задач на сегодня</string>
+    <string name="widget_empty_text">На сегодня нет важных дел ✨</string>
+    <string name="widget_add_btn">+ Добавить</string>
+    <string name="widget_all_done">Все важные дела выполнены! 🎉</string>
 </resources>

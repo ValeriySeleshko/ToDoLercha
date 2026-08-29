@@ -33,6 +33,27 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!-- Home Screen Widget Receiver -->
+        <receiver
+            android:name=".PriorityWidgetProvider"
+            android:label="@string/widget_priority_title"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.plan4u.app.ACTION_REFRESH_WIDGET" />
+                <action android:name="com.plan4u.app.ACTION_TOGGLE_TASK" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/priority_widget_info" />
+        </receiver>
+
+        <!-- Home Screen Widget Service for ListView -->
+        <service
+            android:name=".PriorityWidgetService"
+            android:permission="android.permission.BIND_REMOTEVIEWS"
+            android:exported="false" />
     </application>
 
     <!-- Permissions -->

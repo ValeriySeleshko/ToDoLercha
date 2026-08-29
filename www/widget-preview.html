@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plan4U — Виджет рабочего стола Android (Предпросмотр)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=PT+Serif:wght@700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: #0f172a;
+      font-family: 'Inter', sans-serif;
+      color: #f8fafc;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px 16px;
+    }
+
+    .page-title {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 6px;
+      text-align: center;
+    }
+
+    .page-subtitle {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    /* Phone Mockup Frame */
+    .phone-mockup {
+      width: 100%;
+      max-width: 380px;
+      height: 680px;
+      border-radius: 40px;
+      background: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop') center/cover no-repeat;
+      border: 8px solid #1e293b;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), inset 0 0 0 2px rgba(255, 255, 255, 0.15);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+    }
+
+    /* Status Bar */
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #ffffff;
+      padding: 4px 10px 16px 10px;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+    }
+
+    /* Home Screen Clock */
+    .clock-widget {
+      text-align: center;
+      margin: 10px 0 20px 0;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .clock-time {
+      font-size: 48px;
+      font-weight: 300;
+      line-height: 1;
+      color: #ffffff;
+    }
+
+    .clock-date {
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.9);
+      margin-top: 4px;
+    }
+
+    /* ==========================================================================
+       ANDROID HOME SCREEN WIDGET (4x2 Plan4U Priority Widget)
+       ========================================================================== */
+    .android-widget-card {
+      background: #ffffff;
+      border-radius: 20px;
+      border: 1.5px solid #e2e8f0;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25), 0 2px 6px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .widget-header {
+      background: #fff1f6;
+      border-bottom: 1px solid #fbcfe8;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .widget-title-box {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .widget-title-icon {
+      font-size: 15px;
+    }
+
+    .widget-title-text {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: #580c35;
+      letter-spacing: 0.1px;
+    }
+
+    .widget-header-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .widget-counter-pill {
+      font-size: 11px;
+      font-weight: 800;
+      color: #8a2757;
+      background: rgba(216, 58, 136, 0.15);
+      padding: 2px 7px;
+      border-radius: 12px;
+    }
+
+    .widget-btn-add {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(216, 58, 136, 0.15);
+      color: #d83a88;
+      font-size: 18px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .widget-body {
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: #ffffff;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    .widget-task-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 7px 10px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .widget-task-item:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+
+    .widget-task-item.completed {
+      opacity: 0.6;
+      background: #f8fafc;
+    }
+
+    .widget-checkbox-icon {
+      font-size: 15px;
+      line-height: 1;
+      user-select: none;
+    }
+
+    .widget-task-title {
+      flex: 1;
+      font-family: 'PT Serif', serif;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #0f172a;
+      line-height: 1.25;
+      word-break: break-word;
+    }
+
+    .widget-task-item.completed .widget-task-title {
+      text-decoration: line-through;
+      color: #64748b;
+    }
+
+    .widget-meta-badges {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .widget-badge-time {
+      font-size: 10px;
+      font-weight: 800;
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 0.8px solid #fca5a5;
+      padding: 2px 6px;
+      border-radius: 5px;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .widget-badge-sec {
+      font-size: 10px;
+      font-weight: 700;
+      background: #e2e8f0;
+      color: #475569;
+      padding: 2px 6px;
+      border-radius: 5px;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    /* App Icons Row at Bottom */
+    .home-dock {
+      margin-top: auto;
+      display: flex;
+      justify-content: space-around;
+      padding: 14px 10px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 26px;
+      margin-bottom: 6px;
+    }
+
+    .dock-app-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+      cursor: pointer;
+    }
+
+    .app-plan4u {
+      background: linear-gradient(135deg, #d83a88, #8a2757);
+      color: #ffffff;
+      font-size: 26px;
+    }
+
+    .app-phone { background: #22c55e; color: #fff; }
+    .app-messages { background: #3b82f6; color: #fff; }
+    .app-camera { background: #64748b; color: #fff; }
+
+    /* Interactive Controls Panel */
+    .controls-panel {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn-action {
+      background: #334155;
+      color: #ffffff;
+      border: 1px solid #475569;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .btn-action:hover {
+      background: #475569;
+    }
+  </style>
+</head>
+<body>
+
+  <h1 class="page-title">📱 Plan4U • Виджет рабочего стола Android</h1>
+  <p class="page-subtitle">Виджет 4×2 с отображением главных приоритетов дня, времени и разделов</p>
+
+  <!-- Smartphone Mockup -->
+  <div class="phone-mockup">
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <span>14:55</span>
+      <span>📶 5G 🔋 98%</span>
+    </div>
+
+    <!-- Clock -->
+    <div class="clock-widget">
+      <div class="clock-time" id="mockTime">14:55</div>
+      <div class="clock-date">Суббота, 29 августа</div>
+    </div>
+
+    <!-- Android Home Screen Widget (Plan4U Priority Widget) -->
+    <div class="android-widget-card" id="priorityWidget">
+      <div class="widget-header">
+        <div class="widget-title-box">
+          <span class="widget-title-icon" id="widgetIcon">⚡</span>
+          <span class="widget-title-text">Plan4U • Важные дела</span>
+        </div>
+        <div class="widget-header-right">
+          <span class="widget-counter-pill" id="widgetCounter">1/2</span>
+          <button class="widget-btn-add" title="Добавить задачу">+</button>
+        </div>
+      </div>
+
+      <div class="widget-body" id="widgetList">
+        <!-- Task Item 1 -->
+        <div class="widget-task-item" onclick="toggleTask(this)">
+          <span class="widget-checkbox-icon">⭕</span>
+          <span class="widget-task-title">Сдать финансовый отчет за август</span>
+          <div class="widget-meta-badges">
+            <span class="widget-badge-time">⏰ 14:30</span>
+            <span class="widget-badge-sec">👤 Личные</span>
+          </div>
+        </div>
+
+        <!-- Task Item 2 -->
+        <div class="widget-task-item completed" onclick="toggleTask(this)">
+          <span class="widget-checkbox-icon">✅</span>
+          <span class="widget-task-title">Созвон с командой дизайнеров</span>
+          <div class="widget-meta-badges">
+            <span class="widget-badge-time">⏰ 17:00</span>
+            <span class="widget-badge-sec">📋 Планы</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom App Dock -->
+    <div class="home-dock">
+      <div class="dock-app-icon app-phone">📞</div>
+      <div class="dock-app-icon app-messages">💬</div>
+      <div class="dock-app-icon app-plan4u" title="Открыть Plan4U">📖</div>
+      <div class="dock-app-icon app-camera">📷</div>
+    </div>
+  </div>
+
+  <!-- Interactive Controls -->
+  <div class="controls-panel">
+    <button class="btn-action" onclick="toggleAllDone()">🎉 Переключить "Все выполнено"</button>
+    <button class="btn-action" onclick="toggleEmptyState()">✨ Показать пустой статус</button>
+    <button class="btn-action" onclick="resetState()">🔄 Сбросить</button>
+  </div>
+
+  <script>
+    function updateClock() {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2, '0');
+      const m = String(now.getMinutes()).padStart(2, '0');
+      const el = document.getElementById('mockTime');
+      if (el) el.textContent = `${h}:${m}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    function toggleTask(el) {
+      el.classList.toggle('completed');
+      const icon = el.querySelector('.widget-checkbox-icon');
+      if (el.classList.contains('completed')) {
+        icon.textContent = '✅';
+      } else {
+        icon.textContent = '⭕';
+      }
+      updateWidgetStats();
+    }
+
+    function updateWidgetStats() {
+      const items = document.querySelectorAll('.widget-task-item');
+      const done = document.querySelectorAll('.widget-task-item.completed').length;
+      const counter = document.getElementById('widgetCounter');
+      const icon = document.getElementById('widgetIcon');
+      if (counter) counter.textContent = `${done}/${items.length}`;
+      if (icon) icon.textContent = (done === items.length && items.length > 0) ? '🎉' : '⚡';
+    }
+
+    function toggleAllDone() {
+      const items = document.querySelectorAll('.widget-task-item');
+      items.forEach(it => {
+        it.classList.add('completed');
+        it.querySelector('.widget-checkbox-icon').textContent = '✅';
+      });
+      updateWidgetStats();
+    }
+
+    function toggleEmptyState() {
+      const list = document.getElementById('widgetList');
+      list.innerHTML = `
+        <div style="text-align: center; padding: 24px 10px; color: #64748b;">
+          <div style="font-size: 13px; font-weight: 600; margin-bottom: 6px;">На сегодня нет важных дел ✨</div>
+          <div style="font-size: 12px; font-weight: 700; color: #d83a88; cursor: pointer;">+ Добавить в блокнот</div>
+        </div>
+      `;
+      document.getElementById('widgetCounter').textContent = '0/0';
+      document.getElementById('widgetIcon').textContent = '⚡';
+    }
+
+    function resetState() {
+      location.reload();
+    }
+  </script>
+</body>
+</html>

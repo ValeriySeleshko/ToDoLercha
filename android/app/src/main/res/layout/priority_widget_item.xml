@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_item_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:background="@drawable/widget_item_bg"
+    android:gravity="center_vertical"
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp"
+    android:paddingTop="6dp"
+    android:paddingBottom="6dp">
+
+    <!-- Checkbox emoji/text -->
+    <TextView
+        android:id="@+id/widget_item_checkbox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="⭕"
+        android:textSize="14sp"
+        android:layout_marginEnd="8dp" />
+
+    <!-- Task Text -->
+    <TextView
+        android:id="@+id/widget_item_text"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="Важное задание"
+        android:textColor="#0F172A"
+        android:textSize="12.5sp"
+        android:textStyle="bold"
+        android:maxLines="2"
+        android:ellipsize="end" />
+
+    <!-- Time Badge -->
+    <TextView
+        android:id="@+id/widget_item_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/widget_time_badge_bg"
+        android:text="14:30"
+        android:textColor="#B91C1C"
+        android:textSize="9.5sp"
+        android:textStyle="bold"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp"
+        android:paddingTop="1.5dp"
+        android:paddingBottom="1.5dp"
+        android:layout_marginStart="4dp"
+        android:visibility="gone" />
+
+    <!-- Section Badge -->
+    <TextView
+        android:id="@+id/widget_item_sec"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/widget_sec_badge_bg"
+        android:text="Личные"
+        android:textColor="#475569"
+        android:textSize="9.5sp"
+        android:textStyle="bold"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp"
+        android:paddingTop="1.5dp"
+        android:paddingBottom="1.5dp"
+        android:layout_marginStart="4dp"
+        android:visibility="gone" />
+</LinearLayout>

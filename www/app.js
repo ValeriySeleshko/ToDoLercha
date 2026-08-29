@@ -216,6 +216,10 @@ const I18N = {
     section_cook: '🍳 Что приготовить',
     section_other: '📋 Другие планы',
     inline_input_placeholder: 'Нажмите, чтобы записать...',
+    blank_line_placeholder: 'Пустая строка (нажмите для записи)...',
+    priority_board_title: 'Главные дела дня',
+    priority_board_no_tasks: 'Нет важных задач',
+    priority_board_all_done: 'Все главные цели выполнены! 🎉',
     period_morning: 'Утро',
     period_day: 'День',
     period_evening: 'Вечер',
@@ -358,6 +362,10 @@ const I18N = {
     section_cook: '🍳 Що приготувати',
     section_other: '📋 Інші плани',
     inline_input_placeholder: 'Натисніть, щоб записати...',
+    blank_line_placeholder: 'Порожній рядок (натисніть для запису)...',
+    priority_board_title: 'Головні справи дня',
+    priority_board_no_tasks: 'Немає важливих завдань',
+    priority_board_all_done: 'Всі головні цілі виконано! 🎉',
     period_morning: 'Ранок',
     period_day: 'День',
     period_evening: 'Вечір',
@@ -500,6 +508,10 @@ const I18N = {
     section_cook: '🍳 What to cook',
     section_other: '📋 Other plans',
     inline_input_placeholder: 'Click to write down...',
+    blank_line_placeholder: 'Empty line (click to write)...',
+    priority_board_title: 'Priority Focus',
+    priority_board_no_tasks: 'No priority tasks',
+    priority_board_all_done: 'All priorities completed! 🎉',
     period_morning: 'Morning',
     period_day: 'Day',
     period_evening: 'Evening',
@@ -728,7 +740,7 @@ function getTaskSection(task) {
 }
 
 function getPriorityRank(task) {
-  if (!task) return 2;
+  if (!task || task.isEmpty || !task.text) return 2;
   const p = (task.priority || '').toLowerCase();
   const t = (task.text || '').toLowerCase();
   if (p === 'важный' || p === 'очень важно' || p === 'вопрос жизни и смерти' || t.includes('очень важно') || t.includes('жизни и смерти')) return 1;
@@ -1494,6 +1506,7 @@ class NotebookApp {
     this.renderTabs();
     this.render();
     this.updateWorkloadWidget();
+    this.syncWithNativeWidget();
   }
 
   // Load app settings
@@ -1890,8 +1903,24 @@ class NotebookApp {
       Plan4UStorage.saveFile('tasks.json', this.tasks);
       this.triggerBackgroundBackup?.();
       this.scheduleCloudSync?.();
+      this.syncWithNativeWidget?.();
     } catch (e) {
       console.warn('Could not save tasks:', e);
+    }
+  }
+
+  // Sync today's tasks with Android Home Screen Widget
+  syncWithNativeWidget() {
+    try {
+      if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WidgetBridge) {
+        const currentTasks = (this.tasks && this.tasks.todo) ? this.tasks.todo : [];
+        window.Capacitor.Plugins.WidgetBridge.updateWidgetData({
+          tasksJson: JSON.stringify(currentTasks),
+          dateStr: this.selectedDate || this.getTodayDateString()
+        });
+      }
+    } catch (e) {
+      console.warn('Widget sync error:', e);
     }
   }
 
@@ -3978,7 +4007,7 @@ class NotebookApp {
     return {
       version: 3,
       appName: 'Plan4U',
-      appVersion: '0.0.14',
+      appVersion: '0.0.15',
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
       tasks: this.tasks,
@@ -4832,6 +4861,11 @@ class NotebookApp {
 
     const task = tabTasks.find(t => t.id === taskId);
     if (task) {
+      if (task.isEmpty || !task.text || !task.text.trim()) {
+        const emptyInput = this.contentContainer.querySelector(`.blank-task-input[data-task-id="${taskId}"]`);
+        if (emptyInput) emptyInput.focus();
+        return;
+      }
       const todayStr = this.getTodayDateString();
       // Completed tasks in past days are archived and cannot be reactivated
       if (this.currentTab === 'todo' && this.selectedDate < todayStr && task.completed) {
@@ -5189,17 +5223,34 @@ class NotebookApp {
       `;
     };
 
-    // Extra info section (Notes only)
-    const renderExtraSection = () => `
-      <div class="extra-details-card">
-        <div class="extra-details-header">
-          <span>📝 ${this.settings.lang === 'en' ? 'Extra details' : (this.settings.lang === 'uk' ? 'Додаткова інформація' : 'Дополнительная информация')}</span>
+    // Extra info section (Notes + Photo Uploader)
+    const renderExtraSection = () => {
+      const hasPhoto = !!this.tempPhotoData;
+      return `
+        <div class="extra-details-card">
+          <div class="extra-details-header">
+            <span>📝 ${this.settings.lang === 'en' ? 'Extra details' : (this.settings.lang === 'uk' ? 'Додаткова інформація' : 'Дополнительная информация')}</span>
+          </div>
+          <div class="form-group" style="margin-bottom: 8px;">
+            <textarea id="taskExtraNotes" rows="2" placeholder="${this.settings.lang === 'en' ? 'Add notes or details...' : (this.settings.lang === 'uk' ? 'Дописати нотатку або подробиці...' : 'Дописать заметку или подробности...')}"></textarea>
+          </div>
+
+          <div class="photo-uploader-area">
+            <input type="file" id="taskPhotoFileInput" accept="image/*" style="display: none;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <button type="button" class="btn-upload-file" id="btnTriggerPhotoUpload">
+                ${hasPhoto ? (this.t('photo_change_btn') || '📸 Заменить фото') : (this.t('photo_attach_btn') || '📸 Прикрепить фото или чек')}
+              </button>
+              <span id="photoAttachedBadge" style="font-size: 11.5px; color: #10b981; font-weight: 600; ${hasPhoto ? '' : 'display: none;'}">✓ ${this.t('photo_attached_title') || 'Фото прикреплено'}</span>
+            </div>
+            <div class="photo-preview-wrap" id="photoPreviewContainer" style="${hasPhoto ? 'display: inline-block;' : 'display: none;'}">
+              <img id="photoPreviewImg" class="photo-preview-img" src="${hasPhoto ? this.tempPhotoData : ''}" alt="Attached Photo">
+              <button type="button" class="photo-remove-btn" id="photoRemoveBtn" title="Удалить фото" aria-label="Удалить фото">&times;</button>
+            </div>
+          </div>
         </div>
-        <div class="form-group" style="margin-bottom: 0;">
-          <textarea id="taskExtraNotes" rows="3" placeholder="${this.settings.lang === 'en' ? 'Add notes or details...' : (this.settings.lang === 'uk' ? 'Дописати нотатку або подробиці...' : 'Дописать заметку или подробности...')}"></textarea>
-        </div>
-      </div>
-    `;
+      `;
+    };
 
     if (tabId === 'todo') {
       // 1) Streamlined Edit Form for Todo notebook
@@ -5330,6 +5381,76 @@ class NotebookApp {
         if (radio) radio.checked = true;
       });
     });
+
+    // Wire up Photo Uploader elements
+    const btnTriggerPhoto = this.dynamicFormFields.querySelector('#btnTriggerPhotoUpload');
+    const photoFileInput = this.dynamicFormFields.querySelector('#taskPhotoFileInput');
+    const previewContainer = this.dynamicFormFields.querySelector('#photoPreviewContainer');
+    const previewImg = this.dynamicFormFields.querySelector('#photoPreviewImg');
+    const removePhotoBtn = this.dynamicFormFields.querySelector('#photoRemoveBtn');
+    const photoBadge = this.dynamicFormFields.querySelector('#photoAttachedBadge');
+
+    if (btnTriggerPhoto && photoFileInput) {
+      btnTriggerPhoto.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        photoFileInput.click();
+      });
+    }
+
+    if (photoFileInput) {
+      photoFileInput.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            const img = new Image();
+            img.onload = () => {
+              const maxDim = 1200;
+              let w = img.width;
+              let h = img.height;
+              if (w > maxDim || h > maxDim) {
+                if (w > h) {
+                  h = Math.round((h * maxDim) / w);
+                  w = maxDim;
+                } else {
+                  w = Math.round((w * maxDim) / h);
+                  h = maxDim;
+                }
+              }
+              const canvas = document.createElement('canvas');
+              canvas.width = w;
+              canvas.height = h;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, w, h);
+              const compressedBase64 = canvas.toDataURL('image/jpeg', 0.82);
+              this.tempPhotoData = compressedBase64;
+              if (previewImg) previewImg.src = this.tempPhotoData;
+              if (previewContainer) previewContainer.style.display = 'inline-block';
+              if (photoBadge) photoBadge.style.display = 'inline';
+              if (btnTriggerPhoto) btnTriggerPhoto.textContent = this.t('photo_change_btn') || '📸 Заменить фото';
+              triggerHaptic(15);
+            };
+            img.src = ev.target.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+
+    if (removePhotoBtn) {
+      removePhotoBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.tempPhotoData = null;
+        if (photoFileInput) photoFileInput.value = '';
+        if (previewContainer) previewContainer.style.display = 'none';
+        if (previewImg) previewImg.src = '';
+        if (photoBadge) photoBadge.style.display = 'none';
+        if (btnTriggerPhoto) btnTriggerPhoto.textContent = this.t('photo_attach_btn') || '📸 Прикрепить фото или чек';
+        triggerHaptic(15);
+      });
+    }
   }
 
   // Helper for wiring input autocompletion with smart dropdown on typing
@@ -5475,6 +5596,10 @@ class NotebookApp {
         task.text = text;
         task.priority = priority;
         task.notes = notes;
+        task.photo = this.tempPhotoData || null;
+        if (task.photo && typeof Plan4UStorage !== 'undefined') {
+          Plan4UStorage.savePhoto(task.photo);
+        }
         if (targetTab === 'todo') {
           const timeInput = this.dynamicFormFields.querySelector('#taskTimeInput');
           task.time = timeInput ? (timeInput.value.trim() || null) : null;
@@ -5498,8 +5623,13 @@ class NotebookApp {
       text: text,
       priority: priority,
       notes: notes,
+      photo: this.tempPhotoData || null,
       completed: false
     };
+
+    if (newTask.photo && typeof Plan4UStorage !== 'undefined') {
+      Plan4UStorage.savePhoto(newTask.photo);
+    }
 
     if (targetTab === 'todo') {
       const timeInput = this.dynamicFormFields.querySelector('#taskTimeInput');
@@ -5623,7 +5753,9 @@ class NotebookApp {
     input.setAttribute('enterkeyhint', 'done');
 
     const sectionId = input.dataset.section;
-    const row = input.closest('.inline-task-row');
+    const isBlankSlot = input.classList.contains('blank-task-input');
+    const taskId = input.dataset.taskId;
+    const row = input.closest('.inline-task-row') || input.closest('.task-row-blank') || input.closest('.task-row-wrapper');
 
     if (row && !row._tapBound) {
       row._tapBound = true;
@@ -5643,14 +5775,129 @@ class NotebookApp {
       }
     });
 
-    const handleCommit = (e) => {
+    const handleCommit = (e, isEnterKey = false) => {
       if (e) {
         e.preventDefault();
         e.stopPropagation();
       }
       const finalVal = input.value.trim();
-      if (!finalVal) return;
 
+      // Case A: Editing an existing blank slot
+      if (isBlankSlot && taskId) {
+        const tabTasks = this.tasks[this.currentTab] || [];
+        const taskIdx = tabTasks.findIndex(t => String(t.id) === String(taskId));
+        if (taskIdx === -1) return;
+
+        if (finalVal) {
+          // Fill the blank slot with text
+          const cleanTitle = cleanTaskText(finalVal);
+          tabTasks[taskIdx].text = cleanTitle;
+          tabTasks[taskIdx].isEmpty = false;
+          this.flushSaveTasks();
+          this.recordHistory(this.currentTab, cleanTitle);
+          this.checkAchievements(true);
+          triggerHaptic(15);
+
+          // Replace blank slot wrapper with regular task row
+          const wrapper = input.closest('.task-row-wrapper');
+          if (wrapper) {
+            const plateHtml = this.renderTaskRow(tabTasks[taskIdx]);
+            const temp = document.createElement('div');
+            temp.innerHTML = plateHtml.trim();
+            const newPlate = temp.firstElementChild;
+            wrapper.parentNode.replaceChild(newPlate, wrapper);
+            this.attachSwipeEvents();
+          }
+
+          if (isEnterKey) {
+            // Find next input (next blank slot or bottom section input)
+            const nextInp = this.contentContainer.querySelector(`.inline-task-input[data-section="${sectionId}"]`);
+            if (nextInp) {
+              requestAnimationFrame(() => nextInp.focus());
+            }
+          }
+          this.updateWorkloadWidget();
+        } else if (isEnterKey) {
+          // Double enter inside blank slot -> insert another blank line right after it
+          const nextBlankTask = {
+            id: Date.now().toString(),
+            text: '',
+            isEmpty: true,
+            section: sectionId || 'personal',
+            priority: 'обычный',
+            completed: false,
+            date: this.selectedDate || this.getTodayDateString(),
+            time: null,
+            notes: '',
+            photo: null
+          };
+          tabTasks.splice(taskIdx + 1, 0, nextBlankTask);
+          this.flushSaveTasks();
+          triggerHaptic(15);
+          this.render();
+          setTimeout(() => {
+            const nextInp = this.contentContainer.querySelector(`.blank-task-input[data-task-id="${nextBlankTask.id}"]`);
+            if (nextInp) nextInp.focus();
+          }, 30);
+        }
+        return;
+      }
+
+      // Case B: Bottom section input
+      if (!finalVal) {
+        // Double Enter on empty input / Enter with no text -> Insert a blank line / skipped line for future writing!
+        if (isEnterKey) {
+          const blankTask = {
+            id: Date.now().toString(),
+            text: '',
+            isEmpty: true,
+            section: sectionId || 'personal',
+            priority: 'обычный',
+            completed: false,
+            date: this.selectedDate || this.getTodayDateString(),
+            time: null,
+            notes: '',
+            photo: null
+          };
+
+          if (!this.tasks[this.currentTab]) {
+            this.tasks[this.currentTab] = [];
+          }
+          this.tasks[this.currentTab].push(blankTask);
+
+          this.flushSaveTasks();
+          triggerHaptic(15);
+
+          // Insert empty plate above the bottom row
+          const sectionContainer = input.closest('.section-tasks-list');
+          if (sectionContainer && row) {
+            const plateHtml = this.renderTaskRow(blankTask);
+            const temp = document.createElement('div');
+            temp.innerHTML = plateHtml.trim();
+            const newPlate = temp.firstElementChild;
+            sectionContainer.insertBefore(newPlate, row);
+
+            const blankInput = newPlate.querySelector('.blank-task-input');
+            if (blankInput) {
+              this.attachEventsToInlineInput(blankInput);
+            }
+            this.attachSwipeEvents();
+          }
+
+          input.value = '';
+          if (row) row.classList.remove('has-text');
+
+          requestAnimationFrame(() => {
+            input.focus({ preventScroll: true });
+            setTimeout(() => {
+              input.focus({ preventScroll: true });
+            }, 35);
+          });
+        }
+        return;
+      }
+
+      // Normal text commit
       const cleanTitle = cleanTaskText(finalVal);
       const newTask = {
         id: Date.now().toString(),
@@ -5706,7 +5953,7 @@ class NotebookApp {
       if (e.key === 'Enter' || e.keyCode === 13 || e.which === 13) {
         e.preventDefault();
         e.stopPropagation();
-        handleCommit(e);
+        handleCommit(e, true);
       }
     });
 
@@ -5728,7 +5975,7 @@ class NotebookApp {
     input.addEventListener('blur', () => {
       const finalVal = input.value.trim();
       if (finalVal) {
-        handleCommit(null);
+        handleCommit(null, false);
       }
     });
   }
@@ -5974,6 +6221,48 @@ class NotebookApp {
 
   // Render individual task row HTML - Interactive swipeable notebook line with priority typography
   renderTaskRow(task) {
+    if (task.isEmpty || !task.text) {
+      return `
+        <div class="task-row-wrapper task-row-empty-slot" data-id="${task.id}">
+          <div class="task-swipe-actions-right">
+            <button type="button" class="swipe-action-btn action-move-up" data-action="move-up" title="Переместить вверх" aria-label="Вверх">
+              <svg class="swipe-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="19" x2="12" y2="5"></line>
+                <polyline points="5 12 12 5 19 12"></polyline>
+              </svg>
+            </button>
+            <button type="button" class="swipe-action-btn action-move-down" data-action="move-down" title="Переместить вниз" aria-label="Вниз">
+              <svg class="swipe-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <polyline points="19 12 12 19 5 12"></polyline>
+              </svg>
+            </button>
+            <button type="button" class="swipe-action-btn action-delete" data-action="delete" title="Удалить пустую строку" aria-label="Удалить">
+              <svg class="swipe-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="task-row task-row-blank" data-id="${task.id}">
+            <div class="task-checkbox-container">
+              <div class="task-checkbox blank-slot-checkbox" title="Свободная строка для записи"></div>
+            </div>
+            <div class="task-text blank-slot-text">
+              <input type="text"
+                     class="inline-task-input blank-task-input"
+                     data-task-id="${task.id}"
+                     data-section="${task.section || 'personal'}"
+                     placeholder="${this.t('blank_line_placeholder') || 'Пустая строка (нажмите для записи)...'}"
+                     value=""
+                     autocomplete="off"
+                     enterkeyhint="done" />
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
     const isWatchArchive = this.currentTab === 'watch' && task.completed;
     const todayStr = this.getTodayDateString();
     const isPastArchived = this.currentTab === 'todo' && this.selectedDate < todayStr && task.completed;
@@ -6326,7 +6615,7 @@ class NotebookApp {
 
   // Update Task Counter Widget (Top: Completed tasks, Bottom: Total planned tasks)
   updateWorkloadWidget() {
-    const todoTasks = this.tasks['todo'] || [];
+    const todoTasks = (this.tasks['todo'] || []).filter(t => !t.isEmpty && (t.text && t.text.trim().length > 0));
     const totalCount = todoTasks.length;
     const completedCount = todoTasks.filter(t => t.completed).length;
 
