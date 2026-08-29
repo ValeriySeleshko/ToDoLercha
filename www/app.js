@@ -275,9 +275,12 @@ const I18N = {
     theme_dark: '🌙 Тёмная',
     theme_auto: '⚙️ Авто',
     settings_accent: 'Цвет акцента',
-    settings_font: 'Шрифт и размер задач',
+    settings_font: 'Шрифт и оформление задач',
     font_family_label: 'Шрифт блокнота',
     font_size_label: 'Размер текста задач',
+    settings_task_weight: 'Жирность обычных задач',
+    settings_priority_weight: 'Жирность важных задач',
+    settings_priority_color: 'Цвет важных задач',
     settings_notif: 'Оповещения и звуки',
     notif_browser_label: 'Уведомления',
     notif_browser_desc: 'Напоминания о задачах дня',
@@ -421,9 +424,12 @@ const I18N = {
     theme_dark: '🌙 Темна',
     theme_auto: '⚙️ Авто',
     settings_accent: 'Колір акценту',
-    settings_font: 'Шрифт і розмір завдань',
+    settings_font: 'Шрифт і оформлення завдань',
     font_family_label: 'Шрифт блокнота',
     font_size_label: 'Розмір тексту завдань',
+    settings_task_weight: 'Жирність звичайних завдань',
+    settings_priority_weight: 'Жирність важливих завдань',
+    settings_priority_color: 'Колір важливих завдань',
     settings_notif: 'Сповіщення та звуки',
     notif_browser_label: 'Сповіщення',
     notif_browser_desc: 'Нагадування про завдання дня',
@@ -567,9 +573,12 @@ const I18N = {
     theme_dark: '🌙 Dark',
     theme_auto: '⚙️ Auto',
     settings_accent: 'Accent Color',
-    settings_font: 'Font & Task Size',
+    settings_font: 'Font & Styling',
     font_family_label: 'Notebook font',
     font_size_label: 'Task text size',
+    settings_task_weight: 'Regular task boldness',
+    settings_priority_weight: 'Priority task boldness',
+    settings_priority_color: 'Priority task color',
     settings_notif: 'Notifications & Sounds',
     notif_browser_label: 'Notifications',
     notif_browser_desc: 'Daily task reminders',
@@ -658,13 +667,33 @@ const DEFAULT_SECTIONS = {
 const SECTIONS_TODO = DEFAULT_SECTIONS.todo;
 
 // Haptic vibration feedback helper
-function triggerHaptic(pattern = 15) {
+function triggerHaptic(pattern = 20, style = 'light') {
   try {
     const raw = localStorage.getItem('todo_notebook_app_settings');
     if (raw) {
       const s = JSON.parse(raw);
       if (s.hapticsEnabled === false) return;
     }
+
+    // 1. Native Android hardware vibration bridge
+    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WidgetBridge && typeof window.Capacitor.Plugins.WidgetBridge.vibrate === 'function') {
+      let dur = 25;
+      let st = typeof style === 'string' ? style : 'light';
+      if (typeof pattern === 'number') {
+        dur = pattern;
+      }
+      if (Array.isArray(pattern) || style === 'achievement') {
+        st = 'achievement';
+      } else if (dur >= 30) {
+        st = 'heavy';
+      } else if (dur >= 20) {
+        st = 'medium';
+      }
+      window.Capacitor.Plugins.WidgetBridge.vibrate({ duration: dur, style: st });
+      return;
+    }
+
+    // 2. Standard Web Navigator Vibrate fallback
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       navigator.vibrate(pattern);
     }
@@ -742,8 +771,14 @@ function getTaskSection(task) {
 function getPriorityRank(task) {
   if (!task || task.isEmpty || !task.text) return 2;
   const p = (task.priority || '').toLowerCase();
-  const t = (task.text || '').toLowerCase();
-  if (p === 'важный' || p === 'очень важно' || p === 'вопрос жизни и смерти' || t.includes('очень важно') || t.includes('жизни и смерти')) return 1;
+  const t = (task.text || '').toLowerCase().trim();
+  if (p === 'важный' || p === 'важно' || p === 'очень важно' || p === 'вопрос жизни и смерти' ||
+      p === 'important' || p === 'urgent' || p === 'high' ||
+      t.includes('очень важно') || t.includes('жизни и смерти') ||
+      t.includes('(важно)') || t.includes('(важный)') ||
+      t.startsWith('! ') || t.startsWith('!') || t.startsWith('⚡')) {
+    return 1;
+  }
   return 2;
 }
 
@@ -752,8 +787,11 @@ function cleanTaskText(text) {
   const cleaned = text
     .replace(/\s*\(вопрос жизни и смерти\)/gi, '')
     .replace(/\s*\(очень важно\)/gi, '')
+    .replace(/\s*\(важно\)/gi, '')
+    .replace(/\s*\(важный\)/gi, '')
     .replace(/\s*\(в течении дня\)/gi, '')
     .replace(/\s*\(перенесено\)/gi, '')
+    .replace(/^!\s*/, '')
     .trim();
   return cleaned || text.trim();
 }
@@ -1093,12 +1131,27 @@ const ACCENT_COLORS = [
   }
 ];
 
+const PRIORITY_COLORS = [
+  { id: 'burgundy', name: 'Бордовый', color: '#881337', darkColor: '#fb7185' },
+  { id: 'red', name: 'Красный', color: '#dc2626', darkColor: '#f87171' },
+  { id: 'magenta', name: 'Малиновый', color: '#d83a88', darkColor: '#f472b6' },
+  { id: 'purple', name: 'Фиолетовый', color: '#7e22ce', darkColor: '#c084fc' },
+  { id: 'blue', name: 'Синий', color: '#2563eb', darkColor: '#60a5fa' },
+  { id: 'green', name: 'Изумрудный', color: '#15803d', darkColor: '#4ade80' },
+  { id: 'chocolate', name: 'Шоколадный', color: '#78350f', darkColor: '#fbbf24' },
+  { id: 'black', name: 'Черный', color: '#0f172a', darkColor: '#f8fafc' }
+];
+
 const DEFAULT_SETTINGS = {
   lang: detectSystemLanguage(), // 'ru' | 'uk' | 'en' (auto system detected)
   theme: 'light', // 'light' | 'dark' | 'auto'
   accentColorId: 'magenta',
   fontFamily: "'PT Serif', Georgia, serif",
   fontSize: 14,
+  taskFontWeight: 500,
+  priorityFontWeight: 900,
+  priorityColorId: 'burgundy',
+  priorityColor: '#881337',
   notificationsEnabled: false,
   hapticsEnabled: true,
   soundEnabled: true,
@@ -1976,6 +2029,13 @@ class NotebookApp {
     this.fontFamilySelect = document.getElementById('fontFamilySelect');
     this.fontSizeRange = document.getElementById('fontSizeRange');
     this.fontSizeVal = document.getElementById('fontSizeVal');
+    this.taskWeightRange = document.getElementById('taskWeightRange');
+    this.taskWeightVal = document.getElementById('taskWeightVal');
+    this.priorityWeightRange = document.getElementById('priorityWeightRange');
+    this.priorityWeightVal = document.getElementById('priorityWeightVal');
+    this.priorityColorPalette = document.getElementById('priorityColorPalette');
+    this.previewRegularText = document.getElementById('previewRegularText');
+    this.previewPriorityText = document.getElementById('previewPriorityText');
     this.fontPreviewBox = document.getElementById('fontPreviewBox');
     this.toggleNotifications = document.getElementById('toggleNotifications');
     this.toggleHaptics = document.getElementById('toggleHaptics');
@@ -3351,11 +3411,27 @@ class NotebookApp {
     document.documentElement.style.setProperty('--section-header-border', isDark ? accentObj.darkSectionBorder : accentObj.sectionBorder);
     document.documentElement.style.setProperty('--section-header-text', isDark ? accentObj.darkSectionText : accentObj.sectionText);
 
-    // 3. Font Family & Size
+    // 3. Font Family, Size, Weights & Priority Color
     const fontFamily = this.settings.fontFamily || "'PT Serif', Georgia, serif";
     const fontSize = (this.settings.fontSize || 14) + 'px';
+    const taskWeight = parseInt(this.settings.taskFontWeight || 700, 10);
+    const priorityWeight = parseInt(this.settings.priorityFontWeight || 900, 10);
+    const prioColorObj = PRIORITY_COLORS.find(c => c.id === this.settings.priorityColorId) || PRIORITY_COLORS[0];
+    const priorityColor = this.settings.priorityColor || prioColorObj.color;
+    const priorityDarkColor = prioColorObj.darkColor || priorityColor;
+
+    // Subtle continuous smooth stroke calculation for regular cursive/serif fonts
+    const taskStroke = (taskWeight <= 400) ? '0px' : (((taskWeight - 400) * 0.0006) + 'px');
+    const priorityStroke = (((priorityWeight - 500) * 0.0018) + 0.12) + 'px';
+
     document.documentElement.style.setProperty('--task-font-family', fontFamily);
     document.documentElement.style.setProperty('--task-font-size', fontSize);
+    document.documentElement.style.setProperty('--task-font-weight', taskWeight);
+    document.documentElement.style.setProperty('--task-text-stroke', taskStroke);
+    document.documentElement.style.setProperty('--priority-font-weight', priorityWeight);
+    document.documentElement.style.setProperty('--priority-text-stroke', priorityStroke);
+    document.documentElement.style.setProperty('--priority-task-color', priorityColor);
+    document.documentElement.style.setProperty('--priority-task-dark-color', priorityDarkColor);
 
     // Update cloud sync label
     if (this.cloudLastSyncText) {
@@ -3383,6 +3459,29 @@ class NotebookApp {
       gain.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.12);
+    } catch (e) {
+      // Audio not supported or blocked
+    }
+  }
+
+  // Play pleasant fanfare chime on achievement unlocked
+  playAchievementSound() {
+    if (!this.settings.soundEnabled) return;
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 fanfare
+      notes.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.07);
+        gain.gain.setValueAtTime(0.16, ctx.currentTime + idx * 0.07);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.07 + 0.16);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + idx * 0.07);
+        osc.stop(ctx.currentTime + idx * 0.07 + 0.16);
+      });
     } catch (e) {
       // Audio not supported or blocked
     }
@@ -3492,9 +3591,61 @@ class NotebookApp {
       };
     }
 
+    const getRegularWeightLabel = (w) => {
+      const isUk = this.settings.lang === 'uk';
+      const isEn = this.settings.lang === 'en';
+      if (w <= 400) return isEn ? `${w} (Light)` : (isUk ? `${w} (Тонкий)` : `${w} (Тонкий)`);
+      if (w <= 450) return isEn ? `${w} (Regular)` : (isUk ? `${w} (Звичайний)` : `${w} (Обычный)`);
+      if (w <= 500) return isEn ? `${w} (Medium)` : (isUk ? `${w} (Середній)` : `${w} (Средний)`);
+      if (w <= 550) return isEn ? `${w} (Semi-Bold)` : (isUk ? `${w} (Насичений)` : `${w} (Насыщенный)`);
+      return isEn ? `${w} (Bold)` : (isUk ? `${w} (Жирний)` : `${w} (Жирный)`);
+    };
+
+    const getPrioWeightLabel = (w) => {
+      const isUk = this.settings.lang === 'uk';
+      const isEn = this.settings.lang === 'en';
+      if (w <= 600) return isEn ? `${w} (Semi-Bold)` : (isUk ? `${w} (Напівжирний)` : `${w} (Полужирный)`);
+      if (w <= 700) return isEn ? `${w} (Bold)` : (isUk ? `${w} (Жирний)` : `${w} (Жирный)`);
+      if (w <= 800) return isEn ? `${w} (Extra Bold)` : (isUk ? `${w} (Дуже жирний)` : `${w} (Очень жирный)`);
+      return isEn ? `${w} (Max / Heavy)` : (isUk ? `${w} (Максимальний)` : `${w} (Максимальный)`);
+    };
+
+    // 5. Regular Task Font Weight Slider (400..600)
+    if (this.taskWeightRange && this.taskWeightVal) {
+      this.taskWeightRange.min = '400';
+      this.taskWeightRange.max = '600';
+      this.taskWeightRange.step = '50';
+      const currentTaskWeight = Math.min(600, Math.max(400, this.settings.taskFontWeight || 500));
+      this.taskWeightRange.value = currentTaskWeight;
+      this.taskWeightVal.textContent = getRegularWeightLabel(currentTaskWeight);
+
+      this.taskWeightRange.oninput = (e) => {
+        this.settings.taskFontWeight = parseInt(e.target.value, 10);
+        this.taskWeightVal.textContent = getRegularWeightLabel(this.settings.taskFontWeight);
+        this.saveSettings();
+        this.applySettings();
+        this.updateFontPreview();
+      };
+    }
+
+    // 6. Priority Task Font Weight Slider
+    if (this.priorityWeightRange && this.priorityWeightVal) {
+      const currentPrioWeight = this.settings.priorityFontWeight || 900;
+      this.priorityWeightRange.value = currentPrioWeight;
+      this.priorityWeightVal.textContent = getPrioWeightLabel(currentPrioWeight);
+
+      this.priorityWeightRange.oninput = (e) => {
+        this.settings.priorityFontWeight = parseInt(e.target.value, 10);
+        this.priorityWeightVal.textContent = getPrioWeightLabel(this.settings.priorityFontWeight);
+        this.saveSettings();
+        this.applySettings();
+        this.updateFontPreview();
+      };
+    }
+
     this.updateFontPreview();
 
-    // 5. Toggles
+    // 8. Toggles
     if (this.toggleNotifications) {
       this.toggleNotifications.checked = !!this.settings.notificationsEnabled;
       this.toggleNotifications.onchange = async (e) => {
@@ -3557,8 +3708,31 @@ class NotebookApp {
   // Update Font Preview text styling in settings
   updateFontPreview() {
     if (!this.fontPreviewBox) return;
-    this.fontPreviewBox.style.fontFamily = this.settings.fontFamily || "'PT Serif', Georgia, serif";
-    this.fontPreviewBox.style.fontSize = `${this.settings.fontSize || 14}px`;
+    const fontFamily = this.settings.fontFamily || "'PT Serif', Georgia, serif";
+    const fontSize = `${this.settings.fontSize || 14}px`;
+    const taskWeight = parseInt(this.settings.taskFontWeight || 700, 10);
+    const priorityWeight = parseInt(this.settings.priorityFontWeight || 900, 10);
+    const prioColorObj = PRIORITY_COLORS.find(c => c.id === this.settings.priorityColorId) || PRIORITY_COLORS[0];
+    const priorityColor = this.settings.priorityColor || prioColorObj.color;
+    const isDark = document.body.classList.contains('theme-dark');
+    const priorityDarkColor = prioColorObj.darkColor || priorityColor;
+
+    const taskStroke = (taskWeight <= 400) ? '0px' : (((taskWeight - 400) * 0.0014) + 'px');
+    const priorityStroke = (((priorityWeight - 500) * 0.0018) + 0.12) + 'px';
+
+    if (this.previewRegularText) {
+      this.previewRegularText.style.fontFamily = fontFamily;
+      this.previewRegularText.style.fontSize = fontSize;
+      this.previewRegularText.style.fontWeight = taskWeight;
+      this.previewRegularText.style.webkitTextStroke = `${taskStroke} currentColor`;
+    }
+    if (this.previewPriorityText) {
+      this.previewPriorityText.style.fontFamily = fontFamily;
+      this.previewPriorityText.style.fontSize = fontSize;
+      this.previewPriorityText.style.fontWeight = priorityWeight;
+      this.previewPriorityText.style.color = isDark ? priorityDarkColor : priorityColor;
+      this.previewPriorityText.style.webkitTextStroke = `${priorityStroke} currentColor`;
+    }
   }
 
   // Close Settings Modal
@@ -4660,8 +4834,8 @@ class NotebookApp {
       this.updateTrophyWidgetAura();
 
       if (notify) {
-        triggerHaptic([30, 60, 30]);
-        this.playCompletionSound();
+        triggerHaptic([40, 70, 50], 'achievement');
+        this.playAchievementSound();
         const firstAch = newlyUnlocked[0];
         this.showToast(`🏆 Достижение получено: "${firstAch.title}"!`, firstAch.icon);
       }
@@ -4927,13 +5101,29 @@ class NotebookApp {
 
   // Delete Task
   deleteTask(taskId, e) {
-    e.stopPropagation();
+    if (e && e.stopPropagation) e.stopPropagation();
     if (this.tasks[this.currentTab]) {
-      this.tasks[this.currentTab] = this.tasks[this.currentTab].filter(t => t.id !== taskId);
+      this.tasks[this.currentTab] = this.tasks[this.currentTab].filter(t => String(t.id) !== String(taskId));
       this.saveTasks();
       this.render();
       this.renderTabs();
       this.updateWorkloadWidget();
+    }
+  }
+
+  // Dedicated instant deletion of an empty blank slot with focus restoration
+  deleteBlankTask(taskId, focusSectionId = null) {
+    if (this.tasks[this.currentTab]) {
+      this.tasks[this.currentTab] = this.tasks[this.currentTab].filter(t => String(t.id) !== String(taskId));
+      this.flushSaveTasks();
+      this.render();
+      triggerHaptic(15);
+      if (focusSectionId) {
+        setTimeout(() => {
+          const inp = this.contentContainer.querySelector(`.inline-task-input[data-section="${focusSectionId}"]`);
+          if (inp) inp.focus({ preventScroll: true });
+        }, 40);
+      }
     }
   }
 
@@ -5039,18 +5229,41 @@ class NotebookApp {
       textInput.value = cleanTaskText(task.text);
     }
 
-    // Populate priority
-    const isImportant = getPriorityRank(task) === 1 || task.priority === 'важный';
+    // Populate priority & color
+    const isImportant = getPriorityRank(task) === 1 || task.priority === 'важный' || task.priority === 'очень важно' || task.priority === 'вопрос жизни и смерти';
     const priorityVal = isImportant ? 'важный' : 'обычный';
     const priorityChips = this.dynamicFormFields.querySelectorAll('.priority-chip');
     priorityChips.forEach(chip => {
       const radio = chip.querySelector('input[type="radio"]');
-      if (radio && radio.value === priorityVal) {
+      if (radio && (radio.value === priorityVal || (isImportant && (radio.value === 'очень важно' || radio.value === 'важный')))) {
         radio.checked = true;
         chip.classList.add('selected');
       } else {
         if (radio) radio.checked = false;
         chip.classList.remove('selected');
+      }
+    });
+
+    const colorGroup = this.dynamicFormFields.querySelector('#taskPriorityColorGroup');
+    const priorityHint = this.dynamicFormFields.querySelector('#taskPriorityHint');
+    if (colorGroup) {
+      colorGroup.style.display = isImportant ? 'flex' : 'none';
+    }
+    if (priorityHint) {
+      priorityHint.style.display = isImportant ? 'block' : 'none';
+    }
+
+    // Default to black if not important, or task.color if important
+    const taskColor = isImportant ? (task.color || 'black') : 'black';
+    const colorOptions = this.dynamicFormFields.querySelectorAll('.priority-color-circle');
+    colorOptions.forEach(opt => {
+      const radio = opt.querySelector('input[type="radio"]');
+      if (radio && radio.value === taskColor) {
+        radio.checked = true;
+        opt.classList.add('selected');
+      } else {
+        if (radio) radio.checked = false;
+        opt.classList.remove('selected');
       }
     });
 
@@ -5170,6 +5383,38 @@ class NotebookApp {
       'вопрос жизни и смерти': this.t('priority_urgent')
     };
 
+    const renderPriorityColorSelector = (selectedColor = 'black', isVisible = false) => {
+      const isUk = this.settings.lang === 'uk';
+      const isEn = this.settings.lang === 'en';
+      const blackLabel = isEn ? 'Black' : (isUk ? 'Чорний' : 'Чёрный');
+      const burgundyLabel = isEn ? 'Burgundy' : (isUk ? 'Бордовий' : 'Бордовый');
+      const purpleLabel = isEn ? 'Purple' : (isUk ? 'Фіолетовий' : 'Фиолетовый');
+      const navyLabel = isEn ? 'Navy Blue' : (isUk ? 'Темно-синій' : 'Тёмно-синий');
+      const darkGreenLabel = isEn ? 'Dark Green' : (isUk ? 'Темно-зелений' : 'Тёмно-зелёный');
+
+      return `
+        <div class="priority-color-selector" id="taskPriorityColorGroup" style="${isVisible ? 'display: flex;' : 'display: none;'}">
+          <div class="priority-color-options">
+            <label class="priority-color-circle ${selectedColor === 'black' ? 'selected' : ''}" data-color="black" title="${blackLabel}" style="--circle-color: #0f172a;">
+              <input type="radio" name="taskPriorityColor" value="black" ${selectedColor === 'black' ? 'checked' : ''}>
+            </label>
+            <label class="priority-color-circle ${selectedColor === 'burgundy' ? 'selected' : ''}" data-color="burgundy" title="${burgundyLabel}" style="--circle-color: #881337;">
+              <input type="radio" name="taskPriorityColor" value="burgundy" ${selectedColor === 'burgundy' ? 'checked' : ''}>
+            </label>
+            <label class="priority-color-circle ${selectedColor === 'purple' ? 'selected' : ''}" data-color="purple" title="${purpleLabel}" style="--circle-color: #7e22ce;">
+              <input type="radio" name="taskPriorityColor" value="purple" ${selectedColor === 'purple' ? 'checked' : ''}>
+            </label>
+            <label class="priority-color-circle ${selectedColor === 'navy' ? 'selected' : ''}" data-color="navy" title="${navyLabel}" style="--circle-color: #1e3a8a;">
+              <input type="radio" name="taskPriorityColor" value="navy" ${selectedColor === 'navy' ? 'checked' : ''}>
+            </label>
+            <label class="priority-color-circle ${selectedColor === 'darkgreen' ? 'selected' : ''}" data-color="darkgreen" title="${darkGreenLabel}" style="--circle-color: #065f46;">
+              <input type="radio" name="taskPriorityColor" value="darkgreen" ${selectedColor === 'darkgreen' ? 'checked' : ''}>
+            </label>
+          </div>
+        </div>
+      `;
+    };
+
     const renderPrioritySelector = (defaultVal = 'спокойно') => `
       <div class="form-section-card">
         <div class="form-group" style="margin-bottom: 0;">
@@ -5183,6 +5428,7 @@ class NotebookApp {
               </label>
             `).join('')}
           </div>
+          ${renderPriorityColorSelector('black', defaultVal === 'очень важно' || defaultVal === 'вопрос жизни и смерти')}
         </div>
       </div>
     `;
@@ -5218,6 +5464,7 @@ class NotebookApp {
                 </label>
               `).join('')}
             </div>
+            ${renderPriorityColorSelector('black', isTop)}
           </div>
         </div>
       `;
@@ -5280,7 +5527,8 @@ class NotebookApp {
                 <span>⭐ ${this.t('priority_important') || 'Важный'}</span>
               </label>
             </div>
-            <div class="priority-hint" style="font-size: 11px; color: #64748b; margin-top: 5px; font-weight: 500;">
+            ${renderPriorityColorSelector('black', false)}
+            <div class="priority-hint" id="taskPriorityHint" style="font-size: 11px; color: #64748b; margin-top: 6px; font-weight: 500; display: none;">
               ${this.t('priority_important_desc') || '«Важный» выделяет задачу жирным шрифтом и поднимает наверх'}
             </div>
           </div>
@@ -5371,14 +5619,48 @@ class NotebookApp {
       onSelect: () => { }
     });
 
-    // Attach Priority Chip click events
+    // Attach Priority Chip click events & toggle color selector + priority hint
+    const colorGroup = this.dynamicFormFields.querySelector('#taskPriorityColorGroup');
+    const priorityHint = this.dynamicFormFields.querySelector('#taskPriorityHint');
     const chips = this.dynamicFormFields.querySelectorAll('.priority-chip');
     chips.forEach(chip => {
       chip.addEventListener('click', () => {
         chips.forEach(c => c.classList.remove('selected'));
         chip.classList.add('selected');
         const radio = chip.querySelector('input[type="radio"]');
+        if (radio) {
+          radio.checked = true;
+          const val = (radio.value || '').toLowerCase();
+          const isPrio = val === 'важный' || val === 'очень важно' || val === 'вопрос жизни и смерти';
+          if (colorGroup) {
+            colorGroup.style.display = isPrio ? 'flex' : 'none';
+          }
+          if (priorityHint) {
+            priorityHint.style.display = isPrio ? 'block' : 'none';
+          }
+          if (!isPrio) {
+            // When downgraded to regular task, reset color option to black
+            const colorOptions = this.dynamicFormFields.querySelectorAll('.priority-color-circle');
+            colorOptions.forEach(opt => {
+              const cradio = opt.querySelector('input[type="radio"]');
+              const isBlack = cradio && cradio.value === 'black';
+              if (cradio) cradio.checked = isBlack;
+              opt.classList.toggle('selected', isBlack);
+            });
+          }
+        }
+      });
+    });
+
+    // Attach Priority Color Option click events
+    const colorOptions = this.dynamicFormFields.querySelectorAll('.priority-color-circle');
+    colorOptions.forEach(opt => {
+      opt.addEventListener('click', () => {
+        colorOptions.forEach(o => o.classList.remove('selected'));
+        opt.classList.add('selected');
+        const radio = opt.querySelector('input[type="radio"]');
         if (radio) radio.checked = true;
+        triggerHaptic(15);
       });
     });
 
@@ -5579,9 +5861,13 @@ class NotebookApp {
 
     if (!text) return;
 
-    // Get selected priority
+    // Get selected priority & color
     const priorityRadio = this.dynamicFormFields.querySelector('input[name="taskPriority"]:checked');
     const priority = priorityRadio ? priorityRadio.value : 'спокойно';
+
+    const isPrio = priority === 'важный' || priority === 'очень важно' || priority === 'вопрос жизни и смерти';
+    const colorRadio = this.dynamicFormFields.querySelector('input[name="taskPriorityColor"]:checked');
+    const taskColor = isPrio ? (colorRadio ? colorRadio.value : 'black') : 'black';
 
     text = cleanTaskText(text);
 
@@ -5595,6 +5881,7 @@ class NotebookApp {
       if (task) {
         task.text = text;
         task.priority = priority;
+        task.color = taskColor;
         task.notes = notes;
         task.photo = this.tempPhotoData || null;
         if (task.photo && typeof Plan4UStorage !== 'undefined') {
@@ -5622,6 +5909,7 @@ class NotebookApp {
       id: Date.now().toString(),
       text: text,
       priority: priority,
+      color: taskColor,
       notes: notes,
       photo: this.tempPhotoData || null,
       completed: false
@@ -5881,6 +6169,14 @@ class NotebookApp {
             if (blankInput) {
               this.attachEventsToInlineInput(blankInput);
             }
+            const delBtn = newPlate.querySelector('.blank-slot-delete-btn');
+            if (delBtn) {
+              delBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.deleteBlankTask(blankTask.id, sectionId);
+              };
+            }
             this.attachSwipeEvents();
           }
 
@@ -5954,6 +6250,34 @@ class NotebookApp {
         e.preventDefault();
         e.stopPropagation();
         handleCommit(e, true);
+        return;
+      }
+
+      // Backspace on empty input -> Delete the blank line!
+      if (e.key === 'Backspace' || e.keyCode === 8 || e.which === 8) {
+        if (input.value === '') {
+          if (isBlankSlot && taskId) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.deleteBlankTask(taskId, sectionId);
+            return;
+          }
+
+          // If in bottom input and previous task in section is an empty line, delete it
+          if (!isBlankSlot) {
+            const tabTasks = this.tasks[this.currentTab] || [];
+            const secTasks = tabTasks.filter(t => (t.section || 'personal') === (sectionId || 'personal'));
+            if (secTasks.length > 0) {
+              const lastSecTask = secTasks[secTasks.length - 1];
+              if (lastSecTask.isEmpty || !lastSecTask.text) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.deleteBlankTask(lastSecTask.id, sectionId);
+                return;
+              }
+            }
+          }
+        }
       }
     });
 
@@ -5985,6 +6309,19 @@ class NotebookApp {
     const inlineInputs = this.contentContainer.querySelectorAll('.inline-task-input');
     inlineInputs.forEach(input => {
       this.attachEventsToInlineInput(input);
+    });
+
+    // Attach click events for blank slot delete buttons (×)
+    const blankDeleteBtns = this.contentContainer.querySelectorAll('.blank-slot-delete-btn');
+    blankDeleteBtns.forEach(btn => {
+      btn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const taskId = btn.dataset.taskId;
+        const sec = btn.closest('.notebook-section');
+        const secId = sec ? sec.dataset.section : 'personal';
+        this.deleteBlankTask(taskId, secId);
+      };
     });
 
     // Clicking anywhere in a section focuses its input
@@ -6258,6 +6595,12 @@ class NotebookApp {
                      autocomplete="off"
                      enterkeyhint="done" />
             </div>
+            <button type="button" class="blank-slot-delete-btn" data-task-id="${task.id}" title="Удалить пустую строку" aria-label="Удалить">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
           </div>
         </div>
       `;
@@ -6268,8 +6611,9 @@ class NotebookApp {
     const isPastArchived = this.currentTab === 'todo' && this.selectedDate < todayStr && task.completed;
     const swipeCheckLabel = task.completed ? this.t('btn_cancel') : (this.settings.lang === 'en' ? 'Done' : 'Готово');
     const priorityRank = getPriorityRank(task);
-    const isImportant = priorityRank === 1 || (task.priority && task.priority.toLowerCase() === 'важный');
+    const isImportant = priorityRank === 1 || (task.priority && (task.priority.toLowerCase() === 'важный' || task.priority.toLowerCase() === 'очень важно' || task.priority.toLowerCase() === 'вопрос жизни и смерти'));
     const priorityClass = isImportant ? 'priority-important' : 'priority-calm';
+    const taskColor = isImportant ? (task.color || 'black') : 'black';
 
     const cleanTitle = cleanTaskText(task.text);
 
@@ -6320,11 +6664,11 @@ class NotebookApp {
         </div>
 
         <!-- Sliding foreground task row -->
-        <div class="task-row ${task.completed ? 'completed' : ''} ${isImportant ? 'task-row-important' : ''} ${isPastArchived ? 'is-past-archived' : ''}" data-id="${task.id}">
+        <div class="task-row ${task.completed ? 'completed' : ''} ${isImportant ? 'task-row-important' : ''} ${isPastArchived ? 'is-past-archived' : ''}" data-id="${task.id}" data-color="${taskColor}">
           <div class="task-checkbox-container">
             <div class="task-checkbox ${isPastArchived ? 'checkbox-archived' : ''}" role="checkbox" aria-checked="${task.completed}" title="${isPastArchived ? 'В архиве истории' : ''}"></div>
           </div>
-          <div class="task-text ${priorityClass}">
+          <div class="task-text ${priorityClass}" data-color="${taskColor}">
             <span class="task-title-text ${isImportant ? 'task-text-bold' : ''}">${this.escapeHtml(cleanTitle)}</span>
             ${isPastArchived ? `<span class="archived-lock-badge" title="Завершено в истории">🔒</span>` : ''}
             ${task.time ? `<span class="task-time-badge">⏰ ${this.escapeHtml(task.time)}</span>` : ''}

@@ -380,7 +380,7 @@
 
             <!-- 4. Шрифт и размер задач -->
             <div class="settings-section">
-              <div class="settings-section-title">✍️ <span data-i18n="settings_font">Шрифт и размер задач</span></div>
+              <div class="settings-section-title">✍️ <span data-i18n="settings_font">Шрифт и оформление задач</span></div>
               <div class="form-group" style="margin-bottom: 12px;">
                 <label for="fontFamilySelect" data-i18n="font_family_label">Шрифт блокнота</label>
                 <select id="fontFamilySelect" class="settings-select">
@@ -394,15 +394,36 @@
                 </select>
               </div>
 
-              <div class="form-group" style="margin-bottom: 0;">
+              <div class="form-group" style="margin-bottom: 12px;">
                 <div class="pattern-size-header">
                   <label for="fontSizeRange" data-i18n="font_size_label">Размер текста задач</label>
                   <span class="pattern-size-val" id="fontSizeVal">15 px</span>
                 </div>
                 <input type="range" id="fontSizeRange" min="13" max="22" step="1" value="15" class="range-slider">
-                <div class="font-preview-box" id="fontPreviewBox">
-                  <span id="fontPreviewText">Завтрак и кофе • Сдать важный отчет</span>
+              </div>
+
+              <!-- Слайдер: Жирность обычных задач (400..600) -->
+              <div class="form-group" style="margin-bottom: 12px;">
+                <div class="pattern-size-header">
+                  <label for="taskWeightRange" data-i18n="settings_task_weight">Жирность обычных задач</label>
+                  <span class="pattern-size-val" id="taskWeightVal">500 (Средний)</span>
                 </div>
+                <input type="range" id="taskWeightRange" min="400" max="600" step="50" value="500" class="range-slider">
+              </div>
+
+              <!-- Слайдер: Жирность приоритетных задач -->
+              <div class="form-group" style="margin-bottom: 12px;">
+                <div class="pattern-size-header">
+                  <label for="priorityWeightRange" data-i18n="settings_priority_weight">Жирность важных задач</label>
+                  <span class="pattern-size-val" id="priorityWeightVal">900 (Максимальный)</span>
+                </div>
+                <input type="range" id="priorityWeightRange" min="600" max="900" step="100" value="900" class="range-slider">
+              </div>
+
+              <!-- Предпросмотр -->
+              <div class="font-preview-box" id="fontPreviewBox">
+                <div class="preview-line-regular" id="previewRegularText">☕ Обычная задача: купить кофе</div>
+                <div class="preview-line-priority" id="previewPriorityText">⚡ Важная задача: сдать отчет шефу</div>
               </div>
             </div>
 
