@@ -1,0 +1,11 @@
+node_modules/
+*.apk
+.gradle/
+build/
+android/app/build/
+android/.gradle/
+android/build/
+android/captures/
+.idea/
+.vscode/
+*.log

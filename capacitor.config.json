@@ -1,0 +1,6 @@
+{
+  "appId": "com.plan4u.app",
+  "appName": "Plan4U",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
