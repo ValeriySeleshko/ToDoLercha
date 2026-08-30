@@ -828,6 +828,17 @@ body {
   overflow: hidden;
   user-select: none;
   background-color: transparent;
+  touch-action: pan-y;
+}
+
+.task-row-wrapper.no-swipe {
+  touch-action: auto !important;
+}
+
+.task-row-wrapper.no-swipe .task-row {
+  cursor: default !important;
+  transform: none !important;
+  touch-action: auto !important;
 }
 
 /* Left side background (Complete indicator when swiping right) */
@@ -847,7 +858,10 @@ body {
   font-size: 13px;
   font-weight: 700;
   opacity: 0;
-  transform: translateX(-30px);
+  transform: translate3d(-30px, 0, 0);
+  will-change: transform, opacity;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1);
   z-index: 1;
   pointer-events: none;
@@ -856,7 +870,7 @@ body {
 
 .task-swipe-check-bg.visible {
   opacity: 1;
-  transform: translateX(0);
+  transform: translate3d(0, 0, 0);
 }
 
 .swipe-check-icon {
@@ -882,7 +896,10 @@ body {
   height: 100%;
   width: 182px;
   z-index: 1;
-  transform: translateX(100%);
+  transform: translate3d(100%, 0, 0);
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
   pointer-events: none;
   padding: 2px 4px 2px 2px;
@@ -890,7 +907,7 @@ body {
 }
 
 .task-row-wrapper.open .task-swipe-actions-right {
-  transform: translateX(0px) !important;
+  transform: translate3d(0px, 0, 0) !important;
   pointer-events: auto !important;
 }
 
@@ -977,6 +994,9 @@ body {
   padding: 2.5px 14px 2px 0;
   cursor: pointer;
   z-index: 2;
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1), background-color 0.15s ease;
   touch-action: pan-y;
   user-select: none;
@@ -985,7 +1005,7 @@ body {
 }
 
 .task-row-wrapper.open .task-row {
-  transform: translateX(-180px) !important;
+  transform: translate3d(-180px, 0, 0) !important;
 }
 
 .task-row-wrapper.swiping .task-row {

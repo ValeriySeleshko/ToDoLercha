@@ -109,7 +109,9 @@ const Plan4UStorage = {
 
   // Save JSON data files into Plan4U/
   async saveFile(filename, data) {
+    if (data === undefined || data === null) return;
     const jsonStr = typeof data === 'string' ? data : JSON.stringify(data);
+    if (!jsonStr || jsonStr === 'undefined' || jsonStr === 'null') return;
 
     // 1. LocalStorage mirror
     try {
@@ -669,10 +671,14 @@ const SECTIONS_TODO = DEFAULT_SECTIONS.todo;
 // Haptic vibration feedback helper
 function triggerHaptic(pattern = 20, style = 'light') {
   try {
-    const raw = localStorage.getItem('todo_notebook_app_settings');
-    if (raw) {
-      const s = JSON.parse(raw);
-      if (s.hapticsEnabled === false) return;
+    if (window.appInstance && window.appInstance.settings) {
+      if (window.appInstance.settings.hapticsEnabled === false) return;
+    } else {
+      const raw = localStorage.getItem('todo_notebook_app_settings');
+      if (raw) {
+        const s = JSON.parse(raw);
+        if (s.hapticsEnabled === false) return;
+      }
     }
 
     // 1. Native Android hardware vibration bridge
@@ -1540,6 +1546,7 @@ class NotebookApp {
     this.tabs = this.loadTabs();
     this.currentTab = this.tabs.length > 0 ? this.tabs[0].id : 'todo';
     this.tasks = this.loadTasks();
+    this.rolloverPastUncompletedTasks();
     this.history = this.loadHistory();
     this.tempPhotoData = null;
     this.editingTaskId = null;
@@ -1832,7 +1839,9 @@ class NotebookApp {
         this.tasks.todo = this.dailyTasks[todayStr];
       }
       this.saveDailyTasks();
-      this.saveTasks();
+      if (this.tasks && typeof this.tasks === 'object') {
+        this.saveTasks();
+      }
     }
   }
 
@@ -1907,11 +1916,15 @@ class NotebookApp {
     let persistentTasks = {};
     try {
       const saved = localStorage.getItem('plan4u_tasks.json') || localStorage.getItem('todo_notebook_tasks');
-      if (saved) {
+      if (saved && saved !== 'undefined' && saved !== 'null') {
         persistentTasks = JSON.parse(saved);
       }
     } catch (e) {
       console.warn('Could not load tasks:', e);
+    }
+
+    if (!persistentTasks || typeof persistentTasks !== 'object') {
+      persistentTasks = {};
     }
 
     if (!persistentTasks.buy) persistentTasks.buy = JSON.parse(JSON.stringify(INITIAL_TASKS.buy));
@@ -1919,7 +1932,6 @@ class NotebookApp {
 
     // Daily todo tasks for selected date
     if (this.dailyTasks) {
-      this.rolloverPastUncompletedTasks();
       if (!this.dailyTasks[this.selectedDate]) {
         this.dailyTasks[this.selectedDate] = this.selectedDate === this.getTodayDateString() ? JSON.parse(JSON.stringify(INITIAL_TASKS.todo)) : [];
       }
@@ -1933,6 +1945,7 @@ class NotebookApp {
 
   // Save tasks to LocalStorage & Plan4UStorage with optional debouncing
   saveTasks(debounced = false) {
+    if (!this.tasks || typeof this.tasks !== 'object') return;
     if (this.dailyTasks && this.tasks) {
       this.dailyTasks[this.selectedDate] = this.tasks.todo || [];
     }
@@ -1949,6 +1962,7 @@ class NotebookApp {
   flushSaveTasks() {
     clearTimeout(this._saveTasksDebounceTimer);
     try {
+      if (!this.tasks || typeof this.tasks !== 'object') return;
       if (this.dailyTasks) {
         this.saveDailyTasks();
       }
@@ -4423,18 +4437,30 @@ class NotebookApp {
       }, 2500);
     };
 
-    // 1. Periodic background sync every 15 minutes
-    if (this._periodicBackupInterval) clearInterval(this._periodicBackupInterval);
-    this._periodicBackupInterval = setInterval(() => {
-      if (this.settings.autoBackupEnabled !== false) {
-        this.performAutoBackup(true);
-      }
-    }, 15 * 60 * 1000);
+    // 1. Periodic background sync every 15 minutes (active only while app is open)
+    const startPeriodicBackup = () => {
+      if (this._periodicBackupInterval) clearInterval(this._periodicBackupInterval);
+      this._periodicBackupInterval = setInterval(() => {
+        if (this.settings.autoBackupEnabled !== false && document.visibilityState === 'visible') {
+          this.performAutoBackup(true);
+        }
+      }, 15 * 60 * 1000);
+    };
 
-    // 2. Auto-save on visibility change / backgrounding / page exit
+    startPeriodicBackup();
+
+    // 2. Auto-save on visibility change / backgrounding / page exit (pauses timers when asleep)
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden' && this.settings.autoBackupEnabled !== false) {
-        this.performAutoBackup(true);
+      if (document.visibilityState === 'hidden') {
+        if (this._periodicBackupInterval) {
+          clearInterval(this._periodicBackupInterval);
+          this._periodicBackupInterval = null;
+        }
+        if (this.settings.autoBackupEnabled !== false) {
+          this.performAutoBackup(true);
+        }
+      } else if (document.visibilityState === 'visible') {
+        startPeriodicBackup();
       }
     });
     window.addEventListener('pagehide', () => {
@@ -5041,16 +5067,16 @@ class NotebookApp {
         return;
       }
       const todayStr = this.getTodayDateString();
-      // Completed tasks in past days are archived and cannot be reactivated
-      if (this.currentTab === 'todo' && this.selectedDate < todayStr && task.completed) {
+      // Completed tasks in past days are archived in history and cannot be modified
+      if (this.currentTab === 'todo' && (this.selectedDate < todayStr || (task.date && task.date < todayStr))) {
         triggerHaptic(15);
         const isEn = this.settings.lang === 'en';
         const isUk = this.settings.lang === 'uk';
         const msg = isEn
-          ? 'Completed tasks from past days are archived in history'
+          ? 'Tasks from past days are archived in history and cannot be modified'
           : (isUk
-            ? 'Завершені справи минулих днів знаходяться в архіві'
-            : 'Завершенные дела прошлых дней находятся в архиве');
+            ? 'Справи минулих днів знаходяться в архіві та не підлягають зміні'
+            : 'Дела прошлых дней находятся в архиве истории и не изменяются');
         this.showToast(msg, '🔒');
         return;
       }
@@ -5102,6 +5128,10 @@ class NotebookApp {
   // Delete Task
   deleteTask(taskId, e) {
     if (e && e.stopPropagation) e.stopPropagation();
+    const todayStr = this.getTodayDateString();
+    if (this.currentTab === 'todo' && this.selectedDate < todayStr) {
+      return;
+    }
     if (this.tasks[this.currentTab]) {
       this.tasks[this.currentTab] = this.tasks[this.currentTab].filter(t => String(t.id) !== String(taskId));
       this.saveTasks();
@@ -5141,6 +5171,10 @@ class NotebookApp {
 
   // Defer / Postpone Task to Next Day
   deferTask(taskId) {
+    const todayStr = this.getTodayDateString();
+    if (this.currentTab === 'todo' && this.selectedDate < todayStr) {
+      return;
+    }
     const tabTasks = this.tasks[this.currentTab];
     if (!tabTasks) return;
     const taskIdx = tabTasks.findIndex(t => t.id === taskId);
@@ -5208,6 +5242,10 @@ class NotebookApp {
 
   // Open Edit Task Modal with existing task values pre-filled
   openEditTaskModal(taskId) {
+    const todayStr = this.getTodayDateString();
+    if (this.currentTab === 'todo' && this.selectedDate < todayStr) {
+      return;
+    }
     const tabTasks = this.tasks[this.currentTab];
     if (!tabTasks) return;
     const task = tabTasks.find(t => t.id === taskId);
@@ -6608,7 +6646,7 @@ class NotebookApp {
 
     const isWatchArchive = this.currentTab === 'watch' && task.completed;
     const todayStr = this.getTodayDateString();
-    const isPastArchived = this.currentTab === 'todo' && this.selectedDate < todayStr && task.completed;
+    const isPastArchived = (this.currentTab === 'todo' && this.selectedDate < todayStr) || (this.currentTab === 'todo' && task.completed && task.date && task.date < todayStr);
     const swipeCheckLabel = task.completed ? this.t('btn_cancel') : (this.settings.lang === 'en' ? 'Done' : 'Готово');
     const priorityRank = getPriorityRank(task);
     const isImportant = priorityRank === 1 || (task.priority && (task.priority.toLowerCase() === 'важный' || task.priority.toLowerCase() === 'очень важно' || task.priority.toLowerCase() === 'вопрос жизни и смерти'));
@@ -6618,7 +6656,8 @@ class NotebookApp {
     const cleanTitle = cleanTaskText(task.text);
 
     return `
-      <div class="task-row-wrapper ${isImportant ? 'is-important-wrapper' : ''} ${isPastArchived ? 'is-past-archived-wrapper' : ''}" data-id="${task.id}">
+      <div class="task-row-wrapper ${isImportant ? 'is-important-wrapper' : ''} ${isPastArchived ? 'is-past-archived-wrapper no-swipe' : ''}" data-id="${task.id}">
+        ${!isPastArchived ? `
         <!-- Right side actions on swipe left (5 buttons: Move Up, Move Down, Defer, Edit, Delete) -->
         <div class="task-swipe-actions-right">
           <button type="button" class="swipe-action-btn action-move-up" data-action="move-up" title="Переместить вверх" aria-label="Вверх">
@@ -6661,7 +6700,7 @@ class NotebookApp {
         <div class="task-swipe-check-bg">
           <span class="swipe-check-icon">✓</span>
           <span class="swipe-check-text">${swipeCheckLabel}</span>
-        </div>
+        </div>` : ''}
 
         <!-- Sliding foreground task row -->
         <div class="task-row ${task.completed ? 'completed' : ''} ${isImportant ? 'task-row-important' : ''} ${isPastArchived ? 'is-past-archived' : ''}" data-id="${task.id}" data-color="${taskColor}">
@@ -6688,7 +6727,7 @@ class NotebookApp {
 
   // Attach touch and drag swipe gestures for each task row
   attachSwipeEvents() {
-    const wrappers = this.contentContainer.querySelectorAll('.task-row-wrapper');
+    const wrappers = this.contentContainer.querySelectorAll('.task-row-wrapper:not(.no-swipe)');
     let activeOpenWrapper = null;
 
     const closeAllSwipes = () => {
@@ -6697,8 +6736,14 @@ class NotebookApp {
         const r = w.querySelector('.task-row');
         const a = w.querySelector('.task-swipe-actions-right');
         const bg = w.querySelector('.task-swipe-check-bg');
-        if (r) r.style.transform = '';
-        if (a) a.style.transform = '';
+        if (r) {
+          r.style.transform = '';
+          r.style.transition = '';
+        }
+        if (a) {
+          a.style.transform = '';
+          a.style.transition = '';
+        }
         if (bg) bg.classList.remove('visible');
       });
       activeOpenWrapper = null;
@@ -6749,10 +6794,14 @@ class NotebookApp {
       let startY = 0;
       let isDragging = false;
       let isHorizontal = null;
+      let rafId = null;
       const maxLeftSwipe = -180;
       const maxRightSwipe = 90;
 
       const handleStart = (clientX, clientY, target) => {
+        if (wrapper.classList.contains('no-swipe') || wrapper.classList.contains('is-past-archived-wrapper')) {
+          return false;
+        }
         if (target && target.closest('.task-checkbox-container, .task-checkbox, .task-attached-photo-btn, .task-attached-link, a, button')) {
           return false;
         }
@@ -6764,6 +6813,8 @@ class NotebookApp {
         isDragging = false;
         isHorizontal = null;
         wrapper.classList.add('swiping');
+        if (row) row.style.transition = 'none';
+        if (actionsRight) actionsRight.style.transition = 'none';
         return true;
       };
 
@@ -6779,13 +6830,15 @@ class NotebookApp {
 
         if (!isHorizontal) return;
 
-        if (e && e.target && typeof e.target.blur === 'function') {
-          e.target.blur();
+        if (!isDragging) {
+          isDragging = true;
+          if (e && e.target && typeof e.target.blur === 'function') {
+            e.target.blur();
+          }
+          try { window.getSelection()?.removeAllRanges(); } catch (err) { }
         }
-        window.getSelection()?.removeAllRanges();
 
         if (e && e.cancelable) e.preventDefault();
-        isDragging = true;
 
         let translateX = dx;
         if (wrapper.classList.contains('open')) {
@@ -6799,24 +6852,33 @@ class NotebookApp {
           translateX = maxRightSwipe + (translateX - maxRightSwipe) * 0.25;
         }
 
-        row.style.transform = `translateX(${translateX}px)`;
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => {
+          if (row) row.style.transform = `translate3d(${translateX}px, 0, 0)`;
 
-        if (translateX < 0) {
-          // Actions follow directly
-          const actionsOffset = Math.max(0, 180 + translateX);
-          if (actionsRight) actionsRight.style.transform = `translateX(${actionsOffset}px)`;
-          if (checkBg) checkBg.classList.remove('visible');
-        } else if (translateX > 15) {
-          if (actionsRight) actionsRight.style.transform = 'translateX(100%)';
-          if (checkBg) checkBg.classList.add('visible');
-        } else {
-          if (actionsRight) actionsRight.style.transform = 'translateX(100%)';
-          if (checkBg) checkBg.classList.remove('visible');
-        }
+          if (translateX < 0) {
+            // Actions follow directly
+            const actionsOffset = Math.max(0, 180 + translateX);
+            if (actionsRight) actionsRight.style.transform = `translate3d(${actionsOffset}px, 0, 0)`;
+            if (checkBg) checkBg.classList.remove('visible');
+          } else if (translateX > 15) {
+            if (actionsRight) actionsRight.style.transform = 'translate3d(100%, 0, 0)';
+            if (checkBg) checkBg.classList.add('visible');
+          } else {
+            if (actionsRight) actionsRight.style.transform = 'translate3d(100%, 0, 0)';
+            if (checkBg) checkBg.classList.remove('visible');
+          }
+        });
       };
 
       const handleEnd = (clientX, target) => {
+        if (rafId) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+        }
         wrapper.classList.remove('swiping');
+        if (row) row.style.transition = '';
+        if (actionsRight) actionsRight.style.transition = '';
         if (checkBg) checkBg.classList.remove('visible');
 
         if (target && target.closest('.task-checkbox-container, .task-checkbox, .task-attached-photo-btn, .task-attached-link, a, button, input')) {
@@ -6834,32 +6896,32 @@ class NotebookApp {
           if (dx > 30) {
             // Swiped right -> close
             wrapper.classList.remove('open');
-            row.style.transform = '';
+            if (row) row.style.transform = '';
             if (actionsRight) actionsRight.style.transform = '';
             activeOpenWrapper = null;
           } else {
             // Stay open
-            row.style.transform = `translateX(${maxLeftSwipe}px)`;
-            if (actionsRight) actionsRight.style.transform = 'translateX(0px)';
+            if (row) row.style.transform = `translate3d(${maxLeftSwipe}px, 0, 0)`;
+            if (actionsRight) actionsRight.style.transform = 'translate3d(0px, 0, 0)';
           }
         } else {
           if (dx < -40) {
             // Swiped left enough -> open action menu
             closeAllSwipes();
             wrapper.classList.add('open');
-            row.style.transform = `translateX(${maxLeftSwipe}px)`;
-            if (actionsRight) actionsRight.style.transform = 'translateX(0px)';
+            if (row) row.style.transform = `translate3d(${maxLeftSwipe}px, 0, 0)`;
+            if (actionsRight) actionsRight.style.transform = 'translate3d(0px, 0, 0)';
             activeOpenWrapper = wrapper;
             triggerHaptic(15);
           } else if (dx > 45) {
             // Swiped right enough -> complete / undo
-            row.style.transform = '';
+            if (row) row.style.transform = '';
             if (actionsRight) actionsRight.style.transform = '';
             triggerHaptic([20, 40]);
             this.toggleTask(taskId);
           } else {
             // Snap back
-            row.style.transform = '';
+            if (row) row.style.transform = '';
             if (actionsRight) actionsRight.style.transform = '';
           }
         }
