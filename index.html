@@ -15,10 +15,22 @@
   <!-- Google Fonts: PT Serif, Caveat, Marck Script, Neucha, Bad Script, Roboto Slab, Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bad+Script&family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700;800;900&family=Marck+Script&family=Neucha&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&family=Roboto+Slab:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bad+Script&family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700;800;900&family=Marck+Script&family=Neucha&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&family=Roboto+Slab:wght@400;600;700;900&display=auto" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <script>
+    (function() {
+      try {
+        var s = JSON.parse(localStorage.getItem('plan4u_settings') || '{}');
+        if (s.theme === 'dark' || (s.theme === 'auto' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('theme-dark');
+        } else {
+          document.documentElement.classList.remove('theme-dark');
+        }
+      } catch(e) {}
+    })();
+  </script>
 </head>
-<body>
+<body class="app-booting preload-no-transitions">
   <div class="app-viewport">
     <main class="app-frame" id="appFrame">
       
@@ -95,8 +107,25 @@
         <!-- Floating Action Button (FAB) -->
         <div class="fab-wrapper">
           <button class="fab-button" id="fabAddBtn" title="Добавить новый блок (раздел)" aria-label="Добавить новый блок">
-            <span class="fab-plus-icon">+</span>
+            <svg class="fab-plus-svg" viewBox="0 0 24 24" width="26" height="26" stroke="#ffffff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" fill="none">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
           </button>
+        </div>
+
+        <!-- Floating Companion (Maine Coon Kitten) -->
+        <div class="notebook-pet-anchor" id="notebookPetAnchor" title="Ваш спутник Мейни" aria-label="Спутник Мейни">
+          <div class="pet-mini-treats-badge" id="petMiniTreatsBadge" title="Маленькие коричневые камушки (сухой корм)">
+            <span class="pet-mini-fish-icon">🟤</span>
+            <span class="pet-mini-treats-count" id="petMiniTreatsCount">0</span>
+          </div>
+          <div class="pet-mini-avatar-container" id="petMiniAvatar">
+            <!-- Rendered via PetSystem SVG -->
+          </div>
+          <div class="pet-mini-speech" id="petMiniSpeech">
+            <span id="petMiniSpeechText">Мяу! 🐾</span>
+          </div>
         </div>
       </section>
 
@@ -506,7 +535,7 @@
           </div>
 
           <div style="text-align: center; font-size: 11px; color: #94a3b8; margin-top: 12px; font-weight: 600; letter-spacing: 0.3px;">
-            Plan4U • Версия 0.0.15
+            Plan4U • Версия 0.0.43
           </div>
 
           <div class="modal-actions" style="margin-top: 10px;">
@@ -637,6 +666,170 @@
         <div class="lightbox-content">
           <button class="lightbox-close-btn" id="lightboxCloseBtn" aria-label="Закрыть">&times;</button>
           <img id="lightboxImg" src="" alt="Просмотр фото" />
+        </div>
+      </div>
+
+      <!-- Cozy Companion / Maine Coon Tamagotchi Modal -->
+      <div class="modal-backdrop" id="petModalBackdrop" aria-hidden="true">
+        <div class="modal-sheet modal-sheet-scrollable pet-modal-sheet" role="dialog" aria-modal="true" aria-labelledby="petModalNameTitle">
+          
+          <!-- Modal Header -->
+          <div class="modal-header pet-modal-header">
+            <div class="pet-header-info">
+              <div class="pet-title-row">
+                <span class="pet-name-display" id="petModalNameTitle">Мейни</span>
+                <button type="button" class="btn-pet-rename" id="btnPetRename" title="Переименовать питомца">✏️</button>
+                <span class="pet-level-badge" id="petLevelBadge">Ур. 1</span>
+              </div>
+              <div class="pet-friendship-wrap">
+                <div class="pet-xp-bar-bg">
+                  <div class="pet-xp-bar-fill" id="petXpBarFill" style="width: 20%;"></div>
+                </div>
+                <span class="pet-xp-text" id="petXpText">20 / 100 XP</span>
+              </div>
+            </div>
+            <button type="button" class="modal-close-btn" id="petModalCloseBtn" aria-label="Закрыть">&times;</button>
+          </div>
+
+          <!-- Pet Modal Content -->
+          <div class="pet-modal-content">
+
+            <!-- Interactive Stage Area -->
+            <div class="pet-interactive-stage" id="petInteractiveStage">
+              <!-- Small Gear Button for Sub-Menu in Top-Left Corner -->
+              <button type="button" class="pet-settings-gear-btn" id="petSettingsGearBtn" title="Настройки котика / Окрас шерсти" aria-label="Окрас шерсти">
+                ⚙️
+              </button>
+
+              <!-- Coat Color Sub-Menu / Popup Menu -->
+              <div class="pet-settings-popup" id="petSettingsPopup" aria-hidden="true">
+                <div class="pet-popup-header">
+                  <span class="pet-popup-title">🎨 Настоящие окрасы</span>
+                  <button type="button" class="pet-popup-close-btn" id="petPopupCloseBtn" title="Закрыть">✕</button>
+                </div>
+                <div class="pet-popup-colors">
+                  <button type="button" class="pet-color-chip active" data-color="ginger">
+                    <span class="pet-color-swatch ginger-swatch"></span>
+                    <span class="pet-color-name">Рыжий табби 🦁</span>
+                  </button>
+                  <button type="button" class="pet-color-chip" data-color="white">
+                    <span class="pet-color-swatch white-swatch"></span>
+                    <span class="pet-color-name">Белоснежный ❄️</span>
+                  </button>
+                  <button type="button" class="pet-color-chip" data-color="tiger">
+                    <span class="pet-color-swatch tiger-swatch"></span>
+                    <span class="pet-color-name">Тигровый 🐯</span>
+                  </button>
+                  <button type="button" class="pet-color-chip" data-color="silver">
+                    <span class="pet-color-swatch silver-swatch"></span>
+                    <span class="pet-color-name">Серебристый 🐺</span>
+                  </button>
+                  <button type="button" class="pet-color-chip" data-color="midnight">
+                    <span class="pet-color-swatch midnight-swatch"></span>
+                    <span class="pet-color-name">Угольный 🌙</span>
+                  </button>
+                  <button type="button" class="pet-color-chip" data-color="cream">
+                    <span class="pet-color-swatch cream-swatch"></span>
+                    <span class="pet-color-name">Кремовый 🍑</span>
+                  </button>
+                  <button type="button" class="pet-color-chip" data-color="mocha">
+                    <span class="pet-color-swatch mocha-swatch"></span>
+                    <span class="pet-color-name">Шоколадный ☕</span>
+                  </button>
+                  <button type="button" class="pet-color-chip" data-color="siamese">
+                    <span class="pet-color-swatch siamese-swatch"></span>
+                    <span class="pet-color-name">Колор-пойнт 🐾</span>
+                  </button>
+                  <button type="button" class="pet-color-chip" data-color="calico">
+                    <span class="pet-color-swatch calico-swatch"></span>
+                    <span class="pet-color-name">Трёхцветный 🎨</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Comic Speech / Thought Bubble -->
+              <div class="pet-thought-bubble comic-speech-bubble" id="petThoughtBubble">
+                <span id="petThoughtText">Муррр-мяу! 🐾</span>
+              </div>
+
+              <!-- Big Interactive Maine Coon Graphic Canvas / SVG -->
+              <div class="pet-character-wrapper" id="petCharacterStage">
+                <!-- Injected via PetSystem.renderFullCharacter() -->
+              </div>
+
+              <!-- Particle Emitter Layer for Hearts / Sparkles -->
+              <div class="pet-particles-layer" id="petParticlesLayer"></div>
+
+              <!-- Petting Hint Banner -->
+              <div class="pet-tap-hint">
+                <span>✨ Погладь Мейнкуна пальцем, чтобы помурчать</span>
+              </div>
+            </div>
+
+            <!-- Stats & Needs Gauges -->
+            <div class="pet-stats-card">
+              <!-- Satiety / Hunger -->
+              <div class="pet-stat-row">
+                <div class="pet-stat-label">
+                  <span class="pet-stat-icon">🟤</span>
+                  <span class="pet-stat-name">Сытость:</span>
+                  <span class="pet-stat-status" id="petHungerStatus">Сытый и довольный</span>
+                </div>
+                <div class="pet-stat-gauge-wrap">
+                  <div class="pet-stat-bar-bg">
+                    <div class="pet-stat-bar-fill hunger-fill" id="petHungerBarFill" style="width: 80%;"></div>
+                  </div>
+                  <span class="pet-stat-val" id="petHungerVal">80%</span>
+                </div>
+              </div>
+
+              <!-- Happiness -->
+              <div class="pet-stat-row">
+                <div class="pet-stat-label">
+                  <span class="pet-stat-icon">💖</span>
+                  <span class="pet-stat-name">Счастье:</span>
+                  <span class="pet-stat-status" id="petHappinessStatus">Мурчит от радости</span>
+                </div>
+                <div class="pet-stat-gauge-wrap">
+                  <div class="pet-stat-bar-bg">
+                    <div class="pet-stat-bar-fill happy-fill" id="petHappinessBarFill" style="width: 90%;"></div>
+                  </div>
+                  <span class="pet-stat-val" id="petHappinessVal">90%</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Treats Inventory & Quick Actions -->
+            <div class="pet-actions-grid">
+              <button type="button" class="btn-pet-action btn-pet-feed" id="btnPetFeed">
+                <div class="pet-action-icon">🟤</div>
+                <div class="pet-action-info">
+                  <span class="pet-action-title">Коричневый камушек</span>
+                  <span class="pet-action-sub" id="petFishCountLabel">В запасе: 0 шт.</span>
+                </div>
+              </button>
+
+              <button type="button" class="btn-pet-action btn-pet-golden" id="btnPetGoldenFeed">
+                <div class="pet-action-icon">🥫</div>
+                <div class="pet-action-info">
+                  <span class="pet-action-title">Золотое лакомство</span>
+                  <span class="pet-action-sub" id="petGoldenCountLabel">В запасе: 0 шт.</span>
+                </div>
+              </button>
+            </div>
+
+            <div class="pet-earning-hint">
+              💡 <span>Выполняйте дела в блокноте, чтобы получать <b>маленькие коричневые камушки 🟤</b> (+10 XP). За важные дела дня даются <b>золотые консервы 🥫</b> (+30 XP)!</span>
+            </div>
+
+          </div>
+
+          <div class="modal-actions" style="margin-top: 14px;">
+            <button type="button" class="btn-submit" id="petModalDoneBtn" style="width: 100%;">
+              🐾 Вернуться к делам
+            </button>
+          </div>
+
         </div>
       </div>
 
