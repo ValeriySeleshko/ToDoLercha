@@ -103,31 +103,31 @@
         <div class="notebook-content" id="notebookContent">
           <!-- Populated dynamically by JavaScript -->
         </div>
-
-        <!-- Floating Action Button (FAB) -->
-        <div class="fab-wrapper">
-          <button class="fab-button" id="fabAddBtn" title="Добавить новый блок (раздел)" aria-label="Добавить новый блок">
-            <svg class="fab-plus-svg" viewBox="0 0 24 24" width="26" height="26" stroke="#ffffff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" fill="none">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-          </button>
-        </div>
-
-        <!-- Floating Companion (Maine Coon Kitten) -->
-        <div class="notebook-pet-anchor" id="notebookPetAnchor" title="Ваш спутник Мейни" aria-label="Спутник Мейни">
-          <div class="pet-mini-treats-badge" id="petMiniTreatsBadge" title="Маленькие коричневые камушки (сухой корм)">
-            <span class="pet-mini-fish-icon">🟤</span>
-            <span class="pet-mini-treats-count" id="petMiniTreatsCount">0</span>
-          </div>
-          <div class="pet-mini-avatar-container" id="petMiniAvatar">
-            <!-- Rendered via PetSystem SVG -->
-          </div>
-          <div class="pet-mini-speech" id="petMiniSpeech">
-            <span id="petMiniSpeechText">Мяу! 🐾</span>
-          </div>
-        </div>
       </section>
+
+      <!-- Floating Action Button (FAB) -->
+      <div class="fab-wrapper">
+        <button class="fab-button" id="fabAddBtn" title="Добавить новый блок (раздел)" aria-label="Добавить новый блок">
+          <svg class="fab-plus-svg" viewBox="0 0 24 24" width="26" height="26" stroke="#ffffff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" fill="none">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Floating Companion (Maine Coon Kitten) -->
+      <div class="notebook-pet-anchor" id="notebookPetAnchor" title="Ваш спутник Мейни" aria-label="Спутник Мейни">
+        <div class="pet-mini-treats-badge" id="petMiniTreatsBadge" title="Маленькие коричневые камушки (сухой корм)">
+          <span class="pet-mini-fish-icon">🟤</span>
+          <span class="pet-mini-treats-count" id="petMiniTreatsCount">0</span>
+        </div>
+        <div class="pet-mini-avatar-container" id="petMiniAvatar">
+          <!-- Rendered via PetSystem SVG -->
+        </div>
+        <div class="pet-mini-speech" id="petMiniSpeech">
+          <span id="petMiniSpeechText">Мяу! 🐾</span>
+        </div>
+      </div>
 
       <!-- Add Task Modal / Dialog -->
       <div class="modal-backdrop" id="taskModalBackdrop" aria-hidden="true">
@@ -260,57 +260,57 @@
             <div class="form-group">
               <label>Иконка блока</label>
               <div class="section-emoji-picker" id="newSectionEmojiPicker">
-                <button type="button" class="emoji-chip active" data-emoji="📋" title="Планы">📋</button>
-                <button type="button" class="emoji-chip" data-emoji="🕊️" title="Духовное">🕊️</button>
-                <button type="button" class="emoji-chip" data-emoji="👤" title="Личное">👤</button>
-                <button type="button" class="emoji-chip" data-emoji="🏠" title="Дом">🏠</button>
-                <button type="button" class="emoji-chip" data-emoji="🍳" title="Что приготовить">🍳</button>
-                <button type="button" class="emoji-chip" data-emoji="🧹" title="Уборка">🧹</button>
-                <button type="button" class="emoji-chip" data-emoji="🧺" title="Стирка и быт">🧺</button>
-                <button type="button" class="emoji-chip" data-emoji="🛒" title="Покупки">🛒</button>
-                <button type="button" class="emoji-chip" data-emoji="🪴" title="Растения и сад">🪴</button>
-                <button type="button" class="emoji-chip" data-emoji="🛠️" title="Ремонт и дела">🛠️</button>
-                <button type="button" class="emoji-chip" data-emoji="☀️" title="Утро">☀️</button>
-                <button type="button" class="emoji-chip" data-emoji="🌙" title="Вечер">🌙</button>
-                <button type="button" class="emoji-chip" data-emoji="⏰" title="Время / Срочно">⏰</button>
-                <button type="button" class="emoji-chip" data-emoji="🎯" title="Цели">🎯</button>
-                <button type="button" class="emoji-chip" data-emoji="⭐" title="Важное">⭐</button>
-                <button type="button" class="emoji-chip" data-emoji="💡" title="Идеи">💡</button>
-                <button type="button" class="emoji-chip" data-emoji="📌" title="Памятка">📌</button>
-                <button type="button" class="emoji-chip" data-emoji="💼" title="Работа">💼</button>
-                <button type="button" class="emoji-chip" data-emoji="💻" title="Компьютер / IT">💻</button>
-                <button type="button" class="emoji-chip" data-emoji="💰" title="Финансы">💰</button>
-                <button type="button" class="emoji-chip" data-emoji="💳" title="Платежи">💳</button>
-                <button type="button" class="emoji-chip" data-emoji="📦" title="Посылки">📦</button>
-                <button type="button" class="emoji-chip" data-emoji="📞" title="Звонки">📞</button>
-                <button type="button" class="emoji-chip" data-emoji="✉️" title="Письма">✉️</button>
-                <button type="button" class="emoji-chip" data-emoji="🧘" title="Отдых / Медитация">🧘</button>
-                <button type="button" class="emoji-chip" data-emoji="🏃" title="Пробежка / Спорт">🏃</button>
-                <button type="button" class="emoji-chip" data-emoji="🏋️" title="Тренировки">🏋️</button>
-                <button type="button" class="emoji-chip" data-emoji="💊" title="Здоровье / Аптека">💊</button>
-                <button type="button" class="emoji-chip" data-emoji="🩺" title="Врач / Процедуры">🩺</button>
-                <button type="button" class="emoji-chip" data-emoji="💧" title="Вода / ЗОЖ">💧</button>
-                <button type="button" class="emoji-chip" data-emoji="😴" title="Сон / Восстановление">😴</button>
-                <button type="button" class="emoji-chip" data-emoji="📚" title="Книги / Чтение">📚</button>
-                <button type="button" class="emoji-chip" data-emoji="🎓" title="Обучение">🎓</button>
-                <button type="button" class="emoji-chip" data-emoji="🎨" title="Творчество">🎨</button>
-                <button type="button" class="emoji-chip" data-emoji="✍️" title="Дневник / Записи">✍️</button>
-                <button type="button" class="emoji-chip" data-emoji="🎵" title="Музыка">🎵</button>
-                <button type="button" class="emoji-chip" data-emoji="🎬" title="Фильмы">🎬</button>
-                <button type="button" class="emoji-chip" data-emoji="🎮" title="Игры">🎮</button>
-                <button type="button" class="emoji-chip" data-emoji="👶" title="Дети">👶</button>
-                <button type="button" class="emoji-chip" data-emoji="🐾" title="Питомцы">🐾</button>
-                <button type="button" class="emoji-chip" data-emoji="🚗" title="Авто / Поездки">🚗</button>
-                <button type="button" class="emoji-chip" data-emoji="✈️" title="Путешествия">✈️</button>
-                <button type="button" class="emoji-chip" data-emoji="🎁" title="Подарки / Праздники">🎁</button>
-                <button type="button" class="emoji-chip" data-emoji="☕" title="Кофе / Встречи">☕</button>
-                <button type="button" class="emoji-chip" data-emoji="🍽️" title="Обед / Ужин">🍽️</button>
-                <button type="button" class="emoji-chip" data-emoji="💖" title="Любовь и забота">💖</button>
+                <div class="emoji-chip active" role="button" tabindex="0" data-emoji="📋" title="Планы">📋</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="🕊️" title="Духовное">🕊️</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="👤" title="Личное">👤</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="🏠" title="Дом">🏠</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="🍳" title="Что приготовить">🍳</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="🧹" title="Уборка">🧹</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="🧺" title="Стирка и быт">🧺</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="🛒" title="Покупки">🛒</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="🪴" title="Растения и сад">🪴</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="🛠️" title="Ремонт и дела">🛠️</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="☀️" title="Утро">☀️</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="🌙" title="Вечер">🌙</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="⏰" title="Время / Срочно">⏰</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="🎯" title="Цели">🎯</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="⭐" title="Важное">⭐</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="💡" title="Идеи">💡</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="📌" title="Памятка">📌</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="💼" title="Работа">💼</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="💻" title="Компьютер / IT">💻</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="💰" title="Финансы">💰</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="💳" title="Платежи">💳</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="📦" title="Посылки">📦</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="📞" title="Звонки">📞</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="✉️" title="Письма">✉️</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="🧘" title="Отдых / Медитация">🧘</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="🏃" title="Пробежка / Спорт">🏃</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="🏋️" title="Тренировки">🏋️</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="💊" title="Здоровье / Аптека">💊</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="🩺" title="Врач / Процедуры">🩺</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="💧" title="Вода / ЗОЖ">💧</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="😴" title="Сон / Восстановление">😴</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="📚" title="Книги / Чтение">📚</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="🎓" title="Обучение">🎓</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="🎨" title="Творчество">🎨</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="✍️" title="Дневник / Записи">✍️</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="🎵" title="Музыка">🎵</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="🎬" title="Фильмы">🎬</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="🎮" title="Игры">🎮</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="👶" title="Дети">👶</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="🐾" title="Питомцы">🐾</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="🚗" title="Авто / Поездки">🚗</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="✈️" title="Путешествия">✈️</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="🎁" title="Подарки / Праздники">🎁</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="☕" title="Кофе / Встречи">☕</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="🍽️" title="Обед / Ужин">🍽️</div>
+                <div class="emoji-chip" role="button" tabindex="0" data-emoji="💖" title="Любовь и забота">💖</div>
               </div>
             </div>
             <div class="modal-actions">
               <button type="button" class="btn-cancel" id="newSectionCancelBtn">Отмена</button>
-              <button type="submit" class="btn-submit">Создать блок</button>
+              <button type="submit" class="btn-submit" id="newSectionSubmitBtn">Создать блок</button>
             </div>
           </form>
         </div>
@@ -462,10 +462,52 @@
               <div class="setting-toggle-row">
                 <div class="setting-toggle-info">
                   <div class="setting-toggle-label" data-i18n="notif_browser_label">Уведомления</div>
-                  <div class="setting-toggle-desc" data-i18n="notif_browser_desc">Напоминания о задачах дня</div>
+                  <div class="setting-toggle-desc" data-i18n="notif_browser_desc">Системные напоминания на телефоне</div>
                 </div>
                 <label class="toggle-switch">
                   <input type="checkbox" id="toggleNotifications">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <!-- Утренний план -->
+              <div class="setting-toggle-row" style="margin-top: 10px;">
+                <div class="setting-toggle-info">
+                  <div class="setting-toggle-label" data-i18n="notif_morning_label">Утренний план ☀️</div>
+                  <div class="setting-toggle-desc" data-i18n="notif_morning_desc">Напоминание о делах в начале дня</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <input type="time" id="morningNotifTime" value="09:00" style="padding: 4px 8px; border-radius: 8px; border: 1px solid var(--border-color, #e2e8f0); font-family: var(--font-ui); font-size: 12px; background: var(--card-bg, #ffffff); color: var(--text-color, #1e293b); font-weight: 600;">
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="toggleMorningNotif" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Вечерний обзор -->
+              <div class="setting-toggle-row" style="margin-top: 10px;">
+                <div class="setting-toggle-info">
+                  <div class="setting-toggle-label" data-i18n="notif_evening_label">Вечерний обзор 🌙</div>
+                  <div class="setting-toggle-desc" data-i18n="notif_evening_desc">Итоги дня и проверка дел</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <input type="time" id="eveningNotifTime" value="21:00" style="padding: 4px 8px; border-radius: 8px; border: 1px solid var(--border-color, #e2e8f0); font-family: var(--font-ui); font-size: 12px; background: var(--card-bg, #ffffff); color: var(--text-color, #1e293b); font-weight: 600;">
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="toggleEveningNotif" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Забота о питомце -->
+              <div class="setting-toggle-row" style="margin-top: 10px;">
+                <div class="setting-toggle-info">
+                  <div class="setting-toggle-label" data-i18n="notif_pet_label">Забота о питомце 🐾</div>
+                  <div class="setting-toggle-desc" data-i18n="notif_pet_desc">Напоминание покормить Мейн-куна (15:00)</div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="togglePetNotif" checked>
                   <span class="toggle-slider"></span>
                 </label>
               </div>
@@ -492,7 +534,7 @@
                 </label>
               </div>
 
-              <button type="button" class="btn-secondary-block" id="btnTestNotification" style="margin-top: 10px;">
+              <button type="button" class="btn-secondary-block" id="btnTestNotification" style="margin-top: 12px;">
                 🔔 <span data-i18n="notif_test_btn">Проверить уведомление</span>
               </button>
             </div>
@@ -535,7 +577,7 @@
           </div>
 
           <div style="text-align: center; font-size: 11px; color: #94a3b8; margin-top: 12px; font-weight: 600; letter-spacing: 0.3px;">
-            Plan4U • Версия 0.0.43
+            Plan4U • Версия 0.0.54
           </div>
 
           <div class="modal-actions" style="margin-top: 10px;">
@@ -838,12 +880,17 @@
 
   <script src="app.js"></script>
   <script>
-    if ('serviceWorker' in navigator) {
+    if ('serviceWorker' in navigator && !window.Capacitor) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch(err => {
           console.log('SW registration skipped:', err);
         });
       });
+    } else if (window.Capacitor && 'serviceWorker' in navigator) {
+      // In native Android app, unregister legacy Service Workers so assets are always fresh
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        regs.forEach(reg => reg.unregister());
+      }).catch(() => {});
     }
   </script>
 </body>

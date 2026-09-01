@@ -606,6 +606,32 @@ body.app-ready .app-viewport {
   line-height: 1.2;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.8);
   transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+  user-select: none;
+}
+
+.section-header-action-btn {
+  background: transparent;
+  border: none;
+  color: var(--section-header-text, #70133c);
+  opacity: 0.65;
+  font-size: 16px;
+  font-weight: bold;
+  padding: 2px 8px;
+  margin-left: 6px;
+  cursor: pointer;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s, background-color 0.2s, transform 0.15s;
+}
+
+.section-header-action-btn:hover,
+.section-header-action-btn:active {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.08);
+  transform: scale(1.08);
 }
 
 /* Notebook 4 Sections & Inline Typing Rows */
@@ -877,6 +903,7 @@ body.app-ready .app-viewport {
   user-select: none;
   background-color: transparent;
   touch-action: pan-y;
+  contain: layout style;
 }
 
 .task-row-wrapper.no-swipe {
@@ -1147,6 +1174,80 @@ body.app-ready .app-viewport {
   vertical-align: middle;
   margin-left: 5px;
   opacity: 0.75;
+}
+
+/* Past Day Archive Banner & Empty State */
+.past-day-archive-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 14px;
+  margin: 6px 14px 14px 14px;
+  background: rgba(148, 163, 184, 0.16);
+  border: 1px dashed rgba(148, 163, 184, 0.4);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+  user-select: none;
+  -webkit-user-select: none;
+  letter-spacing: 0.2px;
+}
+
+.app-frame.theme-dark .past-day-archive-banner {
+  background: rgba(100, 116, 139, 0.16);
+  border-color: rgba(100, 116, 139, 0.35);
+  color: #94a3b8;
+}
+
+.past-day-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 46px 20px;
+  margin: 24px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1.5px dashed rgba(148, 163, 184, 0.35);
+  backdrop-filter: blur(8px);
+}
+
+.app-frame.theme-dark .past-day-empty-state {
+  background: rgba(30, 41, 59, 0.4);
+  border-color: rgba(100, 116, 139, 0.3);
+}
+
+.past-day-empty-icon {
+  font-size: 38px;
+  margin-bottom: 12px;
+  opacity: 0.85;
+}
+
+.past-day-empty-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #334155;
+  margin: 0 0 6px 0;
+}
+
+.app-frame.theme-dark .past-day-empty-title {
+  color: #cbd5e1;
+}
+
+.past-day-empty-subtitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  margin: 0;
+  max-width: 290px;
+  line-height: 1.4;
+}
+
+.app-frame.theme-dark .past-day-empty-subtitle {
+  color: #94a3b8;
 }
 
 /* Task Text Content - clean bold handwriting serif on ruled line */
@@ -1474,6 +1575,10 @@ body.app-ready .app-viewport {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
   transition: all 0.15s ease;
 }
 
@@ -4388,14 +4493,37 @@ all and (display-mode: fullscreen) {
   }
 
   .notebook-content {
-    padding-bottom: max(60px, calc(40px + env(safe-area-inset-bottom, 16px)));
+    padding-bottom: max(96px, calc(80px + env(safe-area-inset-bottom, 16px)));
   }
 
   .fab-wrapper {
-    bottom: max(20px, calc(16px + env(safe-area-inset-bottom, 16px)));
-    padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
-    padding-right: max(18px, env(safe-area-inset-right, 18px));
-    justify-content: flex-end;
+    position: fixed !important;
+    bottom: max(24px, calc(16px + env(safe-area-inset-bottom, 0px))) !important;
+    left: max(20px, calc(16px + env(safe-area-inset-left, 0px))) !important;
+    right: auto !important;
+    width: 56px !important;
+    height: 56px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    z-index: 95 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .notebook-pet-anchor {
+    position: fixed !important;
+    bottom: max(24px, calc(16px + env(safe-area-inset-bottom, 0px))) !important;
+    right: max(20px, calc(16px + env(safe-area-inset-right, 0px))) !important;
+    left: auto !important;
+    width: 56px !important;
+    height: 56px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    z-index: 95 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 
   .modal-backdrop {
