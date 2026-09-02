@@ -5009,7 +5009,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.0.89',
+      appVersion: '0.0.90',
       email: this.cloudEmail,
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
@@ -5240,7 +5240,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.0.89',
+      appVersion: '0.0.90',
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
       sections: this.tabSections || {},
@@ -9192,7 +9192,7 @@ class NotebookApp {
 
     container.innerHTML = items.map(stk => {
       const previewHtml = stk.img
-        ? `<img src="${stk.img}" alt="" draggable="false" class="sticker-picker-img" loading="lazy" onerror="if(!this.dataset.retried){this.dataset.retried='1';setTimeout(()=>{this.src='${stk.img}?v=0.0.89';},300);}" />`
+        ? `<img src="${stk.img}" alt="" draggable="false" class="sticker-picker-img" loading="lazy" onerror="if(!this.dataset.retried){this.dataset.retried='1';setTimeout(()=>{this.src='${stk.img}?v=0.0.90';},300);}" />`
         : stk.svg;
       return `
         <div class="sticker-picker-card" data-type="${stk.id}">

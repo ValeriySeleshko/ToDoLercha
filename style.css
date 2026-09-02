@@ -1882,9 +1882,12 @@ body.keyboard-open .past-day-return-wrapper,
   border-radius: 20px 20px 0 0;
   padding: 16px 16px max(24px, calc(16px + env(safe-area-inset-bottom, 0px))) 16px;
   box-shadow: 0 -10px 32px rgba(0, 0, 0, 0.25);
-  transform: translateY(100%) translateZ(0);
+  transform: translate3d(0, 100%, 0);
+  -webkit-transform: translate3d(0, 100%, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   will-change: transform;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), -webkit-transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1892,7 +1895,8 @@ body.keyboard-open .past-day-return-wrapper,
 }
 
 .modal-backdrop.open .modal-sheet {
-  transform: translateY(0);
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
 }
 
 .modal-sheet-scrollable {
@@ -6086,14 +6090,16 @@ body.is-dragging-sticker .section-header-row {
 
 /* 4. Stickers Drawer / Modal Sheet */
 .modal-sheet-stickers {
-  max-height: 84vh;
+  max-height: min(86dvh, 620px);
   display: flex;
   flex-direction: column;
-  padding: 16px 16px 20px 16px;
+  padding: 14px 12px max(20px, calc(14px + env(safe-area-inset-bottom, 0px))) 12px;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .stickers-sheet-header {
-  padding-bottom: 8px;
+  padding-bottom: 6px;
 }
 
 .stickers-header-title-wrap {
@@ -6115,12 +6121,12 @@ body.is-dragging-sticker .section-header-row {
 .stickers-categories-bar {
   display: flex;
   flex-wrap: nowrap;
-  gap: 8px;
+  gap: 6px;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 6px 4px 10px 4px;
-  margin-top: 4px;
-  margin-bottom: 6px;
+  padding: 6px 2px 8px 2px;
+  margin-top: 2px;
+  margin-bottom: 4px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.07);
   -webkit-overflow-scrolling: touch;
   touch-action: pan-x;
@@ -6145,8 +6151,8 @@ body.is-dragging-sticker .section-header-row {
   background: #f4f4f5;
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 20px;
-  padding: 7px 14px;
-  font-size: 13px;
+  padding: 6px 12px;
+  font-size: 12.5px;
   font-weight: 700;
   color: #52525b;
   cursor: pointer;
@@ -6183,29 +6189,24 @@ body.is-dragging-sticker .section-header-row {
   color: #ffffff;
 }
 
-/* Stickers Grid Container */
+/* Stickers Grid Container - 4 columns fit perfectly on all mobile screens */
 .stickers-grid-container {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-  padding: 8px 4px 24px 4px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  padding: 6px 2px calc(24px + env(safe-area-inset-bottom, 0px)) 2px;
   max-height: 52vh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
   overscroll-behavior-y: contain;
-}
-
-@media (max-width: 360px) {
-  .stickers-grid-container {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-  }
+  box-sizing: border-box;
 }
 
 .sticker-picker-card {
   aspect-ratio: 1 / 1;
   width: 100%;
+  min-width: 0;
   height: auto;
   box-sizing: border-box;
   display: flex;
@@ -6213,8 +6214,8 @@ body.is-dragging-sticker .section-header-row {
   justify-content: center;
   background: #fafafa;
   border: 1.5px solid rgba(0, 0, 0, 0.06);
-  border-radius: 16px;
-  padding: 8px;
+  border-radius: 12px;
+  padding: 4px;
   cursor: grab;
   touch-action: pan-y;
   user-select: none;
