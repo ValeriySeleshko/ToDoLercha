@@ -1699,42 +1699,42 @@ const STICKERS_CATALOG = {
     const num = String(i + 1).padStart(2, '0');
     return {
       id: `cat_${num}`,
-      img: `assets/stickers/cats/cat_${num}.webp`
+      img: `./assets/stickers/cats/cat_${num}.webp`
     };
   }).filter(s => s.id !== 'cat_19'),
   more_cats: Array.from({ length: 49 }, (_, i) => {
     const num = String(i + 1).padStart(2, '0');
     return {
       id: `more_cat_${num}`,
-      img: `assets/stickers/more_cats/more_cat_${num}.webp`
+      img: `./assets/stickers/more_cats/more_cat_${num}.webp`
     };
   }),
   flora: Array.from({ length: 64 }, (_, i) => {
     const num = String(i + 1).padStart(2, '0');
     return {
       id: `flora_${num}`,
-      img: `assets/stickers/flora/flora_${num}.webp`
+      img: `./assets/stickers/flora/flora_${num}.webp`
     };
   }),
   fauna: Array.from({ length: 49 }, (_, i) => {
     const num = String(i + 1).padStart(2, '0');
     return {
       id: `fauna_${num}`,
-      img: `assets/stickers/fauna/fauna_${num}.webp`
+      img: `./assets/stickers/fauna/fauna_${num}.webp`
     };
   }),
   ocean: Array.from({ length: 49 }, (_, i) => {
     const num = String(i + 1).padStart(2, '0');
     return {
       id: `ocean_${num}`,
-      img: `assets/stickers/ocean/ocean_${num}.webp`
+      img: `./assets/stickers/ocean/ocean_${num}.webp`
     };
   }),
   pigs: Array.from({ length: 49 }, (_, i) => {
     const num = String(i + 1).padStart(2, '0');
     return {
       id: `pig_${num}`,
-      img: `assets/stickers/pigs/pig_${num}.webp`
+      img: `./assets/stickers/pigs/pig_${num}.webp`
     };
   })
 };
@@ -5002,7 +5002,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.0.86',
+      appVersion: '0.0.87',
       email: this.cloudEmail,
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
@@ -5233,7 +5233,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.0.86',
+      appVersion: '0.0.87',
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
       sections: this.tabSections || {},
@@ -8694,12 +8694,12 @@ class NotebookApp {
       const found = STICKERS_CATALOG[cat].find(s => s.id === typeId);
       if (found) return found;
     }
-    if (typeId?.startsWith('more_cat_')) return { id: typeId, img: `assets/stickers/more_cats/${typeId}.webp` };
-    if (typeId?.startsWith('flora_')) return { id: typeId, img: `assets/stickers/flora/${typeId}.webp` };
-    if (typeId?.startsWith('fauna_')) return { id: typeId, img: `assets/stickers/fauna/${typeId}.webp` };
-    if (typeId?.startsWith('ocean_')) return { id: typeId, img: `assets/stickers/ocean/${typeId}.webp` };
-    if (typeId?.startsWith('pigs_') || typeId?.startsWith('pig_')) return { id: typeId, img: `assets/stickers/pigs/${typeId}.webp` };
-    if (typeId?.startsWith('cat_')) return { id: typeId, img: `assets/stickers/cats/${typeId}.webp` };
+    if (typeId?.startsWith('more_cat_')) return { id: typeId, img: `./assets/stickers/more_cats/${typeId}.webp` };
+    if (typeId?.startsWith('flora_')) return { id: typeId, img: `./assets/stickers/flora/${typeId}.webp` };
+    if (typeId?.startsWith('fauna_')) return { id: typeId, img: `./assets/stickers/fauna/${typeId}.webp` };
+    if (typeId?.startsWith('ocean_')) return { id: typeId, img: `./assets/stickers/ocean/${typeId}.webp` };
+    if (typeId?.startsWith('pigs_') || typeId?.startsWith('pig_')) return { id: typeId, img: `./assets/stickers/pigs/${typeId}.webp` };
+    if (typeId?.startsWith('cat_')) return { id: typeId, img: `./assets/stickers/cats/${typeId}.webp` };
     return null;
   }
 
@@ -9184,7 +9184,7 @@ class NotebookApp {
 
     container.innerHTML = items.map(stk => {
       const previewHtml = stk.img
-        ? `<img src="${stk.img}" alt="" draggable="false" class="sticker-picker-img" onerror="this.closest('.sticker-picker-card')?.remove()" />`
+        ? `<img src="${stk.img}" alt="" draggable="false" class="sticker-picker-img" loading="lazy" />`
         : stk.svg;
       return `
         <div class="sticker-picker-card" data-type="${stk.id}">
