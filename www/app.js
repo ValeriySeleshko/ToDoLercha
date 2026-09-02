@@ -112,7 +112,7 @@ const Plan4UStorage = {
     if (!base64Data) return null;
     const photoId = `photo_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.jpg`;
 
-    if (this.initPromise) await this.initPromise.catch(() => {});
+    if (this.initPromise) await this.initPromise.catch(() => { });
 
     // 1. Store in IndexedDB Photos Store
     if (this.db) {
@@ -144,7 +144,7 @@ const Plan4UStorage = {
     if (!photoRef) return null;
     if (photoRef.startsWith('data:')) return photoRef;
 
-    if (this.initPromise) await this.initPromise.catch(() => {});
+    if (this.initPromise) await this.initPromise.catch(() => { });
 
     // 1. Check IndexedDB
     if (this.db) {
@@ -158,7 +158,7 @@ const Plan4UStorage = {
         if (record && record.data) {
           return record.data;
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // 2. Check Native Filesystem
@@ -173,7 +173,7 @@ const Plan4UStorage = {
           return `data:image/jpeg;base64,${fileRes.data}`;
         }
       }
-    } catch (e) {}
+    } catch (e) { }
 
     return photoRef;
   },
@@ -189,7 +189,7 @@ const Plan4UStorage = {
       localStorage.setItem(`plan4u_${filename}`, jsonStr);
     } catch (e) { }
 
-    if (this.initPromise) await this.initPromise.catch(() => {});
+    if (this.initPromise) await this.initPromise.catch(() => { });
 
     // 2. IndexedDB mirror
     if (this.db) {
@@ -218,14 +218,14 @@ const Plan4UStorage = {
           directory: 'DOCUMENTS',
           encoding: 'utf8',
           recursive: true
-        }).catch(() => {});
+        }).catch(() => { });
       }
     } catch (e) { }
   },
 
   // Load JSON file with robust fallback chain across all layers
   async loadFile(filename, defaultVal = null) {
-    if (this.initPromise) await this.initPromise.catch(() => {});
+    if (this.initPromise) await this.initPromise.catch(() => { });
 
     // 1. Check Native Device Filesystem (DATA directory)
     try {
@@ -934,10 +934,10 @@ function getPriorityRank(task) {
   const p = (task.priority || '').toLowerCase();
   const t = (task.text || '').toLowerCase().trim();
   if (p === 'важный' || p === 'важно' || p === 'очень важно' || p === 'вопрос жизни и смерти' ||
-      p === 'important' || p === 'urgent' || p === 'high' ||
-      t.includes('очень важно') || t.includes('жизни и смерти') ||
-      t.includes('(важно)') || t.includes('(важный)') ||
-      t.startsWith('! ') || t.startsWith('!') || t.startsWith('⚡')) {
+    p === 'important' || p === 'urgent' || p === 'high' ||
+    t.includes('очень важно') || t.includes('жизни и смерти') ||
+    t.includes('(важно)') || t.includes('(важный)') ||
+    t.startsWith('! ') || t.startsWith('!') || t.startsWith('⚡')) {
     return 1;
   }
   return 2;
@@ -1750,7 +1750,7 @@ class NotebookApp {
     this.selectedDate = this.getTodayDateString();
     this.tempSelectedDate = this.selectedDate;
     this.displayedCalendarMonth = new Date();
-    
+
     // Fast synchronous cache from LocalStorage for instant UI paint
     this.dailyTasks = this.loadDailyTasks();
     this.dayHistory = this.loadDayHistory();
@@ -2629,7 +2629,6 @@ class NotebookApp {
     this.settingsDoneBtn = document.getElementById('settingsDoneBtn');
     this.themeSelector = document.getElementById('themeSelector');
     this.accentColorPicker = document.getElementById('accentColorPicker');
-
     // Lightbox Modal Listeners
     if (this.imageLightboxBackdrop) {
       let startedOnLb = false;
@@ -2644,7 +2643,6 @@ class NotebookApp {
         startedOnLb = false;
       });
     }
-
     this.fontFamilySelect = document.getElementById('fontFamilySelect');
     this.fontSizeRange = document.getElementById('fontSizeRange');
     this.fontSizeVal = document.getElementById('fontSizeVal');
@@ -2853,7 +2851,7 @@ class NotebookApp {
       if (document.activeElement && typeof document.activeElement.blur === 'function') {
         document.activeElement.blur();
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   // Bind event listeners
@@ -4053,7 +4051,7 @@ class NotebookApp {
 
     this.editingSectionId = sec.id;
     this.selectedSectionEmoji = sec.icon || '📋';
-    
+
     // Clean current name (strip any leading emojis so user only edits clean text)
     let currentName = sec.name || '';
     if (!currentName && sec.key && this.t(sec.key)) {
@@ -4640,7 +4638,7 @@ class NotebookApp {
       // Cancel previous smart notification IDs
       await LocalNotifications.cancel({
         notifications: [{ id: 1001 }, { id: 1002 }, { id: 1003 }]
-      }).catch(() => {});
+      }).catch(() => { });
 
       if (!this.settings.notificationsEnabled) return;
 
@@ -5166,7 +5164,7 @@ class NotebookApp {
       this.streakData = data.streak;
       try {
         localStorage.setItem('todo_notebook_daily_streak', JSON.stringify(this.streakData));
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // 8. Settings, Themes, Fonts, Language
@@ -5361,7 +5359,7 @@ class NotebookApp {
             directory: 'DOCUMENTS',
             encoding: 'utf8',
             recursive: true
-          }).catch(() => {});
+          }).catch(() => { });
 
           await Filesystem.writeFile({
             path: `Plan4U/${fileName}`,
@@ -5369,7 +5367,7 @@ class NotebookApp {
             directory: 'DATA',
             encoding: 'utf8',
             recursive: true
-          }).catch(() => {});
+          }).catch(() => { });
 
           // Write to Cache and invoke native Share Sheet so user can pick 'Save to Downloads/Device'
           const writeRes = await Filesystem.writeFile({
@@ -7653,9 +7651,9 @@ class NotebookApp {
     const completed = !!task.completed;
 
     // Filter tasks belonging to the same section, completion state and priority rank
-    const matchingSectionTasks = tabTasks.filter(t => 
-      (t.section || 'personal') === section && 
-      !!t.completed === completed && 
+    const matchingSectionTasks = tabTasks.filter(t =>
+      (t.section || 'personal') === section &&
+      !!t.completed === completed &&
       getPriorityRank(t) === rank
     );
 
@@ -8728,7 +8726,7 @@ class NotebookApp {
     div.style.setProperty('--rot', `${stk.rotate}deg`);
     div.style.setProperty('--sc', `${stk.scale}`);
     div.style.transform = `translate(-50%, -50%) rotate(${stk.rotate}deg) scale(${stk.scale})`;
-    
+
     // Width and height
     const isWashi = stk.type === 'washi_tape' || stk.type === 'highlighter';
     const baseW = isWashi ? 96 : (def?.img ? 76 : 72);
@@ -8789,7 +8787,7 @@ class NotebookApp {
         if (activePointerId !== null && el.hasPointerCapture && el.hasPointerCapture(activePointerId)) {
           el.releasePointerCapture(activePointerId);
         }
-      } catch (err) {}
+      } catch (err) { }
       activePointerId = null;
       const stickersLayer = document.getElementById('notebookStickersLayer');
       if (stickersLayer) stickersLayer.classList.remove('has-dragging-sticker');
@@ -8826,7 +8824,7 @@ class NotebookApp {
         el.classList.add('is-dragging');
       }, 250);
 
-      // 2. Контекстное меню стикера при статичном удержании 2000 мс (без сдвига)
+      // 2. Контекстное меню стикера при статичном удержании 1500 мс (без сдвига)
       menuTimer = setTimeout(() => {
         if (!isDragging) {
           isMenuOpened = true;
@@ -9483,7 +9481,7 @@ class NotebookApp {
 
     stk.rotate = ((stk.rotate || 0) + degChange) % 360;
     this.saveStickers();
-    
+
     const layer = this.notebookStickersLayer || document.getElementById('notebookStickersLayer');
     const el = layer?.querySelector(`[data-sticker-id="${stk.id}"]`);
     if (el) {
@@ -9590,7 +9588,7 @@ class MaineCoonPetSystem {
         this.purrAudioElement.preload = 'auto';
         this.purrAudioElement.volume = 0.5;
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   // Periodic natural decay (every 60s)
@@ -9633,10 +9631,10 @@ class MaineCoonPetSystem {
         this.purrAudioElement.currentTime = 0;
         const playPromise = this.purrAudioElement.play();
         if (playPromise !== undefined) {
-          playPromise.catch(() => {});
+          playPromise.catch(() => { });
         }
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   // Feline purring vibration rhythm (long wave with rhythmic vibration pulses in sync with purr cycles)
@@ -9648,7 +9646,7 @@ class MaineCoonPetSystem {
         180, 50, 200, 60, 220, 60, 180
       ];
       triggerHaptic(purrVibePattern);
-    } catch (e) {}
+    } catch (e) { }
   }
 
   // Load and save state with debounced asynchronous I/O
@@ -9980,7 +9978,7 @@ class MaineCoonPetSystem {
           setTimeout(() => { this.petAnchor.style.transform = ''; }, 200);
         }
       }, 750);
-    } catch (e) {}
+    } catch (e) { }
   }
 
   showMiniSpeech(text) {
@@ -10100,7 +10098,7 @@ class MaineCoonPetSystem {
           }, i * 90);
         }
       }, 460);
-    } catch (e) {}
+    } catch (e) { }
   }
 
   // Play cute munching / "Ням-ням" sound with Web Audio API synthesis
