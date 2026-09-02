@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<body>
+<img id="target" src="/user_upload/media_1788339265971.png" crossorigin="anonymous" />
+<div id="results">Running...</div>
+<script>
+async function run() {
+  const allStickers = [];
+  for (let i = 1; i <= 99; i++) {
+    const num = String(i).padStart(2, '0');
+    allStickers.push(`assets/stickers/cats/cat_${num}.webp`);
+  }
+  for (let i = 1; i <= 49; i++) {
+    const num = String(i).padStart(2, '0');
+    allStickers.push(`assets/stickers/more_cats/more_cat_${num}.webp`);
+  }
+  for (let i = 1; i <= 49; i++) {
+    const num = String(i).padStart(2, '0');
+    allStickers.push(`assets/stickers/fauna/fauna_${num}.webp`);
+  }
+  for (let i = 1; i <= 49; i++) {
+    const num = String(i).padStart(2, '0');
+    allStickers.push(`assets/stickers/ocean/ocean_${num}.webp`);
+  }
+  for (let i = 1; i <= 49; i++) {
+    const num = String(i).padStart(2, '0');
+    allStickers.push(`assets/stickers/pigs/pig_${num}.webp`);
+  }
+  for (let i = 1; i <= 64; i++) {
+    const num = String(i).padStart(2, '0');
+    allStickers.push(`assets/stickers/flora/flora_${num}.webp`);
+  }
+
+  const targetImg = document.getElementById('target');
+  await new Promise(r => {
+    if (targetImg.complete && targetImg.naturalWidth > 0) r();
+    else targetImg.onload = r;
+  });
+
+  const targetCanvas = document.createElement('canvas');
+  targetCanvas.width = 48;
+  targetCanvas.height = 48;
+  const tctx = targetCanvas.getContext('2d');
+  tctx.drawImage(targetImg, 0, 0, 48, 48);
+  const targetData = tctx.getImageData(0, 0, 48, 48).data;
+
+  const scored = [];
+
+  for (const src of allStickers) {
+    try {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = '/' + src;
+      await new Promise((resolve) => {
+        img.onload = resolve;
+        img.onerror = resolve;
+      });
+      if (!img.complete || img.naturalWidth === 0) continue;
+
+      const c = document.createElement('canvas');
+      c.width = 48;
+      c.height = 48;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0, 48, 48);
+      const data = ctx.getImageData(0, 0, 48, 48).data;
+
+      let diff = 0;
+      for (let j = 0; j < data.length; j += 4) {
+        if (data[j+3] > 20 || targetData[j+3] > 20) {
+          diff += Math.abs(data[j] - targetData[j]);
+          diff += Math.abs(data[j+1] - targetData[j+1]);
+          diff += Math.abs(data[j+2] - targetData[j+2]);
+          diff += Math.abs(data[j+3] - targetData[j+3]);
+        }
+      }
+      scored.push({ src, diff });
+    } catch(e){}
+  }
+
+  scored.sort((a, b) => a.diff - b.diff);
+  const top = scored.slice(0, 10);
+  document.getElementById('results').innerText = JSON.stringify(top);
+  
+  await fetch('/save_result', {
+    method: 'POST',
+    body: JSON.stringify(top, null, 2)
+  });
+}
+run();
+</script>
+</body>
+</html>

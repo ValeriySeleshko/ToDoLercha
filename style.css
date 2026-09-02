@@ -572,8 +572,9 @@ body.app-ready .app-viewport {
 
 .notebook-content {
   position: relative;
-  z-index: 3;
+  z-index: 20;
   width: 100%;
+  pointer-events: none;
   padding-bottom: max(130px, calc(105px + env(safe-area-inset-bottom, 0px)));
 }
 
@@ -586,6 +587,7 @@ body.app-ready .app-viewport {
   position: relative;
   margin-top: 12px;
   margin-bottom: 3px;
+  pointer-events: none;
 }
 
 .notebook-content>.section-header-row:first-child {
@@ -608,30 +610,7 @@ body.app-ready .app-viewport {
   transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
   user-select: none;
-}
-
-.section-header-action-btn {
-  background: transparent;
-  border: none;
-  color: var(--section-header-text, #70133c);
-  opacity: 0.65;
-  font-size: 16px;
-  font-weight: bold;
-  padding: 2px 8px;
-  margin-left: 6px;
-  cursor: pointer;
-  border-radius: 6px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: opacity 0.2s, background-color 0.2s, transform 0.15s;
-}
-
-.section-header-action-btn:hover,
-.section-header-action-btn:active {
-  opacity: 1;
-  background: rgba(0, 0, 0, 0.08);
-  transform: scale(1.08);
+  pointer-events: auto;
 }
 
 /* Notebook 4 Sections & Inline Typing Rows */
@@ -639,6 +618,11 @@ body.app-ready .app-viewport {
   position: relative;
   width: 100%;
   margin-bottom: 8px;
+  pointer-events: none;
+}
+
+.section-tasks-list {
+  pointer-events: none;
 }
 
 .notebook-section:first-child .section-header-row {
@@ -647,13 +631,23 @@ body.app-ready .app-viewport {
 
 .inline-task-row {
   min-height: var(--line-height, 24px);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   padding-left: 65px;
-  padding-right: 14px;
+  padding-right: 8px;
   position: relative;
   cursor: text;
   transition: background-color 0.15s ease;
+  width: fit-content;
+  max-width: 240px;
+  pointer-events: auto;
+}
+
+.inline-task-row:focus-within,
+.inline-task-row.has-text {
+  display: flex;
+  width: 100%;
+  max-width: 100%;
 }
 
 .inline-task-row:hover {
@@ -709,7 +703,8 @@ body.app-ready .app-viewport {
 }
 
 .inline-task-input {
-  width: 100%;
+  width: 210px;
+  max-width: 100%;
   background: transparent;
   border: none;
   outline: none;
@@ -722,7 +717,12 @@ body.app-ready .app-viewport {
   padding: 4px 0;
   margin: 0;
   line-height: 1.35;
-  transition: color 0.2s ease;
+  transition: color 0.2s ease, width 0.2s ease;
+}
+
+.inline-task-row:focus-within .inline-task-input,
+.inline-task-row.has-text .inline-task-input {
+  width: 100%;
 }
 
 .inline-task-input::placeholder {
@@ -780,13 +780,20 @@ body.app-ready .app-viewport {
 
 .blank-slot-text {
   margin-left: 65px;
-  flex: 1;
+  width: fit-content;
+  max-width: 100%;
   display: flex;
   align-items: center;
 }
 
-.blank-task-input {
+.task-row-empty-slot:focus-within .blank-slot-text,
+.task-row-empty-slot.has-text .blank-slot-text {
   width: 100%;
+}
+
+.blank-task-input {
+  width: 210px;
+  max-width: 100%;
   background: transparent;
   border: none;
   outline: none;
@@ -799,6 +806,12 @@ body.app-ready .app-viewport {
   padding: 2px 0;
   margin: 0;
   line-height: 1.35;
+  transition: width 0.2s ease;
+}
+
+.task-row-empty-slot:focus-within .blank-task-input,
+.task-row-empty-slot.has-text .blank-task-input {
+  width: 100%;
 }
 
 .blank-task-input::placeholder {
@@ -904,6 +917,18 @@ body.app-ready .app-viewport {
   background-color: transparent;
   touch-action: pan-y;
   contain: layout style;
+  z-index: 20;
+  pointer-events: auto;
+}
+
+.task-row-wrapper.open,
+.task-row-wrapper.swiping {
+  z-index: 100 !important;
+}
+
+.task-row-wrapper.just-completed-gliding {
+  border-radius: 6px;
+  background: rgba(236, 72, 153, 0.06);
 }
 
 .task-row-wrapper.no-swipe {
@@ -984,6 +1009,7 @@ body.app-ready .app-viewport {
 .task-row-wrapper.open .task-swipe-actions-right {
   transform: translate3d(0px, 0, 0) !important;
   pointer-events: auto !important;
+  z-index: 110 !important;
 }
 
 .task-swipe-actions-right.swipe-delete-only {
@@ -1069,10 +1095,11 @@ body.app-ready .app-viewport {
 .task-row {
   min-height: var(--line-height);
   height: auto;
-  display: flex;
+  display: inline-flex;
   align-items: flex-start;
   position: relative;
-  width: 100%;
+  width: fit-content;
+  max-width: 100%;
   background-color: transparent;
   padding: 2.5px 14px 2px 0;
   cursor: pointer;
@@ -1110,7 +1137,7 @@ body.app-ready .app-viewport {
   justify-content: center;
   z-index: 10;
   cursor: pointer;
-  pointer-events: auto;
+  pointer-events: none;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
@@ -1176,7 +1203,92 @@ body.app-ready .app-viewport {
   opacity: 0.75;
 }
 
-/* Past Day Archive Banner & Empty State */
+/* Floating Return to Today Button (Past Archive Days & Future Days) */
+.past-day-return-wrapper {
+  position: absolute;
+  bottom: max(26px, calc(18px + env(safe-area-inset-bottom, 0px)));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  animation: returnBtnFloatIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: bottom 0.25s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.2s ease;
+}
+
+.past-day-return-wrapper.is-future-day {
+  bottom: max(102px, calc(94px + env(safe-area-inset-bottom, 0px)));
+}
+
+/* When viewing a past archive day: ONLY Return to Today button is visible, hide +, Stickers & Cat */
+body.is-past-day-mode .fab-wrapper,
+body.is-past-day-mode .fab-stickers-wrapper,
+body.is-past-day-mode .notebook-pet-anchor,
+.app-frame.is-past-day-mode .fab-wrapper,
+.app-frame.is-past-day-mode .fab-stickers-wrapper,
+.app-frame.is-past-day-mode .notebook-pet-anchor {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
+
+body.keyboard-open .past-day-return-wrapper,
+.app-frame.keyboard-open .past-day-return-wrapper {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+@keyframes returnBtnFloatIn {
+  0% { transform: translate(-50%, 25px) scale(0.9); opacity: 0; }
+  100% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+}
+
+.past-day-return-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: 28px;
+  border: 1.5px solid rgba(236, 72, 153, 0.4);
+  background: linear-gradient(135deg, #ffffff 0%, #fff1f6 100%);
+  color: var(--primary-magenta, #d83a88);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  box-shadow: 0 6px 20px rgba(216, 58, 136, 0.22), 0 2px 6px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s cubic-bezier(0.2, 0.9, 0.3, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.past-day-return-btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(216, 58, 136, 0.2);
+}
+
+.app-frame.theme-dark .past-day-return-btn {
+  background: linear-gradient(135deg, #1e293b 0%, #2d1b2d 100%);
+  border-color: rgba(244, 114, 182, 0.45);
+  color: #f472b6;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5), 0 0 16px rgba(244, 114, 182, 0.25);
+}
+
+.past-day-return-icon {
+  font-size: 17px;
+  line-height: 1;
+  animation: returnIconBounce 1.8s infinite ease-in-out;
+}
+
+@keyframes returnIconBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2.5px); }
+}
 .past-day-archive-banner {
   display: flex;
   align-items: center;
@@ -1262,7 +1374,9 @@ body.app-ready .app-viewport {
   padding: 0;
   color: #000000;
   letter-spacing: -0.1px;
-  flex: 1;
+  flex: 0 1 auto;
+  width: fit-content;
+  max-width: calc(100% - 65px);
   word-break: break-word;
   user-select: none;
   -webkit-user-select: none;
@@ -5763,4 +5877,537 @@ all and (display-mode: fullscreen) {
   -webkit-transform: translateZ(0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+}
+
+/* ==========================================================================
+   STICKERS SYSTEM & NOTEBOOK CUSTOMIZATION
+   ========================================================================== */
+
+/* 1. Stickers Layer placed above blank background lines */
+.notebook-stickers-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  min-height: 100%;
+  pointer-events: none;
+  z-index: 10;
+  overflow: visible;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.notebook-stickers-layer.has-dragging-sticker {
+  z-index: 500 !important;
+}
+
+body.is-dragging-sticker .notebook-content,
+body.is-dragging-sticker .task-row-wrapper,
+body.is-dragging-sticker .task-row,
+body.is-dragging-sticker .section-header-row {
+  pointer-events: none !important;
+}
+
+/* 2. Individual placed sticker on notebook page */
+.placed-sticker {
+  position: absolute;
+  cursor: grab;
+  pointer-events: auto !important;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none !important;
+  transform-origin: center center;
+  will-change: transform, left, top;
+  transition: filter 0.2s ease, opacity 0.2s ease, transform 0.1s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  mix-blend-mode: multiply;
+  opacity: 0.50;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.05));
+  z-index: 10;
+}
+
+.app-frame.theme-dark .placed-sticker {
+  mix-blend-mode: normal;
+  opacity: 0.50;
+}
+
+.placed-sticker svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Hover & Active / Dragging state */
+.placed-sticker:hover {
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.14));
+  opacity: 0.70;
+}
+
+.placed-sticker.is-dragging {
+  cursor: grabbing !important;
+  opacity: 0.85 !important;
+  mix-blend-mode: normal !important;
+  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.25)) !important;
+  z-index: 1000 !important;
+  transition: none !important;
+}
+
+.placed-sticker.is-selected {
+  outline: 2.5px dashed var(--primary-magenta, #d83a88);
+  outline-offset: 6px;
+  border-radius: 12px;
+  opacity: 0.80 !important;
+  filter: drop-shadow(0 6px 16px rgba(var(--primary-rgb, 216, 58, 136), 0.35)) !important;
+  animation: stickerSelectedPulse 1.4s infinite alternate ease-in-out;
+}
+
+@keyframes stickerSelectedPulse {
+  0% { transform: translate(-50%, -50%) rotate(var(--rot, 0deg)) scale(var(--sc, 1)); outline-color: var(--primary-magenta, #d83a88); }
+  100% { transform: translate(-50%, -50%) rotate(var(--rot, 0deg)) scale(calc(var(--sc, 1) * 1.04)); outline-color: #f43f5e; }
+}
+
+/* Placed sticker animation when added */
+.placed-sticker.just-added {
+  animation: stickerDropIn 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes stickerDropIn {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.3) rotate(-15deg);
+  }
+  100% {
+    opacity: 0.85;
+    transform: translate(-50%, -50%) scale(var(--sc, 1)) rotate(var(--rot, 0deg));
+  }
+}
+
+/* Dark theme sticker adjustments */
+.app-frame.theme-dark .placed-sticker {
+  mix-blend-mode: normal;
+  opacity: 0.92;
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.55));
+}
+
+.app-frame.theme-dark .placed-sticker:hover {
+  filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.8));
+}
+
+/* 3. Floating Action Button for Stickers (Round, Centered Bottom on same line with + and Pet) */
+.fab-stickers-wrapper {
+  position: absolute;
+  bottom: max(26px, calc(18px + env(safe-area-inset-bottom, 0px)));
+  left: 50%;
+  transform: translateX(-50%);
+  right: auto;
+  width: 56px !important;
+  height: 56px !important;
+  min-width: 56px !important;
+  max-width: 56px !important;
+  min-height: 56px !important;
+  max-height: 56px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  z-index: 45;
+  pointer-events: auto;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.fab-stickers-btn {
+  pointer-events: auto;
+  width: 56px !important;
+  height: 56px !important;
+  min-width: 56px !important;
+  max-width: 56px !important;
+  min-height: 56px !important;
+  max-height: 56px !important;
+  aspect-ratio: 1 / 1 !important;
+  flex-shrink: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 2px solid rgba(var(--primary-rgb, 216, 58, 136), 0.35) !important;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.14), inset 0 1px 2px rgba(255, 255, 255, 0.8) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  outline: none !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.25s ease !important;
+  user-select: none !important;
+}
+
+.fab-stickers-btn:hover {
+  transform: scale(1.08) translateY(-2px);
+  box-shadow: 0 10px 24px rgba(var(--primary-rgb, 216, 58, 136), 0.32) !important;
+  border-color: var(--primary-magenta, #d83a88) !important;
+}
+
+.fab-stickers-btn:active {
+  transform: scale(0.94);
+}
+
+.fab-stickers-icon {
+  font-size: 24px;
+  line-height: 1;
+  display: inline-block;
+  animation: stickerIconWiggle 4s infinite ease-in-out;
+  pointer-events: none;
+}
+
+@keyframes stickerIconWiggle {
+  0%, 82%, 100% { transform: rotate(0deg) scale(1); }
+  86% { transform: rotate(-14deg) scale(1.18); }
+  92% { transform: rotate(14deg) scale(1.22); }
+  96% { transform: rotate(-6deg) scale(1.08); }
+}
+
+.app-frame.theme-dark .fab-stickers-btn {
+  background: rgba(30, 36, 48, 0.92) !important;
+  border-color: rgba(var(--primary-rgb, 216, 58, 136), 0.45) !important;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.45) !important;
+}
+
+.app-frame.theme-dark .fab-stickers-badge {
+  color: #f472b6;
+}
+
+/* 4. Stickers Drawer / Modal Sheet */
+.modal-sheet-stickers {
+  max-height: 84vh;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 16px 20px 16px;
+}
+
+.stickers-sheet-header {
+  padding-bottom: 8px;
+}
+
+.stickers-header-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stickers-header-hint {
+  font-size: 11px;
+  color: #71717a;
+  font-weight: 500;
+}
+
+.app-frame.theme-dark .stickers-header-hint {
+  color: #a1a1aa;
+}
+
+.stickers-categories-bar {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 6px 4px 10px 4px;
+  margin-top: 4px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.stickers-categories-bar:active {
+  cursor: grabbing;
+}
+
+.stickers-categories-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.sticker-cat-btn {
+  flex: 0 0 auto !important;
+  flex-shrink: 0 !important;
+  background: #f4f4f5;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #52525b;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.16s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.sticker-cat-btn:hover {
+  background: #e4e4e7;
+  color: #18181b;
+}
+
+.sticker-cat-btn.active {
+  background: var(--primary-magenta, #d83a88);
+  color: #ffffff;
+  border-color: var(--primary-magenta, #d83a88);
+  box-shadow: 0 3px 10px rgba(var(--primary-rgb, 216, 58, 136), 0.32);
+}
+
+.app-frame.theme-dark .stickers-categories-bar {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.app-frame.theme-dark .sticker-cat-btn {
+  background: #27272a;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #d4d4d8;
+}
+
+.app-frame.theme-dark .sticker-cat-btn.active {
+  background: var(--primary-magenta, #d83a88);
+  color: #ffffff;
+}
+
+/* Stickers Grid Container */
+.stickers-grid-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding: 8px 4px 24px 4px;
+  max-height: 52vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  overscroll-behavior-y: contain;
+}
+
+@media (max-width: 360px) {
+  .stickers-grid-container {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+}
+
+.sticker-picker-card {
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  height: auto;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fafafa;
+  border: 1.5px solid rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  padding: 8px;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease, border-color 0.18s ease;
+  position: relative;
+}
+
+.sticker-picker-card:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.09);
+  border-color: rgba(var(--primary-rgb, 216, 58, 136), 0.4);
+}
+
+.sticker-picker-card:active {
+  transform: scale(0.94);
+}
+
+.sticker-picker-preview {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.sticker-picker-preview svg,
+.sticker-picker-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.placed-sticker-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.modal-backdrop.is-picking-sticker {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: visible !important;
+  display: flex !important;
+}
+
+/* Floating Drag Ghost from Drawer */
+.sticker-drag-ghost {
+  position: fixed;
+  pointer-events: none;
+  z-index: 10000;
+  width: 76px;
+  height: 76px;
+  transform: translate(-50%, -50%) scale(1.12);
+  filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.28));
+  opacity: 0.95;
+  transition: none;
+  will-change: left, top, transform;
+}
+
+.sticker-drag-ghost svg,
+.sticker-drag-ghost img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* 5. Sticker Context Popup Menu (Styled exactly like task swipe action buttons) */
+.sticker-context-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1400;
+  background: transparent;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sticker-context-popup {
+  position: absolute;
+  z-index: 1500;
+  transform: translate(-50%, -100%);
+  margin-top: -12px;
+  pointer-events: auto;
+  animation: ctxPopupZoom 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.sticker-context-popup.popup-below {
+  transform: translate(-50%, 0);
+  margin-top: 12px;
+}
+
+.sticker-context-popup.popup-below .sticker-ctx-bubble::after {
+  top: -6px;
+  bottom: auto;
+  border-top: none;
+  border-bottom: 6px solid #ffffff;
+}
+
+.app-frame.theme-dark .sticker-context-popup.popup-below .sticker-ctx-bubble::after {
+  border-bottom-color: #1e2430;
+}
+
+.sticker-ctx-bubble {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 14px;
+  padding: 5px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.sticker-ctx-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #ffffff;
+}
+
+.app-frame.theme-dark .sticker-ctx-bubble {
+  background: #1e2430;
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+}
+
+.app-frame.theme-dark .sticker-ctx-bubble::after {
+  border-top-color: #1e2430;
+}
+
+.sticker-ctx-btn {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  min-height: 36px !important;
+  max-width: 36px !important;
+  max-height: 36px !important;
+  border-radius: 10px !important;
+  border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.18) !important;
+  transition: transform 0.14s ease, box-shadow 0.14s ease, filter 0.14s ease !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+.sticker-ctx-btn:hover {
+  transform: translateY(-2px) scale(1.06) !important;
+  filter: brightness(1.08) !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25) !important;
+}
+
+.sticker-ctx-btn:active {
+  transform: scale(0.92) !important;
+}
+
+.sticker-ctx-btn svg {
+  display: block;
+  pointer-events: none;
+}
+
+/* Colors matching the task swipe action buttons */
+.btn-stk-rotate {
+  background: #475569 !important; /* Slate Dark */
+}
+
+.btn-stk-smaller {
+  background: #d97706 !important; /* Golden Amber / Ochre */
+}
+
+.btn-stk-bigger {
+  background: #2563eb !important; /* Royal Blue */
+}
+
+.btn-stk-delete {
+  background: #dc2626 !important; /* Crimson Red */
 }

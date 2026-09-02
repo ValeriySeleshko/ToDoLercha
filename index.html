@@ -99,11 +99,29 @@
         <!-- Ruled notebook lines backdrop -->
         <div class="ruled-lines-backdrop" id="ruledBackdrop" aria-hidden="true"></div>
 
+        <!-- Stickers layer placed underneath tasks & inputs -->
+        <div class="notebook-stickers-layer" id="notebookStickersLayer" aria-hidden="true"></div>
+
         <!-- Notebook Content Tasks Layer -->
         <div class="notebook-content" id="notebookContent">
           <!-- Populated dynamically by JavaScript -->
         </div>
       </section>
+
+      <!-- Floating Return to Today Button (Appears only on past archive days) -->
+      <div class="past-day-return-wrapper" id="pastDayReturnWrapper" style="display: none;">
+        <button class="past-day-return-btn" id="pastDayReturnBtn" type="button" aria-label="Вернуться в Сегодня">
+          <span class="past-day-return-icon">📅</span>
+          <span class="past-day-return-text" id="pastDayReturnText">Вернуться в Сегодня</span>
+        </button>
+      </div>
+
+      <!-- Floating Stickers Button (Round, Centered Bottom on same line with + and Cat) -->
+      <div class="fab-stickers-wrapper">
+        <button class="fab-stickers-btn" id="fabStickersBtn" title="Стикеры и декор" aria-label="Стикеры и декор">
+          <span class="fab-stickers-icon">✨</span>
+        </button>
+      </div>
 
       <!-- Floating Action Button (FAB) -->
       <div class="fab-wrapper">
@@ -165,7 +183,7 @@
             </div>
             <div class="modal-actions">
               <button type="button" class="btn-cancel" id="newTabCancelBtn">Отмена</button>
-              <button type="submit" class="btn-submit">Создать вкладку</button>
+              <button type="submit" class="btn-submit" id="newTabSubmitBtn">Создать вкладку</button>
             </div>
           </form>
         </div>
@@ -239,7 +257,7 @@
 
             <div class="modal-actions" style="margin-top: 14px;">
               <button type="button" class="btn-cancel" id="editTabCancelBtn">Отмена</button>
-              <button type="submit" class="btn-submit">Сохранить</button>
+              <button type="submit" class="btn-submit" id="editTabSubmitBtn">Сохранить</button>
             </div>
           </form>
         </div>
@@ -577,7 +595,7 @@
           </div>
 
           <div style="text-align: center; font-size: 11px; color: #94a3b8; margin-top: 12px; font-weight: 600; letter-spacing: 0.3px;">
-            Plan4U • Версия 0.0.54
+            Plan4U • Версия 0.0.86
           </div>
 
           <div class="modal-actions" style="margin-top: 10px;">
@@ -875,10 +893,69 @@
         </div>
       </div>
 
+      <!-- Stickers Sheet / Drawer Modal -->
+      <div class="modal-backdrop" id="stickersModalBackdrop" aria-hidden="true">
+        <div class="modal-sheet modal-sheet-stickers" id="stickersModalSheet" role="dialog" aria-modal="true" aria-labelledby="stickersModalTitle">
+          <div class="modal-header stickers-sheet-header">
+            <div class="stickers-header-title-wrap">
+              <h2 id="stickersModalTitle">✨ Стикеры и декор</h2>
+              <span class="stickers-header-hint">Перетяните на лист или нажмите для добавления</span>
+            </div>
+            <button type="button" class="modal-close-btn" id="stickersCloseBtn" aria-label="Закрыть">&times;</button>
+          </div>
+          
+          <!-- Category Tabs -->
+          <div class="stickers-categories-bar" id="stickersCategoriesBar">
+            <button type="button" class="sticker-cat-btn active" data-category="cats">🐱 Коты</button>
+            <button type="button" class="sticker-cat-btn" data-category="more_cats">🐾 Ещё коты</button>
+            <button type="button" class="sticker-cat-btn" data-category="flora">🍄 Флора</button>
+            <button type="button" class="sticker-cat-btn" data-category="fauna">🐝 Фауна</button>
+            <button type="button" class="sticker-cat-btn" data-category="ocean">🌊 Океан</button>
+            <button type="button" class="sticker-cat-btn" data-category="pigs">🐹 Свини</button>
+          </div>
+
+          <!-- Stickers Grid -->
+          <div class="stickers-grid-container" id="stickersGridContainer">
+            <!-- Rendered dynamically by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Sticker Context Backdrop & Popup Menu (Long Press / Tap) -->
+      <div class="sticker-context-backdrop" id="stickerContextBackdrop" style="display: none;"></div>
+      <div class="sticker-context-popup" id="stickerContextPopup" style="display: none;">
+        <div class="sticker-ctx-bubble">
+          <button type="button" class="sticker-ctx-btn btn-stk-rotate" id="btnStickerRotate" title="Повернуть на 15°" aria-label="Повернуть">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="#ffffff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" fill="none">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19"/>
+            </svg>
+          </button>
+          <button type="button" class="sticker-ctx-btn btn-stk-smaller" id="btnStickerSmaller" title="Уменьшить" aria-label="Уменьшить">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          </button>
+          <button type="button" class="sticker-ctx-btn btn-stk-bigger" id="btnStickerBigger" title="Увеличить" aria-label="Увеличить">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          </button>
+          <button type="button" class="sticker-ctx-btn btn-stk-delete" id="btnStickerDelete" title="Удалить стикер" aria-label="Удалить">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              <line x1="10" y1="11" x2="10" y2="17"/>
+              <line x1="14" y1="11" x2="14" y2="17"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
     </main>
   </div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=0.0.86"></script>
   <script>
     if ('serviceWorker' in navigator && !window.Capacitor) {
       window.addEventListener('load', () => {

@@ -444,7 +444,17 @@ const I18N = {
     toast_entry_updated: 'Запись успешно обновлена',
     toast_tab_deleted: 'Вкладка «{title}» успешно удалена',
     toast_tab_updated: 'Вкладка и фон листа обновлены',
-    toast_lang_changed: 'Язык изменен: Русский 🇷🇺'
+    toast_lang_changed: 'Язык изменен: Русский 🇷🇺',
+
+    // Stickers
+    stickers_title: '✨ Стикеры и декор',
+    stickers_hint: 'Перетяните на лист или нажмите для добавления',
+    stickers_cat_animals: '🐾 Зверушки',
+    stickers_cat_nature: '🌸 Цветы',
+    stickers_cat_sky: '☁️ Небо',
+    stickers_cat_cozy: '🎀 Уют',
+    toast_sticker_added: 'Стикер прикреплен к листу ✨',
+    toast_sticker_deleted: 'Стикер удален'
   },
 
   uk: {
@@ -599,7 +609,17 @@ const I18N = {
     toast_entry_updated: 'Запис успішно оновлено',
     toast_tab_deleted: 'Вкладку «{title}» успішно видалено',
     toast_tab_updated: 'Вкладку і фон аркуша оновлено',
-    toast_lang_changed: 'Мову змінено: Українська 🇺🇦'
+    toast_lang_changed: 'Мову змінено: Українська 🇺🇦',
+
+    // Stickers
+    stickers_title: '✨ Стікери та декор',
+    stickers_hint: 'Перетягніть на аркуш або натисніть для додавання',
+    stickers_cat_animals: '🐾 Звірятка',
+    stickers_cat_nature: '🌸 Квіти',
+    stickers_cat_sky: '☁️ Небо',
+    stickers_cat_cozy: '🎀 Затишок',
+    toast_sticker_added: 'Стікер прикріплено до аркуша ✨',
+    toast_sticker_deleted: 'Стікер видалено'
   },
 
   en: {
@@ -754,7 +774,17 @@ const I18N = {
     toast_entry_updated: 'Entry successfully updated',
     toast_tab_deleted: 'Tab «{title}» deleted successfully',
     toast_tab_updated: 'Tab and notebook sheet updated',
-    toast_lang_changed: 'Language changed: English 🇬🇧'
+    toast_lang_changed: 'Language changed: English 🇬🇧',
+
+    // Stickers
+    stickers_title: '✨ Stickers & Decor',
+    stickers_hint: 'Drag onto page or tap to place',
+    stickers_cat_animals: '🐾 Animals',
+    stickers_cat_nature: '🌸 Nature',
+    stickers_cat_sky: '☁️ Sky & Magic',
+    stickers_cat_cozy: '🎀 Cozy & Deco',
+    toast_sticker_added: 'Sticker placed on page ✨',
+    toast_sticker_deleted: 'Sticker removed'
   }
 };
 
@@ -1661,6 +1691,54 @@ async function decryptCloudPayload(cipherJsonStr, password, email) {
   return new TextDecoder().decode(decrypted);
 }
 
+// =========================================================================
+// STICKERS & NOTEBOOK DECOR CATALOG (WebP Assets)
+// =========================================================================
+const STICKERS_CATALOG = {
+  cats: Array.from({ length: 49 }, (_, i) => {
+    const num = String(i + 1).padStart(2, '0');
+    return {
+      id: `cat_${num}`,
+      img: `assets/stickers/cats/cat_${num}.webp`
+    };
+  }).filter(s => s.id !== 'cat_19'),
+  more_cats: Array.from({ length: 49 }, (_, i) => {
+    const num = String(i + 1).padStart(2, '0');
+    return {
+      id: `more_cat_${num}`,
+      img: `assets/stickers/more_cats/more_cat_${num}.webp`
+    };
+  }),
+  flora: Array.from({ length: 64 }, (_, i) => {
+    const num = String(i + 1).padStart(2, '0');
+    return {
+      id: `flora_${num}`,
+      img: `assets/stickers/flora/flora_${num}.webp`
+    };
+  }),
+  fauna: Array.from({ length: 49 }, (_, i) => {
+    const num = String(i + 1).padStart(2, '0');
+    return {
+      id: `fauna_${num}`,
+      img: `assets/stickers/fauna/fauna_${num}.webp`
+    };
+  }),
+  ocean: Array.from({ length: 49 }, (_, i) => {
+    const num = String(i + 1).padStart(2, '0');
+    return {
+      id: `ocean_${num}`,
+      img: `assets/stickers/ocean/ocean_${num}.webp`
+    };
+  }),
+  pigs: Array.from({ length: 49 }, (_, i) => {
+    const num = String(i + 1).padStart(2, '0');
+    return {
+      id: `pig_${num}`,
+      img: `assets/stickers/pigs/pig_${num}.webp`
+    };
+  })
+};
+
 class NotebookApp {
   constructor() {
     window.appInstance = this;
@@ -1686,6 +1764,9 @@ class NotebookApp {
     this.tasks = this.loadTasks();
     this.rolloverPastUncompletedTasks();
     this.history = this.loadHistory();
+    this.stickers = this.loadStickers();
+    this.selectedStickerId = null;
+    this.activeStickerCategory = 'cats';
     this.tempPhotoData = null;
     this.editingTaskId = null;
     this.toastTimer = null;
@@ -1702,6 +1783,7 @@ class NotebookApp {
     this.initDragToScroll();
     this.initAutoBackupEngine();
     this.initSections();
+    this.initStickersSystem();
     this.renderTabs();
     this.render();
     this.updateWorkloadWidget();
@@ -1739,7 +1821,8 @@ class NotebookApp {
           savedAchievements,
           savedDayHistory,
           savedHistory,
-          savedPet
+          savedPet,
+          savedStickers
         ] = await Promise.all([
           Plan4UStorage.loadFile('daily_tasks.json', null),
           Plan4UStorage.loadFile('tasks.json', null),
@@ -1749,7 +1832,8 @@ class NotebookApp {
           Plan4UStorage.loadFile('achievements.json', null),
           Plan4UStorage.loadFile('day_history.json', null),
           Plan4UStorage.loadFile('history.json', null),
-          Plan4UStorage.loadFile('pet.json', null)
+          Plan4UStorage.loadFile('pet.json', null),
+          Plan4UStorage.loadFile('stickers.json', null)
         ]);
 
         let hasRestored = false;
@@ -1801,12 +1885,18 @@ class NotebookApp {
           this.petSystem.restorePetData(savedPet);
         }
 
+        if (savedStickers && typeof savedStickers === 'object') {
+          this.stickers = savedStickers;
+          this.renderStickers();
+        }
+
         if (hasRestored) {
           this.rolloverPastUncompletedTasks();
           this.saveDailyTasks();
           this.saveTasks();
           this.saveTabs();
           this.saveSettings();
+          this.saveStickers();
           this.renderTabs();
           this.render();
           this.updateDateWidget();
@@ -1862,6 +1952,7 @@ class NotebookApp {
       this.saveTabs();
       this.saveAchievementsData();
       this.saveHistory();
+      this.saveStickers();
       if (this.tabSections && window.Plan4UStorage) {
         Plan4UStorage.saveFile('sections.json', this.tabSections);
       }
@@ -1889,6 +1980,7 @@ class NotebookApp {
       this.updateDateWidget();
       this.renderTabs();
       this.render();
+      this.renderStickers();
       this.updateWorkloadWidget();
       this.syncWithNativeWidget();
     }
@@ -1936,6 +2028,7 @@ class NotebookApp {
         this.updateDateWidget();
         this.renderTabs();
         this.render();
+        this.renderStickers();
         this.updateWorkloadWidget();
         this.syncWithNativeWidget();
       }
@@ -2205,8 +2298,61 @@ class NotebookApp {
       this.dailyTasks[todayStr] = [];
     }
 
+    // Build set of task IDs belonging to other non-todo tabs to ensure total isolation
+    const nonTodoTaskIds = new Set();
+    if (this.tasks && typeof this.tasks === 'object') {
+      for (const tabKey in this.tasks) {
+        if (tabKey !== 'todo' && Array.isArray(this.tasks[tabKey])) {
+          this.tasks[tabKey].forEach(t => {
+            if (t && t.id) nonTodoTaskIds.add(String(t.id));
+          });
+        }
+      }
+    }
+
+    // 0. Recover any completed tasks from dayHistory ONLY for the 'todo' tab
+    if (this.dayHistory && typeof this.dayHistory === 'object') {
+      for (const d in this.dayHistory) {
+        if (d < todayStr && Array.isArray(this.dayHistory[d])) {
+          if (!this.dailyTasks[d]) this.dailyTasks[d] = [];
+          this.dayHistory[d].forEach(hItem => {
+            if (!hItem || !hItem.text) return;
+            // Never recover tasks from other tabs (custom tabs, buy, watch, etc.) into the daily todo archive!
+            if (hItem.tabId && hItem.tabId !== 'todo') return;
+            if (nonTodoTaskIds.has(String(hItem.id))) return;
+
+            const exists = this.dailyTasks[d].some(t => String(t.id) === String(hItem.id) || (t.text === hItem.text && t.completed));
+            if (!exists) {
+              this.dailyTasks[d].push({
+                id: hItem.id || generateTaskId(),
+                text: hItem.text,
+                section: hItem.place || hItem.period || 'personal',
+                completed: true,
+                date: d
+              });
+              changed = true;
+            }
+          });
+        }
+      }
+    }
+
+    // Clean up any tasks from dailyTasks that actually belong to other perpetual/custom tabs
+    if (nonTodoTaskIds.size > 0 && this.dailyTasks) {
+      for (const d in this.dailyTasks) {
+        if (Array.isArray(this.dailyTasks[d])) {
+          const initLen = this.dailyTasks[d].length;
+          this.dailyTasks[d] = this.dailyTasks[d].filter(t => !nonTodoTaskIds.has(String(t.id)));
+          if (this.dailyTasks[d].length !== initLen) {
+            changed = true;
+          }
+        }
+      }
+    }
+
     const pastDateKeys = Object.keys(this.dailyTasks).filter(d => d < todayStr).sort();
 
+    // 1. Rollover uncompleted tasks from past days into today, leaving completed tasks in past archives
     pastDateKeys.forEach(pastDate => {
       const pastList = this.dailyTasks[pastDate] || [];
       if (!Array.isArray(pastList) || pastList.length === 0) return;
@@ -2215,7 +2361,7 @@ class NotebookApp {
       const completed = pastList.filter(t => t.completed && !t.isEmpty && t.text && t.text.trim());
 
       if (uncompleted.length > 0) {
-        // Move uncompleted tasks to today, preserving all options
+        // Move uncompleted tasks to today, resetting completed flag to false
         uncompleted.forEach(origTask => {
           const alreadyInToday = this.dailyTasks[todayStr].some(t => String(t.id) === String(origTask.id) || (t.text === origTask.text && t.section === origTask.section));
           if (!alreadyInToday) {
@@ -2234,14 +2380,36 @@ class NotebookApp {
       }
     });
 
+    // 2. Clean up any completed tasks from past days that might have leaked into today as completed
+    const pastCompletedMap = new Map();
+    pastDateKeys.forEach(pastDate => {
+      const pList = this.dailyTasks[pastDate] || [];
+      pList.forEach(t => {
+        if (t.completed && t.text && t.text.trim()) {
+          pastCompletedMap.set(`${t.text.trim()}___${t.section || ''}`, true);
+        }
+      });
+    });
+
+    if (this.dailyTasks[todayStr].length > 0) {
+      const initialLen = this.dailyTasks[todayStr].length;
+      this.dailyTasks[todayStr] = this.dailyTasks[todayStr].filter(t => {
+        if (t.completed && pastCompletedMap.has(`${(t.text || '').trim()}___${t.section || ''}`)) {
+          return false;
+        }
+        return true;
+      });
+      if (this.dailyTasks[todayStr].length !== initialLen) {
+        changed = true;
+      }
+    }
+
     if (changed) {
-      if (this.selectedDate === todayStr && this.tasks) {
+      if ((this.selectedDate || todayStr) === todayStr && this.tasks) {
         this.tasks.todo = this.dailyTasks[todayStr];
       }
       this.saveDailyTasks();
-      if (this.tasks && typeof this.tasks === 'object') {
-        this.saveTasks();
-      }
+      this.flushSaveTasks();
     }
   }
 
@@ -2338,13 +2506,13 @@ class NotebookApp {
     }
 
     // Daily todo tasks for selected date
-    if (this.dailyTasks[targetDate] && Array.isArray(this.dailyTasks[targetDate]) && this.dailyTasks[targetDate].length > 0) {
+    if (this.dailyTasks[targetDate] && Array.isArray(this.dailyTasks[targetDate])) {
       persistentTasks.todo = this.dailyTasks[targetDate];
-    } else if (persistentTasks.todo && Array.isArray(persistentTasks.todo) && persistentTasks.todo.length > 0) {
-      // If persistentTasks.todo had saved tasks (e.g. from current session), preserve them in dailyTasks!
-      this.dailyTasks[targetDate] = persistentTasks.todo;
     } else {
-      if (!this.dailyTasks[targetDate]) {
+      const allDailyKeys = Object.keys(this.dailyTasks);
+      if (allDailyKeys.length === 0 && (!persistentTasks.todo || persistentTasks.todo.length === 0)) {
+        this.dailyTasks[targetDate] = JSON.parse(JSON.stringify(INITIAL_TASKS.todo || []));
+      } else {
         this.dailyTasks[targetDate] = [];
       }
       persistentTasks.todo = this.dailyTasks[targetDate];
@@ -2356,8 +2524,10 @@ class NotebookApp {
   // Instant synchronous save to LocalStorage, Plan4UStorage and native widgets
   saveTasks() {
     if (!this.tasks || typeof this.tasks !== 'object') return;
-    const targetDate = this.selectedDate || this.getTodayDateString();
-    if (this.dailyTasks && this.tasks.todo) {
+    const todayStr = this.getTodayDateString();
+    const targetDate = this.selectedDate || todayStr;
+    // Only save this.tasks.todo to dailyTasks for today or future dates (past dates are read-only archive!)
+    if (this.dailyTasks && this.tasks.todo && targetDate >= todayStr) {
       this.dailyTasks[targetDate] = this.tasks.todo;
     }
     this.flushSaveTasks();
@@ -2367,13 +2537,12 @@ class NotebookApp {
     clearTimeout(this._saveTasksDebounceTimer);
     try {
       if (!this.tasks || typeof this.tasks !== 'object') return;
-      const targetDate = this.selectedDate || this.getTodayDateString();
+      const todayStr = this.getTodayDateString();
+      const targetDate = this.selectedDate || todayStr;
 
-      // Ensure dailyTasks for selectedDate is strictly in sync with tasks.todo!
-      if (this.dailyTasks) {
-        if (this.tasks.todo) {
-          this.dailyTasks[targetDate] = this.tasks.todo;
-        }
+      // Ensure dailyTasks for selectedDate is strictly in sync with tasks.todo if today or future
+      if (this.dailyTasks && this.tasks.todo && targetDate >= todayStr) {
+        this.dailyTasks[targetDate] = this.tasks.todo;
         this.saveDailyTasks();
       }
 
@@ -2419,6 +2588,7 @@ class NotebookApp {
     this.taskModalBackdrop = document.getElementById('taskModalBackdrop');
     this.modalCloseBtn = document.getElementById('modalCloseBtn');
     this.modalCancelBtn = document.getElementById('modalCancelBtn');
+    this.modalSubmitBtn = document.getElementById('modalSubmitBtn');
     this.newTaskForm = document.getElementById('newTaskForm');
     this.dynamicFormFields = document.getElementById('dynamicFormFields');
 
@@ -2426,6 +2596,7 @@ class NotebookApp {
     this.newTabModalBackdrop = document.getElementById('newTabModalBackdrop');
     this.newTabCloseBtn = document.getElementById('newTabCloseBtn');
     this.newTabCancelBtn = document.getElementById('newTabCancelBtn');
+    this.newTabSubmitBtn = document.getElementById('newTabSubmitBtn');
     this.newTabForm = document.getElementById('newTabForm');
     this.newTabNameInput = document.getElementById('newTabNameInput');
 
@@ -2433,6 +2604,7 @@ class NotebookApp {
     this.editTabModalBackdrop = document.getElementById('editTabModalBackdrop');
     this.editTabCloseBtn = document.getElementById('editTabCloseBtn');
     this.editTabCancelBtn = document.getElementById('editTabCancelBtn');
+    this.editTabSubmitBtn = document.getElementById('editTabSubmitBtn');
     this.editTabForm = document.getElementById('editTabForm');
     this.editTabId = document.getElementById('editTabId');
     this.editTabTitleInput = document.getElementById('editTabTitleInput');
@@ -2457,6 +2629,22 @@ class NotebookApp {
     this.settingsDoneBtn = document.getElementById('settingsDoneBtn');
     this.themeSelector = document.getElementById('themeSelector');
     this.accentColorPicker = document.getElementById('accentColorPicker');
+
+    // Lightbox Modal Listeners
+    if (this.imageLightboxBackdrop) {
+      let startedOnLb = false;
+      this.imageLightboxBackdrop.addEventListener('pointerdown', (e) => {
+        startedOnLb = (e.target === this.imageLightboxBackdrop || e.target === this.lightboxCloseBtn || (e.target.classList && e.target.classList.contains('lightbox-content')));
+      });
+      this.imageLightboxBackdrop.addEventListener('click', (e) => {
+        if (Date.now() - (this._lightboxOpenedAt || 0) < 300) return;
+        if (startedOnLb && (e.target === this.imageLightboxBackdrop || e.target === this.lightboxCloseBtn || (e.target.classList && e.target.classList.contains('lightbox-content')))) {
+          this.closeLightbox();
+        }
+        startedOnLb = false;
+      });
+    }
+
     this.fontFamilySelect = document.getElementById('fontFamilySelect');
     this.fontSizeRange = document.getElementById('fontSizeRange');
     this.fontSizeVal = document.getElementById('fontSizeVal');
@@ -2539,8 +2727,22 @@ class NotebookApp {
     this.sectionMenuCloseBtn = document.getElementById('sectionMenuCloseBtn');
     this.secMenuRenameBtn = document.getElementById('secMenuRenameBtn');
     this.secMenuMoveUpBtn = document.getElementById('secMenuMoveUpBtn');
-    this.secMenuMoveDownBtn = document.getElementById('secMenuMoveDownBtn');
     this.secMenuDeleteBtn = document.getElementById('secMenuDeleteBtn');
+
+    // Stickers System DOM Elements
+    this.notebookStickersLayer = document.getElementById('notebookStickersLayer');
+    this.fabStickersBtn = document.getElementById('fabStickersBtn');
+    this.stickersModalBackdrop = document.getElementById('stickersModalBackdrop');
+    this.stickersModalSheet = document.getElementById('stickersModalSheet');
+    this.stickersCloseBtn = document.getElementById('stickersCloseBtn');
+    this.stickersCategoriesBar = document.getElementById('stickersCategoriesBar');
+    this.stickersGridContainer = document.getElementById('stickersGridContainer');
+    this.stickerContextPopup = document.getElementById('stickerContextPopup');
+    this.btnStickerMove = document.getElementById('btnStickerMove');
+    this.btnStickerRotate = document.getElementById('btnStickerRotate');
+    this.btnStickerBigger = document.getElementById('btnStickerBigger');
+    this.btnStickerSmaller = document.getElementById('btnStickerSmaller');
+    this.btnStickerDelete = document.getElementById('btnStickerDelete');
 
     this.initContentDelegation();
   }
@@ -2615,19 +2817,34 @@ class NotebookApp {
         return;
       }
 
-      // 5. Section Header Row or Action Button click (Reliable delegation on Android touch)
-      const secHeaderRow = e.target.closest('.section-header-row');
-      if (secHeaderRow) {
+      // Section header clicks removed - only long-press is supported
+    });
+
+    // Direct Robust Listener for Floating Return to Today Button
+    const triggerReturnToday = (e) => {
+      if (e) {
         e.preventDefault();
         e.stopPropagation();
-        const secId = secHeaderRow.dataset.section;
-        if (secId && !secId.startsWith('archive_')) {
-          triggerHaptic(20);
-          this.openSectionMenuModal(secId);
-        }
-        return;
       }
-    });
+      triggerHaptic([30, 45]);
+      const todayStr = this.getTodayDateString();
+      this.selectedDate = todayStr;
+      this.tempSelectedDate = todayStr;
+      this.syncSelectedDate();
+      const lang = this.settings?.lang || 'ru';
+      const msg = lang === 'en' ? 'Back to Today! ✨' : (lang === 'uk' ? 'Ви повернулися до Сьогодні! ✨' : 'Вы вернулись в Сегодня! ✨');
+      this.showToast(msg, '📅');
+    };
+
+    const returnBtn = document.getElementById('pastDayReturnBtn');
+    if (returnBtn) {
+      returnBtn.addEventListener('click', triggerReturnToday);
+      returnBtn.addEventListener('touchend', triggerReturnToday);
+    }
+    const returnWrapper = document.getElementById('pastDayReturnWrapper');
+    if (returnWrapper) {
+      returnWrapper.addEventListener('click', triggerReturnToday);
+    }
   }
 
   // Dismiss keyboard/focus from text inputs
@@ -2697,6 +2914,50 @@ class NotebookApp {
       });
     }
 
+    // Helper to ensure backdrop clicks only trigger when the user actually pressed down ON the backdrop,
+    // preventing accidental modal dismissal when virtual keyboard collapses or viewport shifts during input blur.
+    const bindSafeBackdrop = (backdropEl, closeFn, getOpenedAt) => {
+      if (!backdropEl) return;
+      let startedOnBackdrop = false;
+      backdropEl.addEventListener('pointerdown', (e) => {
+        startedOnBackdrop = (e.target === backdropEl);
+      });
+      backdropEl.addEventListener('click', (e) => {
+        if (getOpenedAt && (Date.now() - (getOpenedAt() || 0) < 400)) return;
+        if (startedOnBackdrop && e.target === backdropEl) {
+          closeFn(e);
+        }
+        startedOnBackdrop = false;
+      });
+    };
+
+    // Helper for bulletproof form submit on mobile devices (prevents keyboard jump from cancelling submit)
+    const bindReliableSubmit = (formEl, submitBtn, submitHandler) => {
+      let isSubmitting = false;
+      const runSubmit = (e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        if (isSubmitting) return;
+        isSubmitting = true;
+        setTimeout(() => { isSubmitting = false; }, 350);
+        submitHandler();
+      };
+
+      if (formEl) {
+        formEl.addEventListener('submit', runSubmit);
+      }
+
+      if (submitBtn) {
+        submitBtn.addEventListener('pointerdown', (e) => {
+          e.preventDefault(); // Prevents input blur from jumping viewport before action completes
+        });
+        submitBtn.addEventListener('click', runSubmit);
+        submitBtn.addEventListener('touchend', runSubmit);
+      }
+    };
+
     // Section Modal Listeners
     if (this.newSectionCloseBtn) {
       this.newSectionCloseBtn.addEventListener('click', () => this.closeAddSectionModal());
@@ -2704,31 +2965,9 @@ class NotebookApp {
     if (this.newSectionCancelBtn) {
       this.newSectionCancelBtn.addEventListener('click', () => this.closeAddSectionModal());
     }
-    if (this.newSectionModalBackdrop) {
-      this.newSectionModalBackdrop.addEventListener('click', (e) => {
-        if (Date.now() - (this._newSectionModalOpenedAt || 0) < 400) return;
-        if (e.target === this.newSectionModalBackdrop) {
-          this.closeAddSectionModal();
-        }
-      });
-    }
-    if (this.newSectionForm) {
-      this.newSectionForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        this.handleSaveSection();
-      });
-    }
-    if (this.newSectionSubmitBtn) {
-      const onSubmit = (e) => {
-        if (e) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-        this.handleSaveSection();
-      };
-      this.newSectionSubmitBtn.addEventListener('click', onSubmit);
-      this.newSectionSubmitBtn.addEventListener('touchend', onSubmit);
-    }
+    bindSafeBackdrop(this.newSectionModalBackdrop, () => this.closeAddSectionModal(), () => this._newSectionModalOpenedAt);
+    bindReliableSubmit(this.newSectionForm, this.newSectionSubmitBtn, () => this.handleSaveSection());
+
     if (this.newSectionEmojiPicker) {
       this.newSectionEmojiPicker.addEventListener('click', (e) => {
         const chip = e.target.closest('.emoji-chip');
@@ -2747,14 +2986,8 @@ class NotebookApp {
     if (this.sectionMenuCloseBtn) {
       this.sectionMenuCloseBtn.addEventListener('click', () => this.closeSectionMenuModal());
     }
-    if (this.sectionMenuModalBackdrop) {
-      this.sectionMenuModalBackdrop.addEventListener('click', (e) => {
-        if (Date.now() - (this._sectionMenuModalOpenedAt || 0) < 400) return;
-        if (e.target === this.sectionMenuModalBackdrop) {
-          this.closeSectionMenuModal();
-        }
-      });
-    }
+    bindSafeBackdrop(this.sectionMenuModalBackdrop, () => this.closeSectionMenuModal(), () => this._sectionMenuModalOpenedAt);
+
     if (this.secMenuRenameBtn) {
       let lastRenameTrigger = 0;
       const handleRename = (e) => {
@@ -2828,20 +3061,8 @@ class NotebookApp {
     if (this.modalCancelBtn) {
       this.modalCancelBtn.addEventListener('click', closeTaskModalHandler);
     }
-    if (this.taskModalBackdrop) {
-      this.taskModalBackdrop.addEventListener('click', (e) => {
-        if (Date.now() - (this._taskModalOpenedAt || 0) < 400) return;
-        if (e.target === this.taskModalBackdrop) {
-          closeTaskModalHandler(e);
-        }
-      });
-    }
-
-    // Add Task submit
-    this.newTaskForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      this.handleAddTask();
-    });
+    bindSafeBackdrop(this.taskModalBackdrop, closeTaskModalHandler, () => this._taskModalOpenedAt);
+    bindReliableSubmit(this.newTaskForm, this.modalSubmitBtn || document.getElementById('modalSubmitBtn'), () => this.handleAddTask());
 
     // Open Add Tab Modal
     if (this.addTabBtn) {
@@ -2867,22 +3088,8 @@ class NotebookApp {
     if (this.newTabCancelBtn) {
       this.newTabCancelBtn.addEventListener('click', closeNewTabModalHandler);
     }
-    if (this.newTabModalBackdrop) {
-      this.newTabModalBackdrop.addEventListener('click', (e) => {
-        if (Date.now() - (this._newTabModalOpenedAt || 0) < 400) return;
-        if (e.target === this.newTabModalBackdrop) {
-          closeNewTabModalHandler(e);
-        }
-      });
-    }
-
-    // Add Tab submit
-    if (this.newTabForm) {
-      this.newTabForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        this.handleAddNewTab();
-      });
-    }
+    bindSafeBackdrop(this.newTabModalBackdrop, closeNewTabModalHandler, () => this._newTabModalOpenedAt);
+    bindReliableSubmit(this.newTabForm, this.newTabSubmitBtn || document.getElementById('newTabSubmitBtn'), () => this.handleAddNewTab());
 
     // Edit Tab Modal listeners
     const closeEditTabModalHandler = (e) => {
@@ -2899,14 +3106,8 @@ class NotebookApp {
     if (this.editTabCancelBtn) {
       this.editTabCancelBtn.addEventListener('click', closeEditTabModalHandler);
     }
-    if (this.editTabModalBackdrop) {
-      this.editTabModalBackdrop.addEventListener('click', (e) => {
-        if (Date.now() - (this._editTabModalOpenedAt || 0) < 400) return;
-        if (e.target === this.editTabModalBackdrop) {
-          closeEditTabModalHandler(e);
-        }
-      });
-    }
+    bindSafeBackdrop(this.editTabModalBackdrop, closeEditTabModalHandler, () => this._editTabModalOpenedAt);
+    bindReliableSubmit(this.editTabForm, this.editTabSubmitBtn || document.getElementById('editTabSubmitBtn'), () => this.handleEditTabSubmit());
 
     if (this.btnTabMoveLeft) {
       this.btnTabMoveLeft.addEventListener('click', (e) => {
@@ -2930,12 +3131,6 @@ class NotebookApp {
         this.deleteTab(tabId);
       });
     }
-    if (this.editTabForm) {
-      this.editTabForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        this.handleEditTabSubmit();
-      });
-    }
 
     // In-App Confirmation Modal listeners
     if (this.confirmModalCancelBtn) {
@@ -2947,12 +3142,8 @@ class NotebookApp {
         this.closeConfirmModal();
       });
     }
-    if (this.confirmModalBackdrop) {
-      this.confirmModalBackdrop.addEventListener('click', (e) => {
-        if (Date.now() - (this._confirmModalOpenedAt || 0) < 400) return;
-        if (e.target === this.confirmModalBackdrop) this.closeConfirmModal();
-      });
-    }
+    bindSafeBackdrop(this.confirmModalBackdrop, () => this.closeConfirmModal(), () => this._confirmModalOpenedAt);
+
     if (this.confirmModalApproveBtn) {
       this.confirmModalApproveBtn.addEventListener('click', (e) => {
         if (e) {
@@ -2974,27 +3165,14 @@ class NotebookApp {
     if (this.settingsDoneBtn) {
       this.settingsDoneBtn.addEventListener('click', () => this.closeSettingsModal());
     }
-    if (this.settingsModalBackdrop) {
-      this.settingsModalBackdrop.addEventListener('click', (e) => {
-        if (Date.now() - (this._settingsModalOpenedAt || 0) < 400) return;
-        if (e.target === this.settingsModalBackdrop) {
-          this.closeSettingsModal();
-        }
-      });
-    }
+    bindSafeBackdrop(this.settingsModalBackdrop, () => this.closeSettingsModal(), () => this._settingsModalOpenedAt);
 
     // Calendar Modal listeners
     if (this.calendarCloseBtn) {
       this.calendarCloseBtn.addEventListener('click', () => this.closeCalendarModal());
     }
-    if (this.calendarModalBackdrop) {
-      this.calendarModalBackdrop.addEventListener('click', (e) => {
-        if (Date.now() - (this._calendarModalOpenedAt || 0) < 400) return;
-        if (e.target === this.calendarModalBackdrop) {
-          this.closeCalendarModal();
-        }
-      });
-    }
+    bindSafeBackdrop(this.calendarModalBackdrop, () => this.closeCalendarModal(), () => this._calendarModalOpenedAt);
+
     if (this.calendarPrevMonth) {
       this.calendarPrevMonth.addEventListener('click', () => {
         triggerHaptic(15);
@@ -3012,20 +3190,32 @@ class NotebookApp {
     if (this.calendarTodayBtn) {
       this.calendarTodayBtn.addEventListener('click', () => {
         triggerHaptic(20);
-        this.selectedDate = this.getTodayDateString();
-        this.tempSelectedDate = this.selectedDate;
+        const todayStr = this.getTodayDateString();
+        // Save current tasks if we were on today or future before switching
+        if (this.selectedDate >= todayStr && this.tasks && this.tasks.todo && this.dailyTasks) {
+          this.dailyTasks[this.selectedDate] = this.tasks.todo;
+          this.saveDailyTasks();
+        }
+        this.selectedDate = todayStr;
+        this.tempSelectedDate = todayStr;
         this.displayedCalendarMonth = new Date();
-        this.syncSelectedDate();
         this.closeCalendarModal();
+        this.syncSelectedDate();
         this.showToast('Открыт сегодняшний день 📍', '📅');
       });
     }
     if (this.calendarSelectBtn) {
       this.calendarSelectBtn.addEventListener('click', () => {
         triggerHaptic(20);
+        const todayStr = this.getTodayDateString();
+        // Save current tasks if we were on today or future before switching
+        if (this.selectedDate >= todayStr && this.tasks && this.tasks.todo && this.dailyTasks) {
+          this.dailyTasks[this.selectedDate] = this.tasks.todo;
+          this.saveDailyTasks();
+        }
         this.selectedDate = this.tempSelectedDate;
-        this.syncSelectedDate();
         this.closeCalendarModal();
+        this.syncSelectedDate();
         const formatted = this.formatDateTitle(this.selectedDate);
         this.showToast(`Выбран день: ${formatted}`, '📅');
       });
@@ -3035,14 +3225,8 @@ class NotebookApp {
     if (this.achievementsCloseBtn) {
       this.achievementsCloseBtn.addEventListener('click', () => this.closeAchievementsModal());
     }
-    if (this.achievementsModalBackdrop) {
-      this.achievementsModalBackdrop.addEventListener('click', (e) => {
-        if (Date.now() - (this._achievementsModalOpenedAt || 0) < 400) return;
-        if (e.target === this.achievementsModalBackdrop) {
-          this.closeAchievementsModal();
-        }
-      });
-    }
+    bindSafeBackdrop(this.achievementsModalBackdrop, () => this.closeAchievementsModal(), () => this._achievementsModalOpenedAt);
+
     if (this.achievementsFilterTabs) {
       this.achievementsFilterTabs.querySelectorAll('.achievement-tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -4820,7 +5004,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.0.51',
+      appVersion: '0.0.86',
       email: this.cloudEmail,
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
@@ -4828,6 +5012,7 @@ class NotebookApp {
       tabSections: this.tabSections || {},
       tasks: this.tasks,
       dailyTasks: this.dailyTasks,
+      stickers: this.stickers || {},
       dayHistory: this.dayHistory,
       achievements: this.achievementsData,
       history: this.history,
@@ -4994,7 +5179,12 @@ class NotebookApp {
       this.petSystem.restorePetData(data.pet);
     }
 
-    // 10. Persist everything to LocalStorage, IndexedDB and Disk
+    // 10. Notebook Stickers
+    if (data.stickers && typeof data.stickers === 'object') {
+      this.stickers = data.stickers;
+    }
+
+    // 11. Persist everything to LocalStorage, IndexedDB and Disk
     this.saveTabs();
     this.saveSections();
     this.saveTasks();
@@ -5003,8 +5193,9 @@ class NotebookApp {
     this.saveHistory();
     this.saveAchievementsData();
     this.saveSettings();
+    this.saveStickers();
 
-    // 11. Apply visual state & update UI components
+    // 12. Apply visual state & update UI components
     this.currentTab = this.tabs.length > 0 ? this.tabs[0].id : 'todo';
     this.applySettings();
     this.updateDateWidget();
@@ -5044,7 +5235,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.0.51',
+      appVersion: '0.0.86',
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
       sections: this.tabSections || {},
@@ -5056,6 +5247,7 @@ class NotebookApp {
       history: this.history,
       settings: this.settings,
       streak: this.streakData,
+      stickers: this.stickers || {},
       pet: this.petSystem ? this.petSystem.getPetSnapshot() : (JSON.parse(localStorage.getItem('plan4u_pet_data') || '{}'))
     };
   }
@@ -5467,16 +5659,20 @@ class NotebookApp {
 
   // Synchronize notebook sheet to selected date
   syncSelectedDate() {
-    this.saveTasks();
-    this.rolloverPastUncompletedTasks();
+    const todayStr = this.getTodayDateString();
+    if (this.selectedDate === todayStr) {
+      this.rolloverPastUncompletedTasks();
+    }
     if (!this.dailyTasks[this.selectedDate]) {
       this.dailyTasks[this.selectedDate] = [];
     }
     this.tasks.todo = this.dailyTasks[this.selectedDate];
     this.updateDateWidget();
     this.render();
+    this.renderStickers();
     this.updateWorkloadWidget();
     this.renderTabs();
+    this.syncWithNativeWidget?.();
   }
 
   // Render Calendar Month & Days Grid with full localization
@@ -6000,18 +6196,21 @@ class NotebookApp {
       return;
     }
 
-    // Completed movies in "Что посмотреть?" are archived and locked
-    if (this.currentTab === 'watch' && task.completed) {
-      triggerHaptic(15);
-      this.showToast('Просмотренные фильмы находятся в архиве истории и заблокированы 🔒', '🎬');
-      return;
-    }
+    // Capture previous visual positions of all task items before re-sorting
+    const oldPositions = new Map();
+    const prevWrappers = this.contentContainer.querySelectorAll('.task-row-wrapper[data-id]');
+    prevWrappers.forEach(el => {
+      const id = el.dataset.id;
+      if (id) {
+        oldPositions.set(id, el.getBoundingClientRect().top);
+      }
+    });
 
     task.completed = !task.completed;
 
-    // Update in dailyTasks directly
+    // Update in dailyTasks directly ONLY for todo tab
     const targetDate = this.selectedDate || todayStr;
-    if (this.dailyTasks && this.dailyTasks[targetDate]) {
+    if (this.currentTab === 'todo' && this.dailyTasks && this.dailyTasks[targetDate]) {
       const dailyTask = this.dailyTasks[targetDate].find(t => String(t.id) === String(taskId));
       if (dailyTask) {
         dailyTask.completed = task.completed;
@@ -6048,20 +6247,81 @@ class NotebookApp {
           completedAt: new Date().toISOString()
         });
       }
-      this.saveDayHistory();
     } else {
+      if (this.currentTab === 'watch') {
+        delete task.completedDate;
+      }
       // Remove from history if unchecked
       if (this.dayHistory[targetDate]) {
         this.dayHistory[targetDate] = this.dayHistory[targetDate].filter(h => String(h.id) !== String(task.id));
-        this.saveDayHistory();
       }
     }
 
-    this.saveTasks();
-    this.checkAchievements(true);
+    // Re-render UI
     this.render();
     this.renderTabs();
-    this.updateWorkloadWidget();
+
+    // 2. Ultra-smooth FLIP animation: 50% slower (~0.65s), hardware-accelerated, zero-jank
+    if (oldPositions.size > 0) {
+      const newWrappers = this.contentContainer.querySelectorAll('.task-row-wrapper[data-id]');
+
+      // PHASE 1: Read all new bounding rects in one pass (no layout thrashing)
+      const moves = [];
+      newWrappers.forEach(el => {
+        const id = el.dataset.id;
+        if (id && oldPositions.has(id)) {
+          const oldTop = oldPositions.get(id);
+          const newTop = el.getBoundingClientRect().top;
+          const deltaY = oldTop - newTop;
+          if (Math.abs(deltaY) > 0.5) {
+            moves.push({ el, id, deltaY });
+          }
+        }
+      });
+
+      // PHASE 2: Apply initial inverted transforms (GPU accelerated)
+      moves.forEach(({ el, id, deltaY }) => {
+        el.style.transform = `translate3d(0, ${deltaY}px, 0)`;
+        el.style.transition = 'none';
+        el.style.willChange = 'transform';
+        el.style.zIndex = (String(id) === String(taskId)) ? '25' : '20';
+        if (String(id) === String(taskId)) {
+          el.classList.add('just-completed-gliding');
+        }
+      });
+
+      // PHASE 3: Animate smoothly to natural position (2.00s, ultra smooth cubic-bezier)
+      if (moves.length > 0) {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            moves.forEach(({ el }) => {
+              el.style.transition = 'transform 2.00s cubic-bezier(0.16, 1, 0.3, 1)';
+              el.style.transform = 'translate3d(0, 0, 0)';
+
+              const cleanup = () => {
+                el.style.transform = '';
+                el.style.transition = '';
+                el.style.willChange = '';
+                el.style.zIndex = '';
+                el.classList.remove('just-completed-gliding');
+                el.removeEventListener('transitionend', cleanup);
+              };
+              el.addEventListener('transitionend', cleanup, { once: true });
+              setTimeout(cleanup, 2100);
+            });
+          });
+        });
+      }
+    }
+
+    // PHASE 4: Defer heavy operations (saving data, achievements check, widget updates)
+    // to avoid dropping frames during the animation
+    setTimeout(() => {
+      this.saveTasks();
+      this.saveDayHistory();
+      this.checkAchievements(true);
+      this.updateWorkloadWidget();
+    }, 150);
   }
 
   // Delete Task
@@ -6873,28 +7133,29 @@ class NotebookApp {
 
   // Handle Add / Edit Task
   handleAddTask() {
+    this.dismissActiveKeyboard();
     const todayStr = this.getTodayDateString();
     if (this.currentTab === 'todo' && this.selectedDate < todayStr) {
       this.closeTaskModal();
       return;
     }
-    const textInput = this.dynamicFormFields.querySelector('#taskTextInput');
+    const textInput = (this.dynamicFormFields ? this.dynamicFormFields.querySelector('#taskTextInput') : null) || document.getElementById('taskTextInput');
     let text = textInput ? textInput.value.trim() : '';
     const targetTab = this.currentTab;
 
     if (!text) return;
 
     // Get selected priority & color
-    const priorityRadio = this.dynamicFormFields.querySelector('input[name="taskPriority"]:checked');
+    const priorityRadio = (this.dynamicFormFields ? this.dynamicFormFields.querySelector('input[name="taskPriority"]:checked') : null) || document.querySelector('input[name="taskPriority"]:checked');
     const priority = priorityRadio ? priorityRadio.value : 'спокойно';
 
     const isPrio = priority === 'важный' || priority === 'очень важно' || priority === 'вопрос жизни и смерти';
-    const colorRadio = this.dynamicFormFields.querySelector('input[name="taskPriorityColor"]:checked');
+    const colorRadio = (this.dynamicFormFields ? this.dynamicFormFields.querySelector('input[name="taskPriorityColor"]:checked') : null) || document.querySelector('input[name="taskPriorityColor"]:checked');
     const taskColor = isPrio ? (colorRadio ? colorRadio.value : 'black') : 'black';
 
     text = cleanTaskText(text);
 
-    const notesInput = this.dynamicFormFields.querySelector('#taskExtraNotes');
+    const notesInput = (this.dynamicFormFields ? this.dynamicFormFields.querySelector('#taskExtraNotes') : null) || document.getElementById('taskExtraNotes');
     const notes = notesInput ? notesInput.value.trim() : '';
 
     if (this.editingTaskId) {
@@ -6911,7 +7172,7 @@ class NotebookApp {
           Plan4UStorage.savePhoto(task.photo);
         }
         if (targetTab === 'todo') {
-          const timeInput = this.dynamicFormFields.querySelector('#taskTimeInput');
+          const timeInput = (this.dynamicFormFields ? this.dynamicFormFields.querySelector('#taskTimeInput') : null) || document.getElementById('taskTimeInput');
           task.time = timeInput ? (timeInput.value.trim() || null) : null;
           if (task.time) {
             this.scheduleTaskNotification(task);
@@ -6944,7 +7205,7 @@ class NotebookApp {
     }
 
     if (targetTab === 'todo') {
-      const timeInput = this.dynamicFormFields.querySelector('#taskTimeInput');
+      const timeInput = (this.dynamicFormFields ? this.dynamicFormFields.querySelector('#taskTimeInput') : null) || document.getElementById('taskTimeInput');
       newTask.time = timeInput ? (timeInput.value.trim() || null) : null;
       newTask.section = 'personal';
       if (newTask.time) {
@@ -7373,24 +7634,6 @@ class NotebookApp {
         this.deleteBlankTask(taskId, secId);
       };
     });
-
-    // Clicking anywhere in a section focuses its input
-    const sections = this.contentContainer.querySelectorAll('.notebook-section');
-    sections.forEach(sec => {
-      sec.addEventListener('click', (e) => {
-        if (e.target.closest('.task-row-wrapper') || e.target.closest('.section-header-row') || e.target.closest('.inline-task-row') || e.target.closest('button') || e.target.closest('a')) {
-          return;
-        }
-        const todayStr = this.getTodayDateString();
-        if (this.currentTab === 'todo' && this.selectedDate < todayStr) {
-          return;
-        }
-        const emptyInp = sec.querySelector('.inline-task-row .inline-task-input');
-        if (emptyInp) {
-          emptyInp.focus();
-        }
-      });
-    });
   }
 
   // Move task order up or down respecting priority and section
@@ -7482,13 +7725,48 @@ class NotebookApp {
     let html = '';
 
     const todayStr = this.getTodayDateString();
-    const isPastDay = this.currentTab === 'todo' && this.selectedDate < todayStr;
+    const isTodoTab = this.currentTab === 'todo';
+    const isPastDay = isTodoTab && this.selectedDate < todayStr;
+    const isFutureDay = isTodoTab && this.selectedDate > todayStr;
+    const isNotToday = isPastDay || isFutureDay;
 
-    // Manage FAB button visibility on past days
+    const appFrame = document.getElementById('appFrame') || document.body;
+    if (appFrame) {
+      appFrame.classList.toggle('is-past-day-mode', isPastDay);
+    }
+    document.body.classList.toggle('is-past-day-mode', isPastDay);
+
+    // 1. Manage FAB button visibility (hidden ONLY on past archive days)
     if (this.fabBtn) {
       const fabWrapper = this.fabBtn.closest('.fab-wrapper') || this.fabBtn;
       if (fabWrapper) {
-        fabWrapper.style.display = isPastDay ? 'none' : '';
+        fabWrapper.style.setProperty('display', isPastDay ? 'none' : 'flex', 'important');
+      }
+    }
+
+    // 2. Manage Stickers FAB button visibility (hidden ONLY on past archive days)
+    if (this.fabStickersBtn) {
+      const fabStickersWrapper = this.fabStickersBtn.closest('.fab-stickers-wrapper') || this.fabStickersBtn;
+      if (fabStickersWrapper) {
+        fabStickersWrapper.style.setProperty('display', isPastDay ? 'none' : 'flex', 'important');
+      }
+    }
+
+    // 3. Manage Pet Companion anchor visibility (hidden ONLY on past archive days)
+    const petAnchor = document.getElementById('notebookPetAnchor');
+    if (petAnchor) {
+      petAnchor.style.setProperty('display', isPastDay ? 'none' : 'flex', 'important');
+    }
+
+    // 4. Manage Floating Return to Today Button (visible in past and future days)
+    const returnWrapper = document.getElementById('pastDayReturnWrapper');
+    if (returnWrapper) {
+      returnWrapper.style.setProperty('display', isNotToday ? 'flex' : 'none', 'important');
+      returnWrapper.classList.toggle('is-future-day', isFutureDay);
+      const returnText = document.getElementById('pastDayReturnText');
+      if (returnText) {
+        const lang = this.settings?.lang || 'ru';
+        returnText.textContent = lang === 'en' ? 'Back to Today' : (lang === 'uk' ? 'Повернутися до Сьогодні' : 'Вернуться в Сегодня');
       }
     }
 
@@ -7497,33 +7775,33 @@ class NotebookApp {
     sections.forEach(sec => { grouped[sec.id] = []; });
 
     if (this.currentTab === 'watch') {
-      const completedMovies = [];
-      const completedSeries = [];
+      const activeGrouped = {};
+      const archiveGrouped = {};
+
+      sections.forEach(sec => {
+        activeGrouped[sec.id] = [];
+        archiveGrouped[sec.id] = [];
+      });
 
       currentTasks.forEach(task => {
+        let secId = task.section;
+        if (!activeGrouped[secId] && !archiveGrouped[secId]) {
+          const found = sections.find(s => s.id === secId || s.name.toLowerCase() === (task.section || '').toLowerCase() || s.name.toLowerCase() === (task.place || '').toLowerCase() || s.name.toLowerCase() === (task.watchType || '').toLowerCase());
+          secId = found ? found.id : (sections[0] ? sections[0].id : 'movies');
+        }
+
         if (task.completed) {
-          const secName = (task.section || '').toLowerCase();
-          const watchType = (task.watchType || '').toLowerCase();
-          if (secName.includes('сериал') || watchType.includes('сериал') || task.section === 'series') {
-            completedSeries.push(task);
-          } else {
-            completedMovies.push(task);
-          }
+          if (!archiveGrouped[secId]) archiveGrouped[secId] = [];
+          archiveGrouped[secId].push(task);
         } else {
-          let secId = task.section;
-          if (!grouped[secId]) {
-            const found = sections.find(s => s.id === secId || s.name.toLowerCase() === (task.section || '').toLowerCase() || s.name.toLowerCase() === (task.place || '').toLowerCase() || s.name.toLowerCase() === (task.watchType || '').toLowerCase());
-            secId = found ? found.id : (sections[0] ? sections[0].id : 'movies');
-          }
-          if (grouped[secId]) {
-            grouped[secId].push(task);
-          }
+          if (!activeGrouped[secId]) activeGrouped[secId] = [];
+          activeGrouped[secId].push(task);
         }
       });
 
-      // 1. Render Active Sections (Only uncompleted movies/series)
+      // 1. Render Active Sections (Only uncompleted movies/series/cartoons)
       sections.forEach(sec => {
-        const tasksInSec = grouped[sec.id] || [];
+        const tasksInSec = activeGrouped[sec.id] || [];
         tasksInSec.sort((a, b) => {
           const rankA = getPriorityRank(a);
           const rankB = getPriorityRank(b);
@@ -7537,7 +7815,6 @@ class NotebookApp {
           <div class="notebook-section" data-section="${sec.id}">
             <div class="section-header-row" data-section="${sec.id}">
               <span class="section-header-text" data-section="${sec.id}">${this.escapeHtml(headerTitle)}</span>
-              <button type="button" class="section-header-action-btn" data-section="${sec.id}" title="Меню блока" aria-label="Меню блока">⋮</button>
             </div>
             <div class="section-tasks-list" data-section="${sec.id}">
         `;
@@ -7564,47 +7841,43 @@ class NotebookApp {
         `;
       });
 
-      // 2. Sort Archives ALPHABETICALLY by title
-      completedMovies.sort((a, b) => cleanTaskText(a.text || '').localeCompare(cleanTaskText(b.text || ''), 'ru', { sensitivity: 'base' }));
-      completedSeries.sort((a, b) => cleanTaskText(a.text || '').localeCompare(cleanTaskText(b.text || ''), 'ru', { sensitivity: 'base' }));
+      // 2. Render Archives PER SECTION (Sorted alphabetically by title)
+      sections.forEach(sec => {
+        const archivedInSec = archiveGrouped[sec.id] || [];
+        if (archivedInSec.length > 0) {
+          archivedInSec.sort((a, b) => cleanTaskText(a.text || '').localeCompare(cleanTaskText(b.text || ''), 'ru', { sensitivity: 'base' }));
 
-      // 3. Render "Архив Фильмов" if there are watched movies
-      if (completedMovies.length > 0) {
-        const moviesArchiveTitle = this.settings.lang === 'en' ? 'MOVIES ARCHIVE' : (this.settings.lang === 'uk' ? 'АРХІВ ФІЛЬМІВ' : 'АРХИВ ФИЛЬМОВ');
-        html += `
-          <div class="notebook-section archive-section watch-archive-movies" data-section="archive_movies">
-            <div class="section-header-row" data-section="archive_movies">
-              <span class="section-header-text" data-section="archive_movies">🎬 ${moviesArchiveTitle} (${completedMovies.length})</span>
-            </div>
-            <div class="section-tasks-list" data-section="archive_movies">
-        `;
-        completedMovies.forEach(task => {
-          html += this.renderTaskRow(task);
-        });
-        html += `
-            </div>
-          </div>
-        `;
-      }
+          let archiveTitle = '';
+          const lang = this.settings?.lang || 'ru';
+          if (sec.id === 'movies') {
+            archiveTitle = lang === 'en' ? 'MOVIES ARCHIVE' : (lang === 'uk' ? 'АРХІВ ФІЛЬМІВ' : 'АРХИВ ФИЛЬМОВ');
+          } else if (sec.id === 'series') {
+            archiveTitle = lang === 'en' ? 'SERIES ARCHIVE' : (lang === 'uk' ? 'АРХІВ СЕРІАЛІВ' : 'АРХИВ СЕРИАЛОВ');
+          } else {
+            const prefix = lang === 'en' ? 'ARCHIVE' : (lang === 'uk' ? 'АРХІВ' : 'АРХИВ');
+            archiveTitle = `${prefix}: ${sec.name.toUpperCase()}`;
+          }
 
-      // 4. Render "Архив Сериалов" if there are watched series
-      if (completedSeries.length > 0) {
-        const seriesArchiveTitle = this.settings.lang === 'en' ? 'SERIES ARCHIVE' : (this.settings.lang === 'uk' ? 'АРХІВ СЕРІАЛІВ' : 'АРХИВ СЕРИАЛОВ');
-        html += `
-          <div class="notebook-section archive-section watch-archive-series" data-section="archive_series">
-            <div class="section-header-row" data-section="archive_series">
-              <span class="section-header-text" data-section="archive_series">📺 ${seriesArchiveTitle} (${completedSeries.length})</span>
+          const icon = sec.icon || '🎬';
+
+          html += `
+            <div class="notebook-section archive-section watch-archive-${sec.id}" data-section="archive_${sec.id}">
+              <div class="section-header-row" data-section="archive_${sec.id}">
+                <span class="section-header-text" data-section="archive_${sec.id}">${icon} ${archiveTitle} (${archivedInSec.length})</span>
+              </div>
+              <div class="section-tasks-list" data-section="archive_${sec.id}">
+          `;
+
+          archivedInSec.forEach(task => {
+            html += this.renderTaskRow(task);
+          });
+
+          html += `
+              </div>
             </div>
-            <div class="section-tasks-list" data-section="archive_series">
-        `;
-        completedSeries.forEach(task => {
-          html += this.renderTaskRow(task);
-        });
-        html += `
-            </div>
-          </div>
-        `;
-      }
+          `;
+        }
+      });
     } else {
       // Standard grouping for other tabs
       currentTasks.forEach(task => {
@@ -7665,7 +7938,6 @@ class NotebookApp {
               <div class="notebook-section" data-section="${sec.id}">
                 <div class="section-header-row" data-section="${sec.id}">
                   <span class="section-header-text" data-section="${sec.id}">${this.escapeHtml(headerTitle)}</span>
-                  <button type="button" class="section-header-action-btn" data-section="${sec.id}" title="Меню блока" aria-label="Меню блока">⋮</button>
                 </div>
                 <div class="section-tasks-list" data-section="${sec.id}">
             `;
@@ -7699,7 +7971,6 @@ class NotebookApp {
             <div class="notebook-section" data-section="${sec.id}">
               <div class="section-header-row" data-section="${sec.id}">
                 <span class="section-header-text" data-section="${sec.id}">${this.escapeHtml(headerTitle)}</span>
-                <button type="button" class="section-header-action-btn" data-section="${sec.id}" title="Меню блока" aria-label="Меню блока">⋮</button>
               </div>
               <div class="section-tasks-list" data-section="${sec.id}">
           `;
@@ -7745,35 +8016,22 @@ class NotebookApp {
     // Attach section header long-press and context menu events
     this.attachSectionHeaderEvents();
 
+    // Render notebook customizable stickers layer
+    this.renderStickers();
+
     this.updateWorkloadWidget();
   }
 
-  // Attach Long-Press, Context Menu, and Click to Section Headers
+  // Attach Long-Press (Only) and Context Menu to Section Headers
+  // Attach Long-Press (Only) and Context Menu strictly to Section Header Badge
   attachSectionHeaderEvents() {
     const headerRows = this.contentContainer.querySelectorAll('.section-header-row');
     headerRows.forEach(row => {
       const secId = row.dataset.section;
       if (!secId || secId.startsWith('archive_')) return;
 
-      const actionBtn = row.querySelector('.section-header-action-btn');
-      if (actionBtn) {
-        actionBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          triggerHaptic(20);
-          this.openSectionMenuModal(secId);
-        });
-      }
-
-      const textSpan = row.querySelector('.section-header-text');
-      if (textSpan) {
-        textSpan.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          triggerHaptic(20);
-          this.openSectionMenuModal(secId);
-        });
-      }
+      const textBadge = row.querySelector('.section-header-text');
+      if (!textBadge) return;
 
       let pressTimer = null;
       let startX = 0;
@@ -7783,11 +8041,12 @@ class NotebookApp {
         if (e.button && e.button !== 0) return;
         startX = e.clientX || (e.touches && e.touches[0] && e.touches[0].clientX) || 0;
         startY = e.clientY || (e.touches && e.touches[0] && e.touches[0].clientY) || 0;
+        clearTimeout(pressTimer);
         pressTimer = setTimeout(() => {
           pressTimer = null;
           triggerHaptic([30, 60]);
           this.openSectionMenuModal(secId);
-        }, 400);
+        }, 420);
       };
 
       const cancelPress = () => {
@@ -7797,10 +8056,10 @@ class NotebookApp {
         }
       };
 
-      row.addEventListener('pointerdown', startPress);
-      row.addEventListener('pointerup', cancelPress);
-      row.addEventListener('pointercancel', cancelPress);
-      row.addEventListener('pointermove', (e) => {
+      textBadge.addEventListener('pointerdown', startPress);
+      textBadge.addEventListener('pointerup', cancelPress);
+      textBadge.addEventListener('pointercancel', cancelPress);
+      textBadge.addEventListener('pointermove', (e) => {
         if (pressTimer) {
           const currentX = e.clientX || 0;
           const currentY = e.clientY || 0;
@@ -7810,13 +8069,16 @@ class NotebookApp {
         }
       });
 
-      row.addEventListener('contextmenu', (e) => {
+      textBadge.addEventListener('contextmenu', (e) => {
         e.preventDefault();
         cancelPress();
         triggerHaptic(20);
         this.openSectionMenuModal(secId);
       });
     });
+
+    // 4. Render stickers for current tab/page
+    this.renderStickers();
   }
 
   // Render individual task row HTML - Interactive swipeable notebook line with priority typography
@@ -7824,10 +8086,10 @@ class NotebookApp {
     const isWatchArchive = this.currentTab === 'watch' && task.completed;
     const isBuyCompleted = this.currentTab === 'buy' && task.completed;
     const todayStr = this.getTodayDateString();
-    const isPastArchived = (this.currentTab === 'todo' && this.selectedDate < todayStr) || isWatchArchive;
+    const isPastArchived = (this.currentTab === 'todo' && this.selectedDate < todayStr);
 
     if (task.isEmpty || !task.text) {
-      if (isPastArchived) return '';
+      if (isPastArchived || isWatchArchive) return '';
       return `
         <div class="task-row-wrapper task-row-empty-slot" data-id="${task.id}">
           <div class="task-swipe-actions-right">
@@ -8025,6 +8287,10 @@ class NotebookApp {
           return false;
         }
         if (target && target.closest('.task-checkbox-container, .task-checkbox, .task-attached-photo-btn, .task-attached-link, a, button')) {
+          return false;
+        }
+        const rowRect = row.getBoundingClientRect();
+        if (clientX < rowRect.left || clientX > rowRect.right + 8) {
           return false;
         }
         if (activeOpenWrapper && activeOpenWrapper !== wrapper) {
@@ -8286,6 +8552,985 @@ class NotebookApp {
     }
   }
 
+  // =========================================================================
+  // STICKERS & NOTEBOOK CUSTOMIZATION ENGINE
+  // =========================================================================
+
+  // Load stickers dictionary: { [tabSheetKey]: [ { id, type, x, y, scale, rotate, zIndex } ] }
+  loadStickers() {
+    try {
+      const saved = localStorage.getItem('plan4u_stickers.json') || localStorage.getItem('todo_notebook_stickers');
+      if (saved && saved !== 'undefined' && saved !== 'null') {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') {
+          for (const key in parsed) {
+            if (Array.isArray(parsed[key])) {
+              parsed[key] = parsed[key].filter(stk => stk && typeof stk === 'object' && stk.id && stk.type).map(stk => ({
+                id: stk.id,
+                type: stk.type,
+                x: (typeof stk.x === 'number' && !isNaN(stk.x)) ? parseFloat(Math.max(5, Math.min(95, stk.x)).toFixed(2)) : 50,
+                y: (typeof stk.y === 'number' && !isNaN(stk.y)) ? Math.max(10, Math.round(stk.y)) : 240,
+                scale: (typeof stk.scale === 'number' && !isNaN(stk.scale)) ? parseFloat(stk.scale.toFixed(2)) : 1.0,
+                rotate: (typeof stk.rotate === 'number' && !isNaN(stk.rotate)) ? Math.round(stk.rotate) : 0,
+                zIndex: stk.zIndex || 12
+              }));
+            }
+          }
+
+          // Migrate any legacy date keys (YYYY-MM-DD) into (todo_YYYY-MM-DD)
+          const dateKeyRegex = /^\d{4}-\d{2}-\d{2}$/;
+          for (const key in parsed) {
+            if (dateKeyRegex.test(key) && Array.isArray(parsed[key])) {
+              const newKey = `todo_${key}`;
+              if (!parsed[newKey]) {
+                parsed[newKey] = parsed[key];
+              }
+              delete parsed[key];
+            }
+          }
+
+          // If legacy 'todo' key exists and today's key doesn't, migrate it to today's date
+          const todayStr = this.getTodayDateString();
+          const todayKey = `todo_${todayStr}`;
+          if (Array.isArray(parsed.todo) && parsed.todo.length > 0 && !parsed[todayKey]) {
+            parsed[todayKey] = JSON.parse(JSON.stringify(parsed.todo));
+          }
+
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.warn('Could not load stickers:', e);
+    }
+    return {};
+  }
+
+  saveStickers() {
+    try {
+      if (!this.stickers || typeof this.stickers !== 'object') return;
+      const todayStr = this.getTodayDateString();
+      // Past archives are frozen and read-only
+      if (this.currentTab === 'todo' && this.selectedDate < todayStr) {
+        return;
+      }
+      const jsonStr = JSON.stringify(this.stickers);
+      localStorage.setItem('todo_notebook_stickers', jsonStr);
+      localStorage.setItem('plan4u_stickers.json', jsonStr);
+      if (window.Plan4UStorage) {
+        Plan4UStorage.saveFile('stickers.json', this.stickers);
+      }
+      this.triggerBackgroundBackup?.();
+      this.scheduleCloudSync?.();
+    } catch (e) {
+      console.warn('Could not save stickers:', e);
+    }
+  }
+
+  getStickerPageKey(targetDate = null) {
+    if (this.currentTab === 'todo') {
+      const dateStr = targetDate || this.selectedDate || this.getTodayDateString();
+      return `todo_${dateStr}`;
+    }
+    return this.currentTab || 'todo';
+  }
+
+  getCurrentPageStickers() {
+    if (!this.stickers || typeof this.stickers !== 'object') this.stickers = {};
+    const key = this.getStickerPageKey();
+
+    // If this is a daily todo sheet and it's not yet populated for this date:
+    if (this.currentTab === 'todo') {
+      if (!Array.isArray(this.stickers[key])) {
+        const currentDate = this.selectedDate || this.getTodayDateString();
+        // Look for the most recent preceding day that has stickers
+        const allTodoDays = Object.keys(this.stickers)
+          .filter(k => k.startsWith('todo_') && k.slice(5) < currentDate && Array.isArray(this.stickers[k]) && this.stickers[k].length > 0)
+          .map(k => k.slice(5))
+          .sort();
+
+        const latestPastDay = allTodoDays.pop();
+
+        if (latestPastDay && Array.isArray(this.stickers[`todo_${latestPastDay}`])) {
+          // Clone yesterday's stickers to the new day with fresh IDs so each day is fully independent
+          this.stickers[key] = this.stickers[`todo_${latestPastDay}`].map(stk => ({
+            ...stk,
+            id: 'stk_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
+          }));
+          this.saveStickers();
+        } else if (Array.isArray(this.stickers.todo) && this.stickers.todo.length > 0) {
+          // Migration fallback from legacy un-dated 'todo' sheet
+          this.stickers[key] = this.stickers.todo.map(stk => ({
+            ...stk,
+            id: 'stk_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
+          }));
+          this.saveStickers();
+        } else {
+          this.stickers[key] = [];
+        }
+      }
+    } else {
+      if (!Array.isArray(this.stickers[key])) {
+        this.stickers[key] = [];
+      }
+    }
+
+    return this.stickers[key];
+  }
+
+  renderStickers() {
+    const layer = this.notebookStickersLayer || document.getElementById('notebookStickersLayer');
+    if (!layer) return;
+    layer.innerHTML = '';
+
+    const list = this.getCurrentPageStickers();
+    if (!list || list.length === 0) return;
+
+    list.forEach(stk => {
+      const el = this.createStickerElement(stk);
+      layer.appendChild(el);
+    });
+  }
+
+  findStickerDef(typeId) {
+    for (const cat in STICKERS_CATALOG) {
+      const found = STICKERS_CATALOG[cat].find(s => s.id === typeId);
+      if (found) return found;
+    }
+    if (typeId?.startsWith('more_cat_')) return { id: typeId, img: `assets/stickers/more_cats/${typeId}.webp` };
+    if (typeId?.startsWith('flora_')) return { id: typeId, img: `assets/stickers/flora/${typeId}.webp` };
+    if (typeId?.startsWith('fauna_')) return { id: typeId, img: `assets/stickers/fauna/${typeId}.webp` };
+    if (typeId?.startsWith('ocean_')) return { id: typeId, img: `assets/stickers/ocean/${typeId}.webp` };
+    if (typeId?.startsWith('pigs_') || typeId?.startsWith('pig_')) return { id: typeId, img: `assets/stickers/pigs/${typeId}.webp` };
+    if (typeId?.startsWith('cat_')) return { id: typeId, img: `assets/stickers/cats/${typeId}.webp` };
+    return null;
+  }
+
+  createStickerElement(stk) {
+    const def = this.findStickerDef(stk.type);
+    const div = document.createElement('div');
+    div.className = 'placed-sticker';
+    div.dataset.stickerId = stk.id;
+    div.dataset.type = stk.type;
+
+    const x = (typeof stk.x === 'number' && !isNaN(stk.x)) ? Math.max(5, Math.min(95, stk.x)) : 50;
+    const y = (typeof stk.y === 'number' && !isNaN(stk.y)) ? Math.max(10, Math.round(stk.y)) : 240;
+    const scale = (typeof stk.scale === 'number' && !isNaN(stk.scale)) ? stk.scale : 1.0;
+    const rotate = (typeof stk.rotate === 'number' && !isNaN(stk.rotate)) ? stk.rotate : 0;
+
+    stk.x = parseFloat(x.toFixed(2));
+    stk.y = Math.round(y);
+    stk.scale = parseFloat(scale.toFixed(2));
+    stk.rotate = Math.round(rotate);
+
+    div.style.left = `${stk.x}%`;
+    div.style.top = `${stk.y}px`;
+    div.style.zIndex = stk.zIndex || 12;
+    div.style.setProperty('--rot', `${stk.rotate}deg`);
+    div.style.setProperty('--sc', `${stk.scale}`);
+    div.style.transform = `translate(-50%, -50%) rotate(${stk.rotate}deg) scale(${stk.scale})`;
+    
+    // Width and height
+    const isWashi = stk.type === 'washi_tape' || stk.type === 'highlighter';
+    const baseW = isWashi ? 96 : (def?.img ? 76 : 72);
+    const baseH = isWashi ? 48 : (def?.img ? 76 : 72);
+    div.style.width = `${baseW}px`;
+    div.style.height = `${baseH}px`;
+
+    if (def) {
+      if (def.img) {
+        div.innerHTML = `<img src="${def.img}" alt="${stk.type}" draggable="false" class="placed-sticker-img" />`;
+      } else if (def.svg) {
+        div.innerHTML = def.svg;
+      }
+    }
+
+    if (this.selectedStickerId === stk.id) {
+      div.classList.add('is-selected');
+    }
+
+    const todayStr = this.getTodayDateString();
+    const isPastDay = this.currentTab === 'todo' && this.selectedDate < todayStr;
+    if (isPastDay) {
+      div.style.pointerEvents = 'none';
+      div.classList.add('is-past-archive');
+      return div;
+    }
+
+    this.attachStickerInteraction(div, stk);
+    return div;
+  }
+
+  attachStickerInteraction(el, stk) {
+    let dragTimer = null;
+    let menuTimer = null;
+    let isDragReady = false;
+    let isMenuOpened = false;
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let startStkX = stk.x;
+    let startStkY = stk.y;
+    let activePointerId = null;
+
+    const cleanup = () => {
+      clearTimeout(dragTimer);
+      clearTimeout(menuTimer);
+      dragTimer = null;
+      menuTimer = null;
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerEnd);
+      window.removeEventListener('pointercancel', onPointerEnd);
+      window.removeEventListener('mousemove', onPointerMove);
+      window.removeEventListener('mouseup', onPointerEnd);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener('touchcancel', onTouchEnd);
+      try {
+        if (activePointerId !== null && el.hasPointerCapture && el.hasPointerCapture(activePointerId)) {
+          el.releasePointerCapture(activePointerId);
+        }
+      } catch (err) {}
+      activePointerId = null;
+      const stickersLayer = document.getElementById('notebookStickersLayer');
+      if (stickersLayer) stickersLayer.classList.remove('has-dragging-sticker');
+      document.body.classList.remove('is-dragging-sticker');
+      el.classList.remove('is-dragging');
+    };
+
+    const startInteraction = (clientX, clientY, isTouch, pointerId = null) => {
+      cleanup();
+
+      const todayStr = this.getTodayDateString();
+      const isPastDay = this.currentTab === 'todo' && this.selectedDate < todayStr;
+      if (isPastDay) return;
+
+      const pageSheet = document.getElementById('notebookSheet');
+      if (!pageSheet) return;
+
+      startX = clientX;
+      startY = clientY;
+      startStkX = (typeof stk.x === 'number') ? stk.x : 50;
+      startStkY = (typeof stk.y === 'number') ? stk.y : 240;
+      isDragReady = false;
+      isMenuOpened = false;
+      isDragging = false;
+      activePointerId = pointerId;
+
+      // 1. Подхват стикера при задержке 250 мс с ощутимым тактильным виброоткликом
+      dragTimer = setTimeout(() => {
+        isDragReady = true;
+        triggerHaptic([35, 50]);
+        const stickersLayer = document.getElementById('notebookStickersLayer');
+        if (stickersLayer) stickersLayer.classList.add('has-dragging-sticker');
+        document.body.classList.add('is-dragging-sticker');
+        el.classList.add('is-dragging');
+      }, 250);
+
+      // 2. Контекстное меню стикера при статичном удержании 2000 мс (без сдвига)
+      menuTimer = setTimeout(() => {
+        if (!isDragging) {
+          isMenuOpened = true;
+          triggerHaptic([50, 70]);
+          this.selectSticker(stk.id);
+          this.openStickerContextMenu(stk.id, el, { clientX, clientY });
+        }
+      }, 2000);
+
+      if (isTouch) {
+        window.addEventListener('touchmove', onTouchMove, { passive: false });
+        window.addEventListener('touchend', onTouchEnd, { passive: true });
+        window.addEventListener('touchcancel', onTouchEnd, { passive: true });
+      } else {
+        window.addEventListener('pointermove', onPointerMove, { passive: false });
+        window.addEventListener('pointerup', onPointerEnd);
+        window.addEventListener('pointercancel', onPointerEnd);
+        window.addEventListener('mousemove', onPointerMove);
+        window.addEventListener('mouseup', onPointerEnd);
+      }
+    };
+
+    const handleMove = (clientX, clientY, e, isTouch) => {
+      const pageSheet = document.getElementById('notebookSheet');
+      if (!pageSheet) return;
+
+      const dx = clientX - startX;
+      const dy = clientY - startY;
+
+      // Если прошло меньше 250 мс: проверяем, не скроллит ли пользователь страницу
+      if (!isDragReady) {
+        if (Math.abs(dx) > 12 || Math.abs(dy) > 12) {
+          cleanup();
+        }
+        return;
+      }
+
+      // Прошло 250 мс (подхват готов): при движении начинаем перемещение и отменяем меню
+      if (!isMenuOpened && !isDragging) {
+        if (Math.abs(dx) >= 2 || Math.abs(dy) >= 2) {
+          clearTimeout(menuTimer);
+          menuTimer = null;
+          isDragging = true;
+          el.classList.add('is-dragging');
+          const stickersLayer = document.getElementById('notebookStickersLayer');
+          if (stickersLayer) stickersLayer.classList.add('has-dragging-sticker');
+          document.body.classList.add('is-dragging-sticker');
+          this.closeStickerContextMenu();
+          this.deselectStickers();
+        }
+      }
+
+      if (isDragging) {
+        if (e && e.cancelable) e.preventDefault();
+
+        const rect = pageSheet.getBoundingClientRect();
+        const newX = Math.max(5, Math.min(95, startStkX + (dx / rect.width) * 100));
+        const newY = Math.max(20, startStkY + dy);
+
+        stk.x = parseFloat(newX.toFixed(2));
+        stk.y = Math.round(newY);
+
+        el.style.left = `${stk.x}%`;
+        el.style.top = `${stk.y}px`;
+      }
+    };
+
+    const handleEnd = (clientX, clientY, evt) => {
+      const wasDragging = isDragging;
+      const wasMenu = isMenuOpened;
+
+      cleanup();
+
+      isDragReady = false;
+      isMenuOpened = false;
+      isDragging = false;
+      const stickersLayer = document.getElementById('notebookStickersLayer');
+      if (stickersLayer) stickersLayer.classList.remove('has-dragging-sticker');
+      document.body.classList.remove('is-dragging-sticker');
+      el.classList.remove('is-dragging');
+
+      if (wasMenu) {
+        // Menu was opened by long-press: keep menu open and do not deselect
+        this._stickerTouchJustEndedAt = Date.now();
+      } else if (wasDragging) {
+        const list = this.getCurrentPageStickers();
+        const found = list.find(s => s.id === stk.id);
+        if (found) {
+          found.x = stk.x;
+          found.y = stk.y;
+        }
+        this.deselectStickers();
+        this.saveStickers();
+        triggerHaptic(15);
+      } else {
+        const popup = this.stickerContextPopup || document.getElementById('stickerContextPopup');
+        if (!popup || popup.style.display === 'none') {
+          this.deselectStickers();
+        }
+      }
+    };
+
+    const onPointerMove = (e) => handleMove(e.clientX, e.clientY, e, false);
+    const onPointerEnd = (e) => handleEnd(e.clientX, e.clientY, e);
+
+    const onTouchMove = (e) => {
+      if (e.touches && e.touches.length > 0) {
+        if (isDragReady && e.cancelable) e.preventDefault();
+        handleMove(e.touches[0].clientX, e.touches[0].clientY, e, true);
+      }
+    };
+    const onTouchEnd = (e) => {
+      const touch = (e.changedTouches && e.changedTouches[0]) || (e.touches && e.touches[0]);
+      handleEnd(touch ? touch.clientX : startX, touch ? touch.clientY : startY, e);
+    };
+
+    // Touch events for mobile (Android WebView)
+    el.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) return;
+      startInteraction(e.touches[0].clientX, e.touches[0].clientY, true);
+    }, { passive: true });
+
+    // Pointer events for desktop / mouse
+    const onPointerDown = (e) => {
+      if (e.pointerType === 'touch') return;
+      if (e.button !== undefined && e.button !== 0) return;
+      startInteraction(e.clientX, e.clientY, false, e.pointerId);
+    };
+
+    el.addEventListener('pointerdown', onPointerDown);
+    el.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      startInteraction(e.clientX, e.clientY, false);
+    });
+
+    el.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      triggerHaptic(20);
+      this.selectSticker(stk.id);
+      this.openStickerContextMenu(stk.id, el, e);
+    });
+
+    el._startInteraction = (clientX, clientY, isTouch, pointerId = null) => {
+      startInteraction(clientX, clientY, isTouch, pointerId);
+    };
+
+    el._onPointerDownHandler = (e) => {
+      if (e.touches && e.touches.length > 0) {
+        startInteraction(e.touches[0].clientX, e.touches[0].clientY, true);
+      } else {
+        startInteraction(e.clientX, e.clientY, false, e.pointerId);
+      }
+    };
+  }
+
+  initStickersSystem() {
+    // 1. FAB Open Stickers Drawer
+    if (this.fabStickersBtn) {
+      this.fabStickersBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        triggerHaptic(20);
+        this.openStickersDrawer();
+      });
+    }
+
+    // 2. Close Stickers Drawer
+    if (this.stickersCloseBtn) {
+      this.stickersCloseBtn.addEventListener('click', () => this.closeStickersDrawer());
+    }
+
+    if (this.stickersModalBackdrop) {
+      let startedOnStkBackdrop = false;
+      this.stickersModalBackdrop.addEventListener('pointerdown', (e) => {
+        startedOnStkBackdrop = (e.target === this.stickersModalBackdrop);
+      });
+      this.stickersModalBackdrop.addEventListener('click', (e) => {
+        if (Date.now() - (this._stickersModalOpenedAt || 0) < 400) return;
+        if (startedOnStkBackdrop && e.target === this.stickersModalBackdrop) {
+          this.closeStickersDrawer();
+        }
+        startedOnStkBackdrop = false;
+      });
+    }
+
+    // 3. Category Buttons in Drawer (with smooth drag, wheel scroll & auto-center)
+    if (this.stickersCategoriesBar) {
+      let isDown = false;
+      let startX = 0;
+      let scrollLeft = 0;
+      let hasDragged = false;
+
+      // Mouse drag-to-scroll
+      this.stickersCategoriesBar.addEventListener('mousedown', (e) => {
+        isDown = true;
+        hasDragged = false;
+        startX = e.pageX - this.stickersCategoriesBar.offsetLeft;
+        scrollLeft = this.stickersCategoriesBar.scrollLeft;
+      });
+
+      window.addEventListener('mouseup', () => {
+        isDown = false;
+      });
+
+      this.stickersCategoriesBar.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        const x = e.pageX - this.stickersCategoriesBar.offsetLeft;
+        const walk = (x - startX) * 1.5;
+        if (Math.abs(walk) > 4) {
+          hasDragged = true;
+        }
+        this.stickersCategoriesBar.scrollLeft = scrollLeft - walk;
+      });
+
+      // Mouse Wheel -> Horizontal Scroll
+      this.stickersCategoriesBar.addEventListener('wheel', (e) => {
+        if (e.deltaY !== 0) {
+          e.preventDefault();
+          this.stickersCategoriesBar.scrollLeft += e.deltaY;
+        }
+      }, { passive: false });
+
+      // Click Category Button
+      this.stickersCategoriesBar.addEventListener('click', (e) => {
+        if (hasDragged) return; // Prevent click trigger after dragging
+        const btn = e.target.closest('.sticker-cat-btn');
+        if (btn && btn.dataset.category) {
+          triggerHaptic(15);
+          btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+          this.renderStickersCatalog(btn.dataset.category);
+        }
+      });
+    }
+
+    // 4. Context Menu Actions
+    if (this.btnStickerRotate) {
+      this.btnStickerRotate.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.rotateSelectedSticker(15);
+      });
+    }
+
+    if (this.btnStickerBigger) {
+      this.btnStickerBigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.scaleSelectedSticker(0.15);
+      });
+    }
+
+    if (this.btnStickerSmaller) {
+      this.btnStickerSmaller.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.scaleSelectedSticker(-0.15);
+      });
+    }
+
+    if (this.btnStickerDelete) {
+      this.btnStickerDelete.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.deleteSelectedSticker();
+      });
+    }
+
+    // 5. Context Backdrop Tap to close sticker popup
+    const backdrop = document.getElementById('stickerContextBackdrop');
+    if (backdrop) {
+      const closeMenuOnBackdrop = (e) => {
+        if (Date.now() - (this._stickerCtxOpenedAt || 0) < 400) return;
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        this.deselectStickers();
+      };
+      backdrop.addEventListener('click', closeMenuOnBackdrop);
+      backdrop.addEventListener('touchend', closeMenuOnBackdrop);
+    }
+
+    // 6. Hit-test delegation for stickers anywhere on sheet
+    const sheet = document.getElementById('notebookSheet');
+    if (sheet && !sheet._hasStickerDelegator) {
+      sheet._hasStickerDelegator = true;
+
+      const handleSheetStickerTap = (clientX, clientY, isTouch, pointerId = null) => {
+        const todayStr = this.getTodayDateString();
+        const isPastDay = this.currentTab === 'todo' && this.selectedDate < todayStr;
+        if (isPastDay) return;
+
+        const directTarget = document.elementFromPoint(clientX, clientY);
+        if (directTarget && directTarget.closest('.task-checkbox-container, .task-checkbox, .swipe-action-btn, .inline-task-input, .blank-task-input, .task-attached-photo-btn, .task-attached-link, button, a, input, textarea, .modal-backdrop, .sticker-context-popup')) {
+          return;
+        }
+
+        const elements = document.elementsFromPoint(clientX, clientY);
+        const hitSticker = elements.find(el => el.classList && el.classList.contains('placed-sticker'));
+        if (hitSticker && typeof hitSticker._startInteraction === 'function') {
+          hitSticker._startInteraction(clientX, clientY, isTouch, pointerId);
+        }
+      };
+
+      sheet.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) return;
+        handleSheetStickerTap(e.touches[0].clientX, e.touches[0].clientY, true);
+      }, { passive: true });
+
+      sheet.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'touch') return;
+        if (e.button !== undefined && e.button !== 0) return;
+        handleSheetStickerTap(e.clientX, e.clientY, false, e.pointerId);
+      });
+    }
+  }
+
+  openStickersDrawer() {
+    const todayStr = this.getTodayDateString();
+    const isPastDay = this.currentTab === 'todo' && this.selectedDate < todayStr;
+    if (isPastDay) {
+      const isEn = this.settings.lang === 'en';
+      const isUk = this.settings.lang === 'uk';
+      const msg = isEn ? 'Stickers cannot be added to past archive days' : (isUk ? 'Не можна додавати стікери в минулі дні' : 'Нельзя добавлять стикеры в прошедшие дни (архив)');
+      this.showToast(msg, '🔒');
+      return;
+    }
+    this.dismissActiveKeyboard();
+    this.closeStickerContextMenu();
+    this.renderStickersCatalog(this.activeStickerCategory || 'animals');
+    if (this.stickersModalBackdrop) {
+      this._stickersModalOpenedAt = Date.now();
+      this.stickersModalBackdrop.classList.add('open');
+      this.stickersModalBackdrop.setAttribute('aria-hidden', 'false');
+      triggerHaptic(20);
+    }
+  }
+
+  closeStickersDrawer() {
+    if (this.stickersModalBackdrop) {
+      this.stickersModalBackdrop.classList.remove('open');
+      this.stickersModalBackdrop.classList.remove('is-picking-sticker');
+      this.stickersModalBackdrop.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  renderStickersCatalog(category = 'cats') {
+    this.activeStickerCategory = category;
+    const catBar = this.stickersCategoriesBar || document.getElementById('stickersCategoriesBar');
+    const container = this.stickersGridContainer || document.getElementById('stickersGridContainer');
+    if (!container) return;
+
+    if (catBar) {
+      catBar.querySelectorAll('.sticker-cat-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.category === category);
+      });
+    }
+
+    const items = STICKERS_CATALOG[category] || [];
+
+    container.innerHTML = items.map(stk => {
+      const previewHtml = stk.img
+        ? `<img src="${stk.img}" alt="" draggable="false" class="sticker-picker-img" onerror="this.closest('.sticker-picker-card')?.remove()" />`
+        : stk.svg;
+      return `
+        <div class="sticker-picker-card" data-type="${stk.id}">
+          <div class="sticker-picker-preview">${previewHtml}</div>
+        </div>
+      `;
+    }).join('');
+
+    container.querySelectorAll('.sticker-picker-card').forEach(card => {
+      const typeId = card.dataset.type;
+      this.attachStickerCardDrag(card, typeId);
+    });
+  }
+
+  attachStickerCardDrag(card, typeId) {
+    let ghost = null;
+    let isDragging = false;
+    let isHolding = false;
+    let holdTimer = null;
+    let startX = 0;
+    let startY = 0;
+    let currentX = 0;
+    let currentY = 0;
+
+    const createGhost = () => {
+      if (ghost) return;
+      const def = this.findStickerDef(typeId);
+      ghost = document.createElement('div');
+      ghost.className = 'sticker-drag-ghost';
+      if (def) {
+        if (def.img) {
+          ghost.innerHTML = `<img src="${def.img}" draggable="false" class="sticker-drag-ghost-img" />`;
+        } else if (def.svg) {
+          ghost.innerHTML = def.svg;
+        }
+      }
+      ghost.style.left = `${currentX}px`;
+      ghost.style.top = `${currentY}px`;
+      document.body.appendChild(ghost);
+    };
+
+    const startDragGesture = () => {
+      isHolding = true;
+      isDragging = true;
+      triggerHaptic([30, 45]);
+      if (this.stickersModalBackdrop) {
+        this.stickersModalBackdrop.classList.add('is-picking-sticker');
+      }
+      createGhost();
+    };
+
+    const cleanupWindowListeners = () => {
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener('touchcancel', onTouchEnd);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    const endDrag = (clientX, clientY) => {
+      cleanupWindowListeners();
+      clearTimeout(holdTimer);
+      holdTimer = null;
+
+      const wasDragging = isDragging;
+      const dx = Math.abs(clientX - startX);
+      const dy = Math.abs(clientY - startY);
+
+      isHolding = false;
+      isDragging = false;
+
+      if (ghost) {
+        ghost.remove();
+        ghost = null;
+      }
+
+      if (this.stickersModalBackdrop) {
+        this.stickersModalBackdrop.classList.remove('is-picking-sticker');
+      }
+
+      if (wasDragging) {
+        this.closeStickersDrawer();
+
+        const sheet = document.getElementById('notebookSheet');
+        if (sheet) {
+          const rect = sheet.getBoundingClientRect();
+          const scrollY = sheet.scrollTop || 0;
+          const xPercent = Math.max(5, Math.min(95, ((clientX - rect.left) / rect.width) * 100));
+          const yPixels = Math.max(20, (clientY - rect.top) + scrollY);
+          this.addStickerToCurrentPage(typeId, xPercent, yPixels);
+        }
+      } else if (dx < 12 && dy < 12) {
+        // Real tap without dragging: place in center of visible notebook sheet
+        const sheet = document.getElementById('notebookSheet');
+        const scrollY = sheet ? sheet.scrollTop : 0;
+        this.closeStickersDrawer();
+        this.addStickerToCurrentPage(typeId, 50, 240 + scrollY);
+      }
+    };
+
+    const onTouchMove = (e) => {
+      if (e.touches && e.touches.length > 0) {
+        const touch = e.touches[0];
+        currentX = touch.clientX;
+        currentY = touch.clientY;
+        const dx = currentX - startX;
+        const dy = currentY - startY;
+
+        if (!isDragging) {
+          if (!isHolding && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
+            clearTimeout(holdTimer);
+            holdTimer = null;
+            return;
+          }
+        }
+
+        if (isDragging && ghost) {
+          if (e.cancelable) e.preventDefault();
+          ghost.style.left = `${currentX}px`;
+          ghost.style.top = `${currentY}px`;
+        }
+      }
+    };
+
+    const onTouchEnd = (e) => {
+      const touch = (e.changedTouches && e.changedTouches[0]) || (e.touches && e.touches[0]);
+      const cx = touch ? touch.clientX : currentX;
+      const cy = touch ? touch.clientY : currentY;
+      endDrag(cx, cy);
+    };
+
+    const onMouseMove = (e) => {
+      currentX = e.clientX;
+      currentY = e.clientY;
+      const dx = currentX - startX;
+      const dy = currentY - startY;
+
+      if (!isDragging && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) {
+        startDragGesture();
+      }
+
+      if (isDragging && ghost) {
+        if (e.cancelable) e.preventDefault();
+        ghost.style.left = `${currentX}px`;
+        ghost.style.top = `${currentY}px`;
+      }
+    };
+
+    const onMouseUp = (e) => {
+      endDrag(e.clientX, e.clientY);
+    };
+
+    // 1. Touch Start (Mobile)
+    card.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) return;
+      const touch = e.touches[0];
+      startX = touch.clientX;
+      startY = touch.clientY;
+      currentX = touch.clientX;
+      currentY = touch.clientY;
+      isDragging = false;
+      isHolding = false;
+
+      window.addEventListener('touchmove', onTouchMove, { passive: false });
+      window.addEventListener('touchend', onTouchEnd, { passive: true });
+      window.addEventListener('touchcancel', onTouchEnd, { passive: true });
+
+      clearTimeout(holdTimer);
+      holdTimer = setTimeout(() => {
+        startDragGesture();
+      }, 140);
+    }, { passive: true });
+
+    // 2. Mouse Down (Desktop)
+    card.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      startX = e.clientX;
+      startY = e.clientY;
+      currentX = e.clientX;
+      currentY = e.clientY;
+      isDragging = false;
+      isHolding = false;
+
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+    });
+  }
+
+  addStickerToCurrentPage(typeId, xPercent = 50, yPos = 240, scale = 1.0, rotate = 0) {
+    const todayStr = this.getTodayDateString();
+    const isPastDay = this.currentTab === 'todo' && this.selectedDate < todayStr;
+    if (isPastDay) return;
+
+    const list = this.getCurrentPageStickers();
+    const newStk = {
+      id: 'stk_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6),
+      type: typeId,
+      x: parseFloat(Math.max(5, Math.min(95, xPercent)).toFixed(2)),
+      y: Math.max(10, Math.round(yPos)),
+      scale: typeof scale === 'number' ? parseFloat(scale.toFixed(2)) : 1.0,
+      rotate: typeof rotate === 'number' ? Math.round(rotate) : 0,
+      zIndex: list.length + 12
+    };
+
+    list.push(newStk);
+    this.saveStickers();
+    this.renderStickers();
+    this.deselectStickers();
+
+    const layer = this.notebookStickersLayer || document.getElementById('notebookStickersLayer');
+    const newEl = layer?.querySelector(`[data-sticker-id="${newStk.id}"]`);
+    if (newEl) {
+      newEl.classList.add('just-added');
+      setTimeout(() => newEl.classList.remove('just-added'), 400);
+    }
+
+    triggerHaptic([30, 45]);
+  }
+
+  selectSticker(stickerId) {
+    const todayStr = this.getTodayDateString();
+    const isPastDay = this.currentTab === 'todo' && this.selectedDate < todayStr;
+    if (isPastDay) return;
+
+    this.selectedStickerId = stickerId;
+    const layer = this.notebookStickersLayer || document.getElementById('notebookStickersLayer');
+    if (!layer) return;
+    layer.querySelectorAll('.placed-sticker').forEach(el => {
+      el.classList.toggle('is-selected', el.dataset.stickerId === stickerId);
+    });
+  }
+
+  deselectStickers() {
+    this.selectedStickerId = null;
+    const layer = this.notebookStickersLayer || document.getElementById('notebookStickersLayer');
+    if (!layer) return;
+    layer.querySelectorAll('.placed-sticker').forEach(el => {
+      el.classList.remove('is-selected');
+    });
+    this.closeStickerContextMenu();
+  }
+
+  openStickerContextMenu(stickerId, stickerEl, e) {
+    const todayStr = this.getTodayDateString();
+    const isPastDay = this.currentTab === 'todo' && this.selectedDate < todayStr;
+    if (isPastDay) return;
+
+    this.selectedStickerId = stickerId;
+    const popup = this.stickerContextPopup || document.getElementById('stickerContextPopup');
+    const backdrop = document.getElementById('stickerContextBackdrop');
+    const frame = document.getElementById('appFrame') || document.body;
+    if (!popup || !stickerEl || !frame) return;
+
+    this._stickerCtxOpenedAt = Date.now();
+    if (backdrop) backdrop.style.display = 'block';
+    popup.style.display = 'block';
+
+    const frameRect = frame.getBoundingClientRect();
+    const stkRect = stickerEl.getBoundingClientRect();
+    const popupWidth = popup.offsetWidth || 230;
+
+    const centerX = (stkRect.left + stkRect.width / 2) - frameRect.left;
+    let topY = stkRect.top - frameRect.top;
+
+    // Strict boundary clamping: popup will NEVER overflow left or right screen border
+    const minX = (popupWidth / 2) + 12;
+    const maxX = frameRect.width - (popupWidth / 2) - 12;
+    const clampedX = Math.max(minX, Math.min(maxX, centerX));
+
+    if (topY < 80) {
+      topY = (stkRect.bottom - frameRect.top) + 16;
+      popup.classList.add('popup-below');
+    } else {
+      topY = topY - 10;
+      popup.classList.remove('popup-below');
+    }
+
+    popup.style.left = `${clampedX}px`;
+    popup.style.top = `${topY}px`;
+  }
+
+  closeStickerContextMenu() {
+    const popup = this.stickerContextPopup || document.getElementById('stickerContextPopup');
+    const backdrop = document.getElementById('stickerContextBackdrop');
+    if (popup) popup.style.display = 'none';
+    if (backdrop) backdrop.style.display = 'none';
+  }
+
+  rotateSelectedSticker(degChange = 15) {
+    if (!this.selectedStickerId) return;
+    const list = this.getCurrentPageStickers();
+    const stk = list.find(s => s.id === this.selectedStickerId);
+    if (!stk) return;
+
+    stk.rotate = ((stk.rotate || 0) + degChange) % 360;
+    this.saveStickers();
+    
+    const layer = this.notebookStickersLayer || document.getElementById('notebookStickersLayer');
+    const el = layer?.querySelector(`[data-sticker-id="${stk.id}"]`);
+    if (el) {
+      el.style.setProperty('--rot', `${stk.rotate}deg`);
+      el.style.transform = `translate(-50%, -50%) rotate(${stk.rotate}deg) scale(${stk.scale || 1})`;
+    } else {
+      this.renderStickers();
+    }
+    triggerHaptic(15);
+  }
+
+  scaleSelectedSticker(delta = 0.15) {
+    if (!this.selectedStickerId) return;
+    const list = this.getCurrentPageStickers();
+    const stk = list.find(s => s.id === this.selectedStickerId);
+    if (!stk) return;
+
+    const cur = stk.scale || 1.0;
+    const next = Math.max(0.45, Math.min(2.4, cur + delta));
+    stk.scale = parseFloat(next.toFixed(2));
+    this.saveStickers();
+
+    const layer = this.notebookStickersLayer || document.getElementById('notebookStickersLayer');
+    const el = layer?.querySelector(`[data-sticker-id="${stk.id}"]`);
+    if (el) {
+      el.style.setProperty('--sc', `${stk.scale}`);
+      el.style.transform = `translate(-50%, -50%) rotate(${stk.rotate || 0}deg) scale(${stk.scale})`;
+    } else {
+      this.renderStickers();
+    }
+    triggerHaptic(15);
+  }
+
+  deleteSelectedSticker() {
+    if (!this.selectedStickerId) return;
+    const list = this.getCurrentPageStickers();
+    const idx = list.findIndex(s => s.id === this.selectedStickerId);
+    if (idx !== -1) {
+      list.splice(idx, 1);
+      this.saveStickers();
+      this.closeStickerContextMenu();
+      this.renderStickers();
+      triggerHaptic([20, 35]);
+      this.showToast(this.t('toast_sticker_deleted') || 'Стикер удален', '🗑️');
+    }
+  }
+
   escapeHtml(str) {
     if (!str) return '';
     const div = document.createElement('div');
@@ -8526,11 +9771,16 @@ class MaineCoonPetSystem {
       this.petModalDoneBtn.addEventListener('click', () => this.closePetModal());
     }
     if (this.petModalBackdrop) {
+      let startedOnPetBackdrop = false;
+      this.petModalBackdrop.addEventListener('pointerdown', (e) => {
+        startedOnPetBackdrop = (e.target === this.petModalBackdrop);
+      });
       this.petModalBackdrop.addEventListener('click', (e) => {
         if (Date.now() - (this._petModalOpenedAt || 0) < 400) return;
-        if (e.target === this.petModalBackdrop) {
+        if (startedOnPetBackdrop && e.target === this.petModalBackdrop) {
           this.closePetModal();
         }
+        startedOnPetBackdrop = false;
       });
     }
 

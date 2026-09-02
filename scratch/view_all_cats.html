@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<body style="background: #eee; font-family: sans-serif;">
+<div style="position: sticky; top: 0; background: white; padding: 10px; z-index: 99; border-bottom: 2px solid #ccc; display: flex; align-items: center; gap: 20px;">
+  <div><strong>TARGET:</strong><br><img src="/user_upload/media_1788339265971.png" style="width: 100px; height: 100px; object-fit: contain; background: white; border: 1px solid #ccc;" /></div>
+  <div id="matchDisplay" style="font-size: 18px; font-weight: bold; color: blue;"></div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; padding: 20px;">
+<script>
+for (let i = 1; i <= 99; i++) {
+  const num = String(i).padStart(2, '0');
+  document.write(`
+    <div style="background: white; padding: 5px; text-align: center; border-radius: 8px;">
+      <img src="/assets/stickers/cats/cat_${num}.webp" style="width: 90px; height: 90px; object-fit: contain;" /><br>
+      <small>cat_${num}</small>
+    </div>
+  `);
+}
+for (let i = 1; i <= 49; i++) {
+  const num = String(i).padStart(2, '0');
+  document.write(`
+    <div style="background: white; padding: 5px; text-align: center; border-radius: 8px;">
+      <img src="/assets/stickers/more_cats/more_cat_${num}.webp" style="width: 90px; height: 90px; object-fit: contain;" /><br>
+      <small>more_cat_${num}</small>
+    </div>
+  `);
+}
+</script>
+</div>
+</body>
+</html>
