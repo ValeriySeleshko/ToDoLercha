@@ -6088,18 +6088,19 @@ body.is-dragging-sticker .section-header-row {
   color: #f472b6;
 }
 
-/* 4. Stickers Drawer / Modal Sheet */
+/* 4. Stickers Drawer / Modal Sheet - Half Screen (50%) */
 .modal-sheet-stickers {
-  max-height: min(86dvh, 620px);
+  height: 50dvh !important;
+  max-height: 50dvh !important;
   display: flex;
   flex-direction: column;
-  padding: 14px 12px max(20px, calc(14px + env(safe-area-inset-bottom, 0px))) 12px;
+  padding: 12px 12px max(14px, calc(10px + env(safe-area-inset-bottom, 0px))) 12px;
   box-sizing: border-box;
   overflow: hidden;
 }
 
 .stickers-sheet-header {
-  padding-bottom: 6px;
+  padding-bottom: 4px;
 }
 
 .stickers-header-title-wrap {
@@ -6189,13 +6190,15 @@ body.is-dragging-sticker .section-header-row {
   color: #ffffff;
 }
 
-/* Stickers Grid Container - 4 columns fit perfectly on all mobile screens */
+/* Stickers Grid Container - 4 columns fit perfectly in half-screen modal */
 .stickers-grid-container {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
-  padding: 6px 2px calc(24px + env(safe-area-inset-bottom, 0px)) 2px;
-  max-height: 52vh;
+  padding: 4px 2px calc(14px + env(safe-area-inset-bottom, 0px)) 2px;
+  flex: 1;
+  min-height: 0;
+  max-height: none;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
