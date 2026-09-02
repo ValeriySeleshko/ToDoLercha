@@ -1695,6 +1695,13 @@ async function decryptCloudPayload(cipherJsonStr, password, email) {
 // STICKERS & NOTEBOOK DECOR CATALOG (WebP Assets)
 // =========================================================================
 const STICKERS_CATALOG = {
+  fall: Array.from({ length: 49 }, (_, i) => {
+    const num = String(i + 1).padStart(2, '0');
+    return {
+      id: `fall_${num}`,
+      img: `./assets/stickers/fall/fall_${num}.webp`
+    };
+  }),
   cats: Array.from({ length: 49 }, (_, i) => {
     const num = String(i + 1).padStart(2, '0');
     return {
@@ -5002,7 +5009,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.0.87',
+      appVersion: '0.0.88',
       email: this.cloudEmail,
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
@@ -5233,7 +5240,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.0.87',
+      appVersion: '0.0.88',
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
       sections: this.tabSections || {},
@@ -8694,6 +8701,7 @@ class NotebookApp {
       const found = STICKERS_CATALOG[cat].find(s => s.id === typeId);
       if (found) return found;
     }
+    if (typeId?.startsWith('fall_')) return { id: typeId, img: `./assets/stickers/fall/${typeId}.webp` };
     if (typeId?.startsWith('more_cat_')) return { id: typeId, img: `./assets/stickers/more_cats/${typeId}.webp` };
     if (typeId?.startsWith('flora_')) return { id: typeId, img: `./assets/stickers/flora/${typeId}.webp` };
     if (typeId?.startsWith('fauna_')) return { id: typeId, img: `./assets/stickers/fauna/${typeId}.webp` };
@@ -9168,7 +9176,7 @@ class NotebookApp {
     }
   }
 
-  renderStickersCatalog(category = 'cats') {
+  renderStickersCatalog(category = 'fall') {
     this.activeStickerCategory = category;
     const catBar = this.stickersCategoriesBar || document.getElementById('stickersCategoriesBar');
     const container = this.stickersGridContainer || document.getElementById('stickersGridContainer');
