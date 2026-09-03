@@ -269,16 +269,16 @@
       <div class="modal-backdrop" id="newSectionModalBackdrop" aria-hidden="true">
         <div class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="newSectionModalTitle">
           <div class="modal-header">
-            <h2 id="newSectionModalTitle">Новый блок (раздел)</h2>
+            <h2 id="newSectionModalTitle" data-i18n="new_section_title">Новый блок (раздел)</h2>
             <button type="button" class="modal-close-btn" id="newSectionCloseBtn" aria-label="Закрыть">&times;</button>
           </div>
           <form id="newSectionForm" class="modal-form">
             <div class="form-group">
-              <label for="newSectionNameInput">Название блока</label>
-              <input type="text" id="newSectionNameInput" placeholder="Например: Вечерние дела" required autocomplete="off">
+              <label for="newSectionNameInput" data-i18n="new_section_name_label">Название блока</label>
+              <input type="text" id="newSectionNameInput" placeholder="Например: Вечерние дела" data-i18n-placeholder="new_section_name_ph" required autocomplete="off">
             </div>
             <div class="form-group">
-              <label>Иконка блока</label>
+              <label data-i18n="new_section_icon_label">Иконка блока</label>
               <div class="section-emoji-picker" id="newSectionEmojiPicker">
                 <div class="emoji-chip active" role="button" tabindex="0" data-emoji="📋" title="Планы">📋</div>
                 <div class="emoji-chip" role="button" tabindex="0" data-emoji="🕊️" title="Духовное">🕊️</div>
@@ -329,8 +329,8 @@
               </div>
             </div>
             <div class="modal-actions">
-              <button type="button" class="btn-cancel" id="newSectionCancelBtn">Отмена</button>
-              <button type="submit" class="btn-submit" id="newSectionSubmitBtn">Создать блок</button>
+              <button type="button" class="btn-cancel" id="newSectionCancelBtn" data-i18n="btn_cancel">Отмена</button>
+              <button type="submit" class="btn-submit" id="newSectionSubmitBtn" data-i18n="new_section_submit">Создать блок</button>
             </div>
           </form>
         </div>
@@ -340,25 +340,25 @@
       <div class="modal-backdrop" id="sectionMenuModalBackdrop" aria-hidden="true">
         <div class="modal-sheet section-actions-sheet" role="dialog" aria-modal="true">
           <div class="modal-header">
-            <h2 id="sectionMenuTitle">Управление блоком</h2>
+            <h2 id="sectionMenuTitle" data-i18n="sec_menu_title">Управление блоком</h2>
             <button type="button" class="modal-close-btn" id="sectionMenuCloseBtn" aria-label="Закрыть">&times;</button>
           </div>
           <div class="section-menu-actions-list">
             <button type="button" class="section-menu-btn" id="secMenuRenameBtn">
               <span class="sec-menu-icon">✏️</span>
-              <span class="sec-menu-text">Переименовать блок</span>
+              <span class="sec-menu-text" data-i18n="sec_menu_rename">Переименовать блок</span>
             </button>
             <button type="button" class="section-menu-btn" id="secMenuMoveUpBtn">
               <span class="sec-menu-icon">⬆️</span>
-              <span class="sec-menu-text">Переместить выше</span>
+              <span class="sec-menu-text" data-i18n="sec_menu_move_up">Переместить выше</span>
             </button>
             <button type="button" class="section-menu-btn" id="secMenuMoveDownBtn">
               <span class="sec-menu-icon">⬇️</span>
-              <span class="sec-menu-text">Переместить ниже</span>
+              <span class="sec-menu-text" data-i18n="sec_menu_move_down">Переместить ниже</span>
             </button>
             <button type="button" class="section-menu-btn btn-danger" id="secMenuDeleteBtn">
               <span class="sec-menu-icon">🗑️</span>
-              <span class="sec-menu-text">Удалить блок</span>
+              <span class="sec-menu-text" data-i18n="sec_menu_delete">Удалить блок</span>
             </button>
           </div>
         </div>
@@ -420,8 +420,8 @@
             </div>
 
             <!-- 3. Цвет акцента -->
-            <div class="settings-section">
-              <div class="settings-section-title">🎨 <span data-i18n="settings_accent">Цвет акцента</span></div>
+            <div class="settings-section" id="accentColorSection">
+              <div class="settings-section-title">🎨 <span data-i18n="settings_accent">Цвет акцента</span> <span class="accent-disabled-hint" id="accentDisabledHint" data-i18n="accent_disabled_hint">(недоступно в тёмной теме)</span></div>
               <div class="accent-color-picker" id="accentColorPicker">
                 <!-- Accent colors rendered via JS -->
               </div>
@@ -596,8 +596,8 @@
             </div>
           </div>
 
-          <div style="text-align: center; font-size: 11px; color: #94a3b8; margin-top: 12px; font-weight: 600; letter-spacing: 0.3px;">
-            Plan4U • Версия 0.0.91
+          <div style="text-align: center; font-size: 11px; color: #94a3b8; margin-top: 12px; font-weight: 600; letter-spacing: 0.3px;" data-i18n="app_version_footer">
+            Plan4U • Версия 0.1.0
           </div>
 
           <div class="modal-actions" style="margin-top: 10px;">
@@ -740,7 +740,7 @@
             <div class="pet-header-info">
               <div class="pet-title-row">
                 <span class="pet-name-display" id="petModalNameTitle">Мейни</span>
-                <button type="button" class="btn-pet-rename" id="btnPetRename" title="Переименовать питомца">✏️</button>
+                <button type="button" class="btn-pet-rename" id="btnPetRename" title="Переименовать питомца" data-i18n-title="pet_rename_title">✏️</button>
                 <span class="pet-level-badge" id="petLevelBadge">Ур. 1</span>
               </div>
               <div class="pet-friendship-wrap">
@@ -766,45 +766,45 @@
               <!-- Coat Color Sub-Menu / Popup Menu -->
               <div class="pet-settings-popup" id="petSettingsPopup" aria-hidden="true">
                 <div class="pet-popup-header">
-                  <span class="pet-popup-title">🎨 Настоящие окрасы</span>
+                  <span class="pet-popup-title" data-i18n="pet_coat_colors_title">🎨 Настоящие окрасы</span>
                   <button type="button" class="pet-popup-close-btn" id="petPopupCloseBtn" title="Закрыть">✕</button>
                 </div>
                 <div class="pet-popup-colors">
                   <button type="button" class="pet-color-chip active" data-color="ginger">
                     <span class="pet-color-swatch ginger-swatch"></span>
-                    <span class="pet-color-name">Рыжий табби 🦁</span>
+                    <span class="pet-color-name" data-i18n="pet_color_ginger">Рыжий табби 🦁</span>
                   </button>
                   <button type="button" class="pet-color-chip" data-color="white">
                     <span class="pet-color-swatch white-swatch"></span>
-                    <span class="pet-color-name">Белоснежный ❄️</span>
+                    <span class="pet-color-name" data-i18n="pet_color_white">Белоснежный ❄️</span>
                   </button>
                   <button type="button" class="pet-color-chip" data-color="tiger">
                     <span class="pet-color-swatch tiger-swatch"></span>
-                    <span class="pet-color-name">Тигровый 🐯</span>
+                    <span class="pet-color-name" data-i18n="pet_color_tiger">Тигровый 🐯</span>
                   </button>
                   <button type="button" class="pet-color-chip" data-color="silver">
                     <span class="pet-color-swatch silver-swatch"></span>
-                    <span class="pet-color-name">Серебристый 🐺</span>
+                    <span class="pet-color-name" data-i18n="pet_color_silver">Серебристый 🐺</span>
                   </button>
                   <button type="button" class="pet-color-chip" data-color="midnight">
                     <span class="pet-color-swatch midnight-swatch"></span>
-                    <span class="pet-color-name">Угольный 🌙</span>
+                    <span class="pet-color-name" data-i18n="pet_color_midnight">Угольный 🌙</span>
                   </button>
                   <button type="button" class="pet-color-chip" data-color="cream">
                     <span class="pet-color-swatch cream-swatch"></span>
-                    <span class="pet-color-name">Кремовый 🍑</span>
+                    <span class="pet-color-name" data-i18n="pet_color_cream">Кремовый 🍑</span>
                   </button>
                   <button type="button" class="pet-color-chip" data-color="mocha">
                     <span class="pet-color-swatch mocha-swatch"></span>
-                    <span class="pet-color-name">Шоколадный ☕</span>
+                    <span class="pet-color-name" data-i18n="pet_color_mocha">Шоколадный ☕</span>
                   </button>
                   <button type="button" class="pet-color-chip" data-color="siamese">
                     <span class="pet-color-swatch siamese-swatch"></span>
-                    <span class="pet-color-name">Колор-пойнт 🐾</span>
+                    <span class="pet-color-name" data-i18n="pet_color_siamese">Колор-пойнт 🐾</span>
                   </button>
                   <button type="button" class="pet-color-chip" data-color="calico">
                     <span class="pet-color-swatch calico-swatch"></span>
-                    <span class="pet-color-name">Трёхцветный 🎨</span>
+                    <span class="pet-color-name" data-i18n="pet_color_calico">Трёхцветный 🎨</span>
                   </button>
                 </div>
               </div>
@@ -824,7 +824,7 @@
 
               <!-- Petting Hint Banner -->
               <div class="pet-tap-hint">
-                <span>✨ Погладь Мейнкуна пальцем, чтобы помурчать</span>
+                <span data-i18n="pet_tap_hint">✨ Погладь Мейнкуна пальцем, чтобы помурчать</span>
               </div>
             </div>
 
@@ -834,7 +834,7 @@
               <div class="pet-stat-row">
                 <div class="pet-stat-label">
                   <span class="pet-stat-icon">🟤</span>
-                  <span class="pet-stat-name">Сытость:</span>
+                  <span class="pet-stat-name" data-i18n="pet_stat_satiety">Сытость:</span>
                   <span class="pet-stat-status" id="petHungerStatus">Сытый и довольный</span>
                 </div>
                 <div class="pet-stat-gauge-wrap">
@@ -849,7 +849,7 @@
               <div class="pet-stat-row">
                 <div class="pet-stat-label">
                   <span class="pet-stat-icon">💖</span>
-                  <span class="pet-stat-name">Счастье:</span>
+                  <span class="pet-stat-name" data-i18n="pet_stat_happiness">Счастье:</span>
                   <span class="pet-stat-status" id="petHappinessStatus">Мурчит от радости</span>
                 </div>
                 <div class="pet-stat-gauge-wrap">
@@ -866,7 +866,7 @@
               <button type="button" class="btn-pet-action btn-pet-feed" id="btnPetFeed">
                 <div class="pet-action-icon">🟤</div>
                 <div class="pet-action-info">
-                  <span class="pet-action-title">Коричневый камушек</span>
+                  <span class="pet-action-title" data-i18n="pet_treat_brown_title">Коричневый камушек</span>
                   <span class="pet-action-sub" id="petFishCountLabel">В запасе: 0 шт.</span>
                 </div>
               </button>
@@ -874,20 +874,20 @@
               <button type="button" class="btn-pet-action btn-pet-golden" id="btnPetGoldenFeed">
                 <div class="pet-action-icon">🥫</div>
                 <div class="pet-action-info">
-                  <span class="pet-action-title">Золотое лакомство</span>
+                  <span class="pet-action-title" data-i18n="pet_treat_golden_title">Золотое лакомство</span>
                   <span class="pet-action-sub" id="petGoldenCountLabel">В запасе: 0 шт.</span>
                 </div>
               </button>
             </div>
 
             <div class="pet-earning-hint">
-              💡 <span>Выполняйте дела в блокноте, чтобы получать <b>маленькие коричневые камушки 🟤</b> (+10 XP). За важные дела дня даются <b>золотые консервы 🥫</b> (+30 XP)!</span>
+              <span data-i18n="pet_earning_hint">💡 Выполняйте дела в блокноте, чтобы получать <b>маленькие коричневые камушки 🟤</b> (+10 XP). За важные дела дня даются <b>золотые консервы 🥫</b> (+30 XP)!</span>
             </div>
 
           </div>
 
           <div class="modal-actions" style="margin-top: 14px;">
-            <button type="button" class="btn-submit" id="petModalDoneBtn" style="width: 100%;">
+            <button type="button" class="btn-submit" id="petModalDoneBtn" style="width: 100%;" data-i18n="pet_btn_return">
               🐾 Вернуться к делам
             </button>
           </div>
@@ -900,21 +900,24 @@
         <div class="modal-sheet modal-sheet-stickers" id="stickersModalSheet" role="dialog" aria-modal="true" aria-labelledby="stickersModalTitle">
           <div class="modal-header stickers-sheet-header">
             <div class="stickers-header-title-wrap">
-              <h2 id="stickersModalTitle">✨ Стикеры и декор</h2>
-              <span class="stickers-header-hint">Перетяните на лист или нажмите для добавления</span>
+              <h2 id="stickersModalTitle" data-i18n="stickers_title">✨ Стикеры и декор</h2>
+              <span class="stickers-header-hint" data-i18n="stickers_hint">Перетяните на лист или нажмите для добавления</span>
             </div>
             <button type="button" class="modal-close-btn" id="stickersCloseBtn" aria-label="Закрыть">&times;</button>
           </div>
           
           <!-- Category Tabs -->
           <div class="stickers-categories-bar" id="stickersCategoriesBar">
-            <button type="button" class="sticker-cat-btn active" data-category="fall">🍂 Осень</button>
-            <button type="button" class="sticker-cat-btn" data-category="cats">🐱 Коты</button>
-            <button type="button" class="sticker-cat-btn" data-category="more_cats">🐾 Ещё коты</button>
-            <button type="button" class="sticker-cat-btn" data-category="flora">🍄 Флора</button>
-            <button type="button" class="sticker-cat-btn" data-category="fauna">🐝 Фауна</button>
-            <button type="button" class="sticker-cat-btn" data-category="ocean">🌊 Океан</button>
-            <button type="button" class="sticker-cat-btn" data-category="pigs">🐹 Свини</button>
+            <button type="button" class="sticker-cat-btn active" data-category="fall" data-i18n="cat_fall">🍂 Осень</button>
+            <button type="button" class="sticker-cat-btn" data-category="cats" data-i18n="cat_cats">🐱 Коты</button>
+            <button type="button" class="sticker-cat-btn" data-category="more_cats" data-i18n="cat_more_cats">🐾 Ещё коты</button>
+            <button type="button" class="sticker-cat-btn" data-category="flora" data-i18n="cat_flora">🍄 Флора</button>
+            <button type="button" class="sticker-cat-btn" data-category="fauna" data-i18n="cat_fauna">🐝 Фауна</button>
+            <button type="button" class="sticker-cat-btn" data-category="ocean" data-i18n="cat_ocean">🌊 Океан</button>
+            <button type="button" class="sticker-cat-btn" data-category="pigs" data-i18n="cat_pigs">🐹 Свини</button>
+            <button type="button" class="sticker-cat-btn" data-category="food" data-i18n="cat_food">🍔 Еда</button>
+            <button type="button" class="sticker-cat-btn" data-category="sweets" data-i18n="cat_sweets">🍰 Сладости</button>
+            <button type="button" class="sticker-cat-btn" data-category="reptiles" data-i18n="cat_reptiles">🐸 Рептилии</button>
           </div>
 
           <!-- Stickers Grid -->
@@ -928,23 +931,23 @@
       <div class="sticker-context-backdrop" id="stickerContextBackdrop" style="display: none;"></div>
       <div class="sticker-context-popup" id="stickerContextPopup" style="display: none;">
         <div class="sticker-ctx-bubble">
-          <button type="button" class="sticker-ctx-btn btn-stk-rotate" id="btnStickerRotate" title="Повернуть на 15°" aria-label="Повернуть">
+          <button type="button" class="sticker-ctx-btn btn-stk-rotate" id="btnStickerRotate" title="Повернуть на 15°" data-i18n-title="btn_stk_rotate" aria-label="Повернуть">
             <svg viewBox="0 0 24 24" width="18" height="18" stroke="#ffffff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" fill="none">
               <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19"/>
             </svg>
           </button>
-          <button type="button" class="sticker-ctx-btn btn-stk-smaller" id="btnStickerSmaller" title="Уменьшить" aria-label="Уменьшить">
+          <button type="button" class="sticker-ctx-btn btn-stk-smaller" id="btnStickerSmaller" title="Уменьшить" data-i18n-title="btn_stk_smaller" aria-label="Уменьшить">
             <svg viewBox="0 0 24 24" width="18" height="18" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none">
               <line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
           </button>
-          <button type="button" class="sticker-ctx-btn btn-stk-bigger" id="btnStickerBigger" title="Увеличить" aria-label="Увеличить">
+          <button type="button" class="sticker-ctx-btn btn-stk-bigger" id="btnStickerBigger" title="Увеличить" data-i18n-title="btn_stk_bigger" aria-label="Увеличить">
             <svg viewBox="0 0 24 24" width="18" height="18" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none">
               <line x1="12" y1="5" x2="12" y2="19"/>
               <line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
           </button>
-          <button type="button" class="sticker-ctx-btn btn-stk-delete" id="btnStickerDelete" title="Удалить стикер" aria-label="Удалить">
+          <button type="button" class="sticker-ctx-btn btn-stk-delete" id="btnStickerDelete" title="Удалить стикер" data-i18n-title="btn_stk_delete" aria-label="Удалить">
             <svg viewBox="0 0 24 24" width="18" height="18" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none">
               <polyline points="3 6 5 6 21 6"/>
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -958,7 +961,8 @@
     </main>
   </div>
 
-  <script src="app.js?v=0.0.91"></script>
+  <script src="i18n.js?v=0.1.0"></script>
+  <script src="app.js?v=0.1.0"></script>
   <script>
     if ('serviceWorker' in navigator && !window.Capacitor) {
       window.addEventListener('load', () => {

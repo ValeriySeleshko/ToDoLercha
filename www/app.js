@@ -4,19 +4,21 @@
 
 // Detect user's system language (ru, uk, or en)
 function detectSystemLanguage() {
+  if (window.Plan4UI18n && typeof window.Plan4UI18n.detectSystemLanguage === 'function') {
+    return window.Plan4UI18n.detectSystemLanguage();
+  }
   try {
     const raw = localStorage.getItem('todo_notebook_app_settings');
     if (raw) {
       const s = JSON.parse(raw);
-      if (s.lang && ['ru', 'uk', 'en'].includes(s.lang)) return s.lang;
+      if (s.lang) return s.lang;
     }
   } catch (e) { }
 
-  const navLang = (typeof navigator !== 'undefined' ? (navigator.language || navigator.userLanguage || 'ru') : 'ru').toLowerCase();
+  const navLang = (typeof navigator !== 'undefined' ? (navigator.language || navigator.userLanguage || 'en') : 'en').toLowerCase();
   if (navLang.startsWith('uk')) return 'uk';
   if (navLang.startsWith('ru') || navLang.startsWith('be') || navLang.startsWith('kk')) return 'ru';
-  if (navLang.startsWith('en')) return 'en';
-  return 'ru';
+  return 'en';
 }
 
 // Device Haptic & Vibration Engine
@@ -290,503 +292,8 @@ const Plan4UStorage = {
 // Initialize dedicated storage on app launch
 Plan4UStorage.init();
 
-// Comprehensive multi-language dictionary
-const I18N = {
-  ru: {
-    code: 'РУ',
-    name: 'Русский',
-    flag: '🇷🇺',
-    locale: 'ru-RU',
-    monthsGenitive: ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'],
-    monthsNominative: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'],
-    weekdays: ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'],
-    weekdaysShort: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
-    today: 'Сегодня',
-    selectedDay: 'Выбранный день',
-
-    // Widgets & Toasts
-    tooltip_date: 'Календарь блокнота',
-    tooltip_timer: 'Загруженность за день (из 16 ч)',
-    tooltip_streak: 'Серия дней',
-    tooltip_trophy: 'Достижения',
-    tooltip_settings: 'Настройки',
-    workload_toast: 'Загруженность за день: {val} из 16 часов',
-    streak_toast: '🔥 Беспрерывная серия: {days} {daysWord}! (Рекорд: {record})',
-
-    // System Tabs
-    tab_todo: 'Что\nсделать?',
-    tab_buy: 'Что\nкупить?',
-    tab_watch: 'Что\nпосмотреть?',
-
-    // Period & 5 Section headers
-    section_spiritual: '🕊️ Духовные дела',
-    section_personal: '👤 Личные дела',
-    section_household: '🏠 Домашние дела',
-    section_cook: '🍳 Что приготовить',
-    section_other: '📋 Другие планы',
-    inline_input_placeholder: 'Нажмите, чтобы записать...',
-    blank_line_placeholder: 'Пустая строка (нажмите для записи)...',
-    priority_board_title: 'Главные дела дня',
-    priority_board_no_tasks: 'Нет важных задач',
-    priority_board_all_done: 'Все главные цели выполнены! 🎉',
-    period_morning: 'Утро',
-    period_day: 'День',
-    period_evening: 'Вечер',
-    period_free: 'В свободное время',
-    watch_movies: '🎬 Фильмы',
-    watch_series: '📺 Сериалы',
-    watch_archive: '🎬 Архив просмотренного ({count})',
-    empty_list: 'Список пуст',
-    empty_list_hint: 'Нажмите в строку раздела, чтобы добавить дело',
-
-    // Priorities
-    priority_normal: 'Обычный',
-    priority_normal_desc: 'Стандартная задача',
-    priority_calm: 'Обычный',
-    priority_day: 'В течении дня',
-    priority_important: 'Важный',
-    priority_important_desc: 'Выделяет жирным и поднимает наверх',
-    priority_urgent: 'Очень важно',
-    time_label: 'Когда выполнить? (время)',
-    time_placeholder: 'Укажите время',
-
-    // Modals
-    modal_new_entry: 'Новая запись',
-    modal_edit_entry: 'Редактировать запись',
-    modal_new_tab: 'Новая вкладка',
-    modal_edit_tab: 'Настройка вкладки',
-    modal_delete_tab: 'Удалить вкладку',
-    btn_cancel: 'Отмена',
-    btn_save: 'Сохранить',
-    btn_save_changes: 'Сохранить изменения',
-    btn_create_tab: 'Создать вкладку',
-    btn_delete_tab: '🗑️ Удалить вкладку',
-    btn_done: 'Готово',
-
-    // Form fields
-    task_text_label: 'Текст задачи / записи *',
-    task_text_placeholder: 'Что нужно сделать...',
-    buy_item_placeholder: 'Например: Молоко, Хлеб...',
-    watch_name_label: 'Название фильма / сериала *',
-    watch_name_placeholder: 'Например: Интерстеллар, Дюна...',
-    period_label: 'Время суток',
-    priority_label: 'Важность и срочность',
-    photo_attach_btn: '📸 Прикрепить фото или чек',
-    photo_change_btn: '📸 Заменить фото',
-    photo_attached_title: 'Фото прикреплено к записи',
-
-    // Settings
-    settings_title: '⚙️ Настройки',
-    settings_language: 'Язык приложения',
-    settings_language_desc: 'Интерфейс и даты на выбранном языке',
-    settings_theme: 'Тема оформления',
-    theme_light: '☀️ Светлая',
-    theme_dark: '🌙 Тёмная',
-    theme_auto: '⚙️ Авто',
-    settings_accent: 'Цвет акцента',
-    settings_font: 'Шрифт и оформление задач',
-    font_family_label: 'Шрифт блокнота',
-    font_size_label: 'Размер текста задач',
-    settings_task_weight: 'Жирность обычных задач',
-    settings_priority_weight: 'Жирность важных задач',
-    settings_priority_color: 'Цвет важных задач',
-    settings_notif: 'Оповещения и звуки',
-    notif_browser_label: 'Уведомления',
-    notif_browser_desc: 'Системные напоминания на телефоне',
-    notif_morning_label: 'Утренний план ☀️',
-    notif_morning_desc: 'Напоминание о делах в начале дня',
-    notif_evening_label: 'Вечерний обзор 🌙',
-    notif_evening_desc: 'Итоги дня и проверка дел',
-    notif_pet_label: 'Забота о питомце 🐾',
-    notif_pet_desc: 'Напоминание покормить Мейн-куна (15:00)',
-    notif_haptics_label: 'Тактильный виброотклик',
-    notif_haptics_desc: 'Вибрация при свайпах и тапах',
-    notif_sound_label: 'Звуковые щелчки',
-    notif_sound_desc: 'Приятный звук выполнения задачи',
-    notif_test_btn: 'Проверить уведомление',
-    settings_backup: 'Синхронизация и бэкап',
-    backup_export: 'Скачать бэкап (JSON)',
-    backup_import: 'Загрузить из файла',
-    cloud_sync_btn: 'Синхронизировать сейчас',
-
-    // Achievements
-    achievements_title: 'Достижения',
-    achievements_search_ph: 'Поиск среди 220+ достижений...',
-    ach_filter_all: 'Все',
-    ach_filter_streaks: '🔥 Серии',
-    ach_filter_tasks: '📝 Дела',
-    ach_filter_watch: '🎬 Кино',
-    ach_filter_buy: '🛒 Покупки',
-    ach_filter_special: '🌟 Особые',
-    ach_filter_unlocked: '✓ Открыто',
-    ach_unlocked_badge: '✓ Открыто',
-    ach_locked_badge: '🔒 Закрыто',
-    ach_progress_label: 'Прогресс:',
-    ach_status_label: 'Статус:',
-    ach_completed_text: 'Выполнено',
-    ach_not_completed_text: 'Не выполнено',
-    ach_nothing_found: 'Ничего не найдено',
-    ach_nothing_found_sub: 'Попробуйте изменить категорию или поисковый запрос',
-
-    // Confirm Modal
-    confirm_delete_tab_title: 'Удалить вкладку?',
-    confirm_delete_tab_msg: 'Вы уверены, что хотите удалить созданную вкладку «{title}» и все её задачи? Это действие нельзя будет отменить.',
-    confirm_delete_tab_btn: 'Да, удалить',
-
-    // Calendar
-    calendar_title: '📅 Календарь блокнота',
-    calendar_today_btn: '📍 Сегодня',
-    calendar_select_btn: '✓ Открыть этот день',
-
-    // Toasts
-    toast_task_deferred: 'Задача перенесена на {date}',
-    toast_entry_deferred: 'Запись перенесена',
-    toast_entry_updated: 'Запись успешно обновлена',
-    toast_tab_deleted: 'Вкладка «{title}» успешно удалена',
-    toast_tab_updated: 'Вкладка и фон листа обновлены',
-    toast_lang_changed: 'Язык изменен: Русский 🇷🇺',
-
-    // Stickers
-    stickers_title: '✨ Стикеры и декор',
-    stickers_hint: 'Перетяните на лист или нажмите для добавления',
-    stickers_cat_animals: '🐾 Зверушки',
-    stickers_cat_nature: '🌸 Цветы',
-    stickers_cat_sky: '☁️ Небо',
-    stickers_cat_cozy: '🎀 Уют',
-    toast_sticker_added: 'Стикер прикреплен к листу ✨',
-    toast_sticker_deleted: 'Стикер удален'
-  },
-
-  uk: {
-    code: 'УК',
-    name: 'Українська',
-    flag: '🇺🇦',
-    locale: 'uk-UA',
-    monthsGenitive: ['січня', 'лютого', 'березня', 'квітня', 'травня', 'червня', 'липня', 'серпня', 'вересня', 'жовтня', 'листопада', 'грудня'],
-    monthsNominative: ['Січень', 'Лютий', 'Березень', 'Квітень', 'Травень', 'Червень', 'Липень', 'Серпень', 'Вересень', 'Жовтень', 'Листопад', 'Грудень'],
-    weekdays: ['Неділя', 'Понеділок', 'Вівторок', 'Середа', 'Четвер', 'П\'ятниця', 'Субота'],
-    weekdaysShort: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'],
-    today: 'Сьогодні',
-    selectedDay: 'Обраний день',
-
-    // Widgets & Toasts
-    tooltip_date: 'Календар блокнота',
-    tooltip_timer: 'Завантаженість за день (з 16 год)',
-    tooltip_streak: 'Серія днів',
-    tooltip_trophy: 'Досягнення',
-    tooltip_settings: 'Налаштування',
-    workload_toast: 'Завантаженість за день: {val} з 16 годин',
-    streak_toast: '🔥 Безперервна серія: {days} {daysWord}! (Рекорд: {record})',
-
-    // System Tabs
-    tab_todo: 'Що\nзробити?',
-    tab_buy: 'Що\nкупити?',
-    tab_watch: 'Що\nподивитись?',
-
-    // Period & 5 Section headers
-    section_spiritual: '🕊️ Духовні справи',
-    section_personal: '👤 Особисті справи',
-    section_household: '🏠 Домашні справи',
-    section_cook: '🍳 Що приготувати',
-    section_other: '📋 Інші плани',
-    inline_input_placeholder: 'Натисніть, щоб записати...',
-    blank_line_placeholder: 'Порожній рядок (натисніть для запису)...',
-    priority_board_title: 'Головні справи дня',
-    priority_board_no_tasks: 'Немає важливих завдань',
-    priority_board_all_done: 'Всі головні цілі виконано! 🎉',
-    period_morning: 'Ранок',
-    period_day: 'День',
-    period_evening: 'Вечір',
-    period_free: 'У вільний час',
-    watch_movies: '🎬 Фільми',
-    watch_series: '📺 Серіали',
-    watch_archive: '🎬 Архів переглянутого ({count})',
-    empty_list: 'Список порожній',
-    empty_list_hint: 'Натисніть у рядок розділу, щоб додати справу',
-
-    // Priorities
-    priority_normal: 'Звичайний',
-    priority_normal_desc: 'Стандартне завдання',
-    priority_calm: 'Звичайний',
-    priority_day: 'Протягом дня',
-    priority_important: 'Важливий',
-    priority_important_desc: 'Виділяє жирним і піднімає вгору',
-    priority_urgent: 'Дуже важливо',
-    time_label: 'Коли виконати? (час)',
-    time_placeholder: 'Оберіть час',
-
-    // Modals
-    modal_new_entry: 'Новий запис',
-    modal_edit_entry: 'Редагувати запис',
-    modal_new_tab: 'Нова вкладка',
-    modal_edit_tab: 'Налаштування вкладки',
-    modal_delete_tab: 'Видалити вкладку',
-    btn_cancel: 'Скасувати',
-    btn_save: 'Зберегти',
-    btn_save_changes: 'Зберегти зміни',
-    btn_create_tab: 'Створити вкладку',
-    btn_delete_tab: '🗑️ Видалити вкладку',
-    btn_done: 'Готово',
-
-    // Form fields
-    task_text_label: 'Текст завдання / запису *',
-    task_text_placeholder: 'Що потрібно зробити...',
-    buy_item_placeholder: 'Наприклад: Молоко, Хліб...',
-    watch_name_label: 'Назва фільму / серіалу *',
-    watch_name_placeholder: 'Наприклад: Інтерстеллар, Дюна...',
-    period_label: 'Час доби',
-    priority_label: 'Важливість і терміновість',
-    photo_attach_btn: '📸 Прикріпити фото або чек',
-    photo_change_btn: '📸 Замінити фото',
-    photo_attached_title: 'Фото прикріплено до запису',
-
-    // Settings
-    settings_title: '⚙️ Налаштування',
-    settings_language: 'Мова додатку',
-    settings_language_desc: 'Інтерфейс і дати вибраною мовою',
-    settings_theme: 'Тема оформлення',
-    theme_light: '☀️ Світла',
-    theme_dark: '🌙 Темна',
-    theme_auto: '⚙️ Авто',
-    settings_accent: 'Колір акценту',
-    settings_font: 'Шрифт і оформлення завдань',
-    font_family_label: 'Шрифт блокнота',
-    font_size_label: 'Розмір тексту завдань',
-    settings_task_weight: 'Жирність звичайних завдань',
-    settings_priority_weight: 'Жирність важливих завдань',
-    settings_priority_color: 'Колір важливих завдань',
-    settings_notif: 'Сповіщення та звуки',
-    notif_browser_label: 'Сповіщення',
-    notif_browser_desc: 'Системні нагадування на телефоні',
-    notif_morning_label: 'Ранковий план ☀️',
-    notif_morning_desc: 'Нагадування про справи на початку дня',
-    notif_evening_label: 'Вечірній огляд 🌙',
-    notif_evening_desc: 'Підсумки дня та перевірка справ',
-    notif_pet_label: 'Турбота про котика 🐾',
-    notif_pet_desc: 'Нагадування провідати Мейн-куна (15:00)',
-    notif_haptics_label: 'Тактильний вібровідгук',
-    notif_haptics_desc: 'Вібрація при свайпах і тапах',
-    notif_sound_label: 'Звукові клацання',
-    notif_sound_desc: 'Приємний звук виконання завдання',
-    notif_test_btn: 'Перевірити сповіщення',
-    settings_backup: 'Синхронізація та бекап',
-    backup_export: 'Завантажити бекап (JSON)',
-    backup_import: 'Відновити з файлу',
-    cloud_sync_btn: 'Синхронізувати зараз',
-
-    // Achievements
-    achievements_title: 'Досягнення',
-    achievements_search_ph: 'Пошук серед 220+ досягнень...',
-    ach_filter_all: 'Всі',
-    ach_filter_streaks: '🔥 Серії',
-    ach_filter_tasks: '📝 Справи',
-    ach_filter_watch: '🎬 Кіно',
-    ach_filter_buy: '🛒 Покупки',
-    ach_filter_special: '🌟 Особливі',
-    ach_filter_unlocked: '✓ Відкрито',
-    ach_unlocked_badge: '✓ Відкрито',
-    ach_locked_badge: '🔒 Закрито',
-    ach_progress_label: 'Прогрес:',
-    ach_status_label: 'Статус:',
-    ach_completed_text: 'Виконано',
-    ach_not_completed_text: 'Не виконано',
-    ach_nothing_found: 'Нічого не знайдено',
-    ach_nothing_found_sub: 'Спробуйте змінити категорію або пошуковий запит',
-
-    // Confirm Modal
-    confirm_delete_tab_title: 'Видалити вкладку?',
-    confirm_delete_tab_msg: 'Ви впевнені, що хочете видалити створену вкладку «{title}» та всі її завдання? Цю дію не можна буде скасувати.',
-    confirm_delete_tab_btn: 'Так, видалити',
-
-    // Calendar
-    calendar_title: '📅 Календар блокнота',
-    calendar_today_btn: '📍 Сьогодні',
-    calendar_select_btn: '✓ Відкрити цей день',
-
-    // Toasts
-    toast_task_deferred: 'Завдання перенесено на {date}',
-    toast_entry_deferred: 'Запис перенесено',
-    toast_entry_updated: 'Запис успішно оновлено',
-    toast_tab_deleted: 'Вкладку «{title}» успішно видалено',
-    toast_tab_updated: 'Вкладку і фон аркуша оновлено',
-    toast_lang_changed: 'Мову змінено: Українська 🇺🇦',
-
-    // Stickers
-    stickers_title: '✨ Стікери та декор',
-    stickers_hint: 'Перетягніть на аркуш або натисніть для додавання',
-    stickers_cat_animals: '🐾 Звірятка',
-    stickers_cat_nature: '🌸 Квіти',
-    stickers_cat_sky: '☁️ Небо',
-    stickers_cat_cozy: '🎀 Затишок',
-    toast_sticker_added: 'Стікер прикріплено до аркуша ✨',
-    toast_sticker_deleted: 'Стікер видалено'
-  },
-
-  en: {
-    code: 'EN',
-    name: 'English',
-    flag: '🇬🇧',
-    locale: 'en-US',
-    monthsGenitive: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
-    monthsNominative: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
-    weekdays: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-    weekdaysShort: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
-    today: 'Today',
-    selectedDay: 'Selected day',
-
-    // Widgets & Toasts
-    tooltip_date: 'Notebook Calendar',
-    tooltip_timer: 'Daily workload (out of 16h)',
-    tooltip_streak: 'Daily Streak',
-    tooltip_trophy: 'Achievements',
-    tooltip_settings: 'Settings',
-    workload_toast: 'Daily workload: {val} of 16 hours',
-    streak_toast: '🔥 Consecutive streak: {days} {daysWord}! (Best: {record})',
-
-    // System Tabs
-    tab_todo: 'To\nDo?',
-    tab_buy: 'To\nBuy?',
-    tab_watch: 'To\nWatch?',
-
-    // Period & 5 Section headers
-    section_spiritual: '🕊️ Spiritual tasks',
-    section_personal: '👤 Personal tasks',
-    section_household: '🏠 Household tasks',
-    section_cook: '🍳 What to cook',
-    section_other: '📋 Other plans',
-    inline_input_placeholder: 'Click to write down...',
-    blank_line_placeholder: 'Empty line (click to write)...',
-    priority_board_title: 'Priority Focus',
-    priority_board_no_tasks: 'No priority tasks',
-    priority_board_all_done: 'All priorities completed! 🎉',
-    period_morning: 'Morning',
-    period_day: 'Day',
-    period_evening: 'Evening',
-    period_free: 'Free time',
-    watch_movies: '🎬 Movies',
-    watch_series: '📺 TV Series',
-    watch_archive: '🎬 Watched Archive ({count})',
-    empty_list: 'List is empty',
-    empty_list_hint: 'Click on a section line to add a task',
-
-    // Priorities
-    priority_normal: 'Normal',
-    priority_normal_desc: 'Standard task priority',
-    priority_calm: 'Normal',
-    priority_day: 'During the day',
-    priority_important: 'Important',
-    priority_important_desc: 'Bolds font and sorts to top',
-    priority_urgent: 'Top priority',
-    time_label: 'When to execute? (time)',
-    time_placeholder: 'Set time',
-
-    // Modals
-    modal_new_entry: 'New Entry',
-    modal_edit_entry: 'Edit Entry',
-    modal_new_tab: 'New Tab',
-    modal_edit_tab: 'Tab Settings',
-    modal_delete_tab: 'Delete Tab',
-    btn_cancel: 'Cancel',
-    btn_save: 'Save',
-    btn_save_changes: 'Save Changes',
-    btn_create_tab: 'Create Tab',
-    btn_delete_tab: '🗑️ Delete Tab',
-    btn_done: 'Done',
-
-    // Form fields
-    task_text_label: 'Task text / entry *',
-    task_text_placeholder: 'What needs to be done...',
-    buy_item_placeholder: 'e.g.: Milk, Bread...',
-    watch_name_label: 'Movie / Series title *',
-    watch_name_placeholder: 'e.g.: Interstellar, Dune...',
-    period_label: 'Time of day',
-    priority_label: 'Priority & urgency',
-    photo_attach_btn: '📸 Attach photo or receipt',
-    photo_change_btn: '📸 Replace photo',
-    photo_attached_title: 'Photo attached to entry',
-
-    // Settings
-    settings_title: '⚙️ Settings',
-    settings_language: 'Application Language',
-    settings_language_desc: 'Interface & dates in selected language',
-    settings_theme: 'Theme',
-    theme_light: '☀️ Light',
-    theme_dark: '🌙 Dark',
-    theme_auto: '⚙️ Auto',
-    settings_accent: 'Accent Color',
-    settings_font: 'Font & Styling',
-    font_family_label: 'Notebook font',
-    font_size_label: 'Task text size',
-    settings_task_weight: 'Regular task boldness',
-    settings_priority_weight: 'Priority task boldness',
-    settings_priority_color: 'Priority task color',
-    settings_notif: 'Notifications & Sounds',
-    notif_browser_label: 'Notifications',
-    notif_browser_desc: 'System phone reminders',
-    notif_morning_label: 'Morning Plan ☀️',
-    notif_morning_desc: 'Daily morning task briefing',
-    notif_evening_label: 'Evening Review 🌙',
-    notif_evening_desc: 'Daily wrap-up and completed task check',
-    notif_pet_label: 'Pet Care Reminder 🐾',
-    notif_pet_desc: 'Reminder to feed and pet your Maine Coon',
-    notif_haptics_label: 'Haptic Vibration',
-    notif_haptics_desc: 'Vibration on swipes and taps',
-    notif_sound_label: 'Sound Effects',
-    notif_sound_desc: 'Pleasant sound on task completion',
-    notif_test_btn: 'Test Notification',
-    settings_backup: 'Backup & Cloud Sync',
-    backup_export: 'Download Backup (JSON)',
-    backup_import: 'Restore from file',
-    cloud_sync_btn: 'Sync Now',
-
-    // Achievements
-    achievements_title: 'Achievements',
-    achievements_search_ph: 'Search 220+ achievements...',
-    ach_filter_all: 'All',
-    ach_filter_streaks: '🔥 Streaks',
-    ach_filter_tasks: '📝 Tasks',
-    ach_filter_watch: '🎬 Watch',
-    ach_filter_buy: '🛒 Buy',
-    ach_filter_special: '🌟 Special',
-    ach_filter_unlocked: '✓ Unlocked',
-    ach_unlocked_badge: '✓ Unlocked',
-    ach_locked_badge: '🔒 Locked',
-    ach_progress_label: 'Progress:',
-    ach_status_label: 'Status:',
-    ach_completed_text: 'Completed',
-    ach_not_completed_text: 'Incomplete',
-    ach_nothing_found: 'Nothing found',
-    ach_nothing_found_sub: 'Try changing category or search query',
-
-    // Confirm Modal
-    confirm_delete_tab_title: 'Delete tab?',
-    confirm_delete_tab_msg: 'Are you sure you want to delete custom tab «{title}» and all its tasks? This action cannot be undone.',
-    confirm_delete_tab_btn: 'Yes, delete',
-
-    // Calendar
-    calendar_title: '📅 Notebook Calendar',
-    calendar_today_btn: '📍 Today',
-    calendar_select_btn: '✓ Open this day',
-
-    // Toasts
-    toast_task_deferred: 'Task deferred to {date}',
-    toast_entry_deferred: 'Entry deferred',
-    toast_entry_updated: 'Entry successfully updated',
-    toast_tab_deleted: 'Tab «{title}» deleted successfully',
-    toast_tab_updated: 'Tab and notebook sheet updated',
-    toast_lang_changed: 'Language changed: English 🇬🇧',
-
-    // Stickers
-    stickers_title: '✨ Stickers & Decor',
-    stickers_hint: 'Drag onto page or tap to place',
-    stickers_cat_animals: '🐾 Animals',
-    stickers_cat_nature: '🌸 Nature',
-    stickers_cat_sky: '☁️ Sky & Magic',
-    stickers_cat_cozy: '🎀 Cozy & Deco',
-    toast_sticker_added: 'Sticker placed on page ✨',
-    toast_sticker_deleted: 'Sticker removed'
-  }
-};
+// Modular internationalization dictionary (sourced from i18n.js)
+const I18N = (window.Plan4UI18n && window.Plan4UI18n.I18N) || window.I18N || {};
 
 // Initial Seed Tabs
 const INITIAL_TABS = [
@@ -1293,6 +800,78 @@ const ACCENT_COLORS = [
     darkSectionBg: '#261536',
     darkSectionBorder: '#4c1d70',
     darkSectionText: '#d8b4fe'
+  },
+  {
+    id: 'chocolate',
+    name: 'Шоколадный',
+    color: '#7c3f1d',
+    dark: '#4a220c',
+    rgb: '124, 63, 29',
+    btnText: '#ffffff',
+    btnBorder: 'none',
+    readableText: '#5a2a11',
+    marginLine: 'rgba(124, 63, 29, 0.45)',
+    darkMarginLine: 'rgba(230, 169, 134, 0.4)',
+    sectionBg: '#faf3ee',
+    sectionBorder: '#e8cfbe',
+    sectionText: '#4a220c',
+    darkSectionBg: '#24150f',
+    darkSectionBorder: '#5c3321',
+    darkSectionText: '#f5cdb8'
+  },
+  {
+    id: 'coffee',
+    name: 'Кофейный',
+    color: '#8d5b36',
+    dark: '#52321c',
+    rgb: '141, 91, 54',
+    btnText: '#ffffff',
+    btnBorder: 'none',
+    readableText: '#4d2d17',
+    marginLine: 'rgba(141, 91, 54, 0.45)',
+    darkMarginLine: 'rgba(226, 187, 157, 0.4)',
+    sectionBg: '#fcf6f1',
+    sectionBorder: '#ebd6c5',
+    sectionText: '#452611',
+    darkSectionBg: '#221711',
+    darkSectionBorder: '#5a3a25',
+    darkSectionText: '#f7d5be'
+  },
+  {
+    id: 'swamp',
+    name: 'Болотный',
+    color: '#5b7036',
+    dark: '#2f3c19',
+    rgb: '91, 112, 54',
+    btnText: '#ffffff',
+    btnBorder: 'none',
+    readableText: '#2d3b18',
+    marginLine: 'rgba(91, 112, 54, 0.45)',
+    darkMarginLine: 'rgba(188, 214, 144, 0.4)',
+    sectionBg: '#f4f7ee',
+    sectionBorder: '#d3dfbf',
+    sectionText: '#283615',
+    darkSectionBg: '#17210e',
+    darkSectionBorder: '#3d5225',
+    darkSectionText: '#c6e498'
+  },
+  {
+    id: 'khaki_moss',
+    name: 'Хаки-болото',
+    color: '#4a6147',
+    dark: '#253424',
+    rgb: '74, 97, 71',
+    btnText: '#ffffff',
+    btnBorder: 'none',
+    readableText: '#20301f',
+    marginLine: 'rgba(74, 97, 71, 0.45)',
+    darkMarginLine: 'rgba(172, 203, 168, 0.4)',
+    sectionBg: '#f2f6f1',
+    sectionBorder: '#c7dac4',
+    sectionText: '#1b2d1a',
+    darkSectionBg: '#131f13',
+    darkSectionBorder: '#324b30',
+    darkSectionText: '#bfe0ba'
   }
 ];
 
@@ -1743,8 +1322,42 @@ const STICKERS_CATALOG = {
       id: `pig_${num}`,
       img: `./assets/stickers/pigs/pig_${num}.webp`
     };
+  }),
+  food: Array.from({ length: 49 }, (_, i) => {
+    const num = String(i + 1).padStart(2, '0');
+    return {
+      id: `food_${num}`,
+      img: `./assets/stickers/food/food_${num}.webp`
+    };
+  }),
+  sweets: Array.from({ length: 49 }, (_, i) => {
+    const num = String(i + 1).padStart(2, '0');
+    return {
+      id: `sweet_${num}`,
+      img: `./assets/stickers/sweets/sweet_${num}.webp`
+    };
+  }),
+  reptiles: Array.from({ length: 49 }, (_, i) => {
+    const num = String(i + 1).padStart(2, '0');
+    return {
+      id: `reptile_${num}`,
+      img: `./assets/stickers/reptiles/reptile_${num}.webp`
+    };
   })
 };
+
+const DEFAULT_STICKER_CATEGORIES = [
+  { id: 'fall', key: 'cat_fall', icon: '🍂', fallback: 'Осень' },
+  { id: 'cats', key: 'cat_cats', icon: '🐱', fallback: 'Коты' },
+  { id: 'more_cats', key: 'cat_more_cats', icon: '🐾', fallback: 'Ещё коты' },
+  { id: 'flora', key: 'cat_flora', icon: '🍄', fallback: 'Флора' },
+  { id: 'fauna', key: 'cat_fauna', icon: '🐝', fallback: 'Фауна' },
+  { id: 'ocean', key: 'cat_ocean', icon: '🌊', fallback: 'Океан' },
+  { id: 'pigs', key: 'cat_pigs', icon: '🐹', fallback: 'Свини' },
+  { id: 'food', key: 'cat_food', icon: '🍔', fallback: 'Еда' },
+  { id: 'sweets', key: 'cat_sweets', icon: '🍰', fallback: 'Сладости' },
+  { id: 'reptiles', key: 'cat_reptiles', icon: '🐸', fallback: 'Рептилии' }
+];
 
 class NotebookApp {
   constructor() {
@@ -2001,7 +1614,7 @@ class NotebookApp {
         document.body.classList.add('app-ready');
         setTimeout(() => {
           document.body.classList.remove('preload-no-transitions');
-        }, 100);
+        }, 450);
       });
     };
 
@@ -3419,9 +3032,9 @@ class NotebookApp {
       tabBtn.setAttribute('data-tab', tab.id);
       tabBtn.title = 'Нажмите для выбора. Удерживайте для настройки';
 
-      // Active tab gets EXACT same background as sheet; Inactive gets soft inactive color
+      // In Dark mode, tabs are pure monochrome grayscale (black to white range) without colored tints
       if (isDark) {
-        tabBtn.style.backgroundColor = isActive ? (tabColorObj.darkSheetBg || '#131620') : (tabColorObj.darkInactiveBg || '#1c202d');
+        tabBtn.style.backgroundColor = isActive ? '#141720' : '#1e2330';
       } else {
         tabBtn.style.backgroundColor = isActive ? tabColorObj.sheetBg : tabColorObj.inactiveBg;
       }
@@ -3520,7 +3133,7 @@ class NotebookApp {
     const sheet = document.getElementById('notebookSheet') || document.querySelector('.notebook-sheet');
     if (sheet) {
       if (isDark) {
-        sheet.style.backgroundColor = activeColorObj.darkSheetBg || '#131620';
+        sheet.style.backgroundColor = '#141720';
       } else {
         sheet.style.backgroundColor = activeColorObj.sheetBg;
       }
@@ -4152,7 +3765,7 @@ class NotebookApp {
     this.settings.lang = lang;
     this.saveSettings();
 
-    const dict = I18N[lang] || I18N.ru;
+    const dict = I18N[lang] || I18N.ru || {};
 
     // 1. Update text nodes with [data-i18n]
     document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -4170,13 +3783,21 @@ class NotebookApp {
       }
     });
 
-    // 3. Update circular badge text
+    // 3. Update title attributes with [data-i18n-title]
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+      const key = el.getAttribute('data-i18n-title');
+      if (dict[key]) {
+        el.setAttribute('title', dict[key]);
+      }
+    });
+
+    // 4. Update circular badge text
     const badgeText = document.getElementById('langBadgeText');
     if (badgeText) {
       badgeText.textContent = dict.code || 'РУ';
     }
 
-    // 4. Update active dropdown item in settings
+    // 5. Update active dropdown item in settings
     const dropdownMenu = document.getElementById('langDropdownMenu');
     if (dropdownMenu) {
       dropdownMenu.querySelectorAll('.lang-dropdown-opt').forEach(opt => {
@@ -4184,7 +3805,7 @@ class NotebookApp {
       });
     }
 
-    // 5. Update system tabs default titles if not customized
+    // 6. Update system tabs default titles if not customized
     if (this.tabs) {
       this.tabs.forEach(tab => {
         if (tab.id === 'todo' && !tab.customTitle) tab.title = dict.tab_todo;
@@ -4195,8 +3816,20 @@ class NotebookApp {
       this.renderTabs();
     }
 
-    // 6. Refresh date widget, achievements, and main notebook content
-    ACHIEVEMENTS_LIST = buildAchievementsCatalog(lang);
+    // 7. Update stickers drawer category tabs with translated names
+    if (typeof this.renderStickersCategoryTabs === 'function') {
+      this.renderStickersCategoryTabs();
+    }
+
+    // 8. Update pet companion modal UI
+    if (this.petSystem && typeof this.petSystem.renderFullModal === 'function') {
+      this.petSystem.renderFullModal();
+    }
+
+    // 9. Refresh date widget, achievements, and main notebook content
+    if (typeof buildAchievementsCatalog === 'function') {
+      ACHIEVEMENTS_LIST = buildAchievementsCatalog(lang);
+    }
     this.updateDateWidget();
     this.render();
     if (this.calendarModalBackdrop && this.calendarModalBackdrop.classList.contains('open')) {
@@ -4209,12 +3842,17 @@ class NotebookApp {
 
   // Translation helper function with parameter interpolation
   t(key, params = {}) {
-    const lang = this.settings.lang || 'ru';
-    const dict = I18N[lang] || I18N.ru;
+    const lang = this.settings?.lang || detectSystemLanguage();
+    if (window.Plan4UI18n && typeof window.Plan4UI18n.t === 'function') {
+      return window.Plan4UI18n.t(key, params, lang);
+    }
+    const dict = I18N[lang] || I18N.ru || {};
     let str = dict[key] || (I18N.ru && I18N.ru[key]) || key;
-    Object.keys(params).forEach(p => {
-      str = str.replace(new RegExp(`\\{${p}\\}`, 'g'), params[p]);
-    });
+    if (params && typeof params === 'object') {
+      Object.keys(params).forEach(p => {
+        str = str.replace(new RegExp(`\\{${p}\\}`, 'g'), params[p]);
+      });
+    }
     return str;
   }
 
@@ -4242,17 +3880,37 @@ class NotebookApp {
     }
 
     // 2. Accent Color
-    const accentObj = ACCENT_COLORS.find(c => c.id === this.settings.accentColorId) || ACCENT_COLORS[0];
-    document.documentElement.style.setProperty('--primary-rgb', accentObj.rgb || '216, 58, 136');
-    document.documentElement.style.setProperty('--primary-magenta', accentObj.color);
-    document.documentElement.style.setProperty('--primary-magenta-dark', accentObj.dark);
-    document.documentElement.style.setProperty('--btn-accent-text', accentObj.btnText || '#ffffff');
-    document.documentElement.style.setProperty('--btn-accent-border', accentObj.btnBorder || 'none');
-    document.documentElement.style.setProperty('--accent-readable-text', accentObj.readableText || (isDark ? accentObj.darkSectionText : accentObj.sectionText) || accentObj.dark);
-    document.documentElement.style.setProperty('--accent-margin-line', isDark ? (accentObj.darkMarginLine || accentObj.marginLine) : accentObj.marginLine);
-    document.documentElement.style.setProperty('--section-header-bg', isDark ? accentObj.darkSectionBg : accentObj.sectionBg);
-    document.documentElement.style.setProperty('--section-header-border', isDark ? accentObj.darkSectionBorder : accentObj.sectionBorder);
-    document.documentElement.style.setProperty('--section-header-text', isDark ? accentObj.darkSectionText : accentObj.sectionText);
+    // In Dark theme, completely remove accent color influence: pure grayscale monochrome from black to white
+    if (isDark) {
+      document.documentElement.style.setProperty('--primary-rgb', '226, 232, 240');
+      document.documentElement.style.setProperty('--primary-magenta', '#f1f5f9');
+      document.documentElement.style.setProperty('--primary-magenta-dark', '#cbd5e1');
+      document.documentElement.style.setProperty('--btn-accent-text', '#0f172a');
+      document.documentElement.style.setProperty('--btn-accent-border', '1px solid rgba(255, 255, 255, 0.2)');
+      document.documentElement.style.setProperty('--accent-readable-text', '#ffffff');
+      document.documentElement.style.setProperty('--accent-margin-line', 'rgba(255, 255, 255, 0.16)');
+      document.documentElement.style.setProperty('--section-header-bg', '#20242e');
+      document.documentElement.style.setProperty('--section-header-border', '#384050');
+      document.documentElement.style.setProperty('--section-header-text', '#f1f5f9');
+    } else {
+      const accentObj = ACCENT_COLORS.find(c => c.id === this.settings.accentColorId) || ACCENT_COLORS[0];
+      document.documentElement.style.setProperty('--primary-rgb', accentObj.rgb || '216, 58, 136');
+      document.documentElement.style.setProperty('--primary-magenta', accentObj.color);
+      document.documentElement.style.setProperty('--primary-magenta-dark', accentObj.dark);
+      document.documentElement.style.setProperty('--btn-accent-text', accentObj.btnText || '#ffffff');
+      document.documentElement.style.setProperty('--btn-accent-border', accentObj.btnBorder || 'none');
+      document.documentElement.style.setProperty('--accent-readable-text', accentObj.readableText || accentObj.sectionText || accentObj.dark);
+      document.documentElement.style.setProperty('--accent-margin-line', accentObj.marginLine);
+      document.documentElement.style.setProperty('--section-header-bg', accentObj.sectionBg);
+      document.documentElement.style.setProperty('--section-header-border', accentObj.sectionBorder);
+      document.documentElement.style.setProperty('--section-header-text', accentObj.sectionText);
+    }
+
+    // Toggle disabled state on Accent Color settings section when in Dark mode
+    const accentSec = document.getElementById('accentColorSection') || (this.accentColorPicker ? this.accentColorPicker.closest('.settings-section') : null);
+    if (accentSec) {
+      accentSec.classList.toggle('is-disabled', isDark);
+    }
 
     // 3. Font Family, Size, Weights & Priority Color
     const fontFamily = this.settings.fontFamily || "'PT Serif', Georgia, serif";
@@ -4392,12 +4050,13 @@ class NotebookApp {
         <button type="button" class="accent-swatch ${c.id === this.settings.accentColorId ? 'active' : ''}" 
                 data-accent-id="${c.id}" 
                 style="background-color: ${c.color};" 
-                title="${c.name}">
+                title="${this.t('theme_accent_' + c.id) || c.name}">
         </button>
       `).join('');
 
       this.accentColorPicker.querySelectorAll('.accent-swatch').forEach(swatch => {
         swatch.onclick = () => {
+          if (this.isDarkMode()) return;
           this.settings.accentColorId = swatch.dataset.accentId;
           this.accentColorPicker.querySelectorAll('.accent-swatch').forEach(s => s.classList.remove('active'));
           swatch.classList.add('active');
@@ -5009,7 +4668,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.0.91',
+      appVersion: '0.1.0',
       email: this.cloudEmail,
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
@@ -5240,7 +4899,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.0.91',
+      appVersion: '0.1.0',
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
       sections: this.tabSections || {},
@@ -8708,6 +8367,9 @@ class NotebookApp {
     if (typeId?.startsWith('ocean_')) return { id: typeId, img: `./assets/stickers/ocean/${typeId}.webp` };
     if (typeId?.startsWith('pigs_') || typeId?.startsWith('pig_')) return { id: typeId, img: `./assets/stickers/pigs/${typeId}.webp` };
     if (typeId?.startsWith('cat_')) return { id: typeId, img: `./assets/stickers/cats/${typeId}.webp` };
+    if (typeId?.startsWith('food_')) return { id: typeId, img: `./assets/stickers/food/${typeId}.webp` };
+    if (typeId?.startsWith('sweet_')) return { id: typeId, img: `./assets/stickers/sweets/${typeId}.webp` };
+    if (typeId?.startsWith('reptile_')) return { id: typeId, img: `./assets/stickers/reptiles/${typeId}.webp` };
     return null;
   }
 
@@ -9019,54 +8681,262 @@ class NotebookApp {
       });
     }
 
-    // 3. Category Buttons in Drawer (with smooth drag, wheel scroll & auto-center)
-    if (this.stickersCategoriesBar) {
-      let isDown = false;
+    // 3. Category Buttons in Drawer (with smooth drag, wheel scroll & Long-Press Reorder)
+    this.initStickersCategoryTabs();
+  }
+
+  loadStickerCategoryOrder() {
+    try {
+      const saved = localStorage.getItem('plan4u_sticker_tabs_order');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const knownIds = DEFAULT_STICKER_CATEGORIES.map(c => c.id);
+          const ordered = parsed.filter(id => knownIds.includes(id));
+          knownIds.forEach(id => {
+            if (!ordered.includes(id)) ordered.push(id);
+          });
+          return ordered;
+        }
+      }
+    } catch (e) { }
+    return DEFAULT_STICKER_CATEGORIES.map(c => c.id);
+  }
+
+  saveStickerCategoryOrder(order) {
+    try {
+      if (Array.isArray(order)) {
+        localStorage.setItem('plan4u_sticker_tabs_order', JSON.stringify(order));
+        if (window.Plan4UStorage) {
+          Plan4UStorage.saveFile('sticker_tabs_order.json', order);
+        }
+      }
+    } catch (e) { }
+  }
+
+  initStickersCategoryTabs() {
+    const bar = this.stickersCategoriesBar || document.getElementById('stickersCategoriesBar');
+    if (!bar) return;
+
+    this.renderStickersCategoryTabs();
+
+    // Horizontal Wheel Scroll
+    bar.addEventListener('wheel', (e) => {
+      if (e.deltaY !== 0) {
+        e.preventDefault();
+        bar.scrollLeft += e.deltaY;
+      }
+    }, { passive: false });
+  }
+
+  renderStickersCategoryTabs() {
+    const bar = this.stickersCategoriesBar || document.getElementById('stickersCategoriesBar');
+    if (!bar) return;
+
+    const order = this.loadStickerCategoryOrder();
+    if (!this.activeStickerCategory) {
+      this.activeStickerCategory = order[0] || 'fall';
+    }
+
+    bar.innerHTML = order.map(catId => {
+      const def = DEFAULT_STICKER_CATEGORIES.find(c => c.id === catId);
+      if (!def) return '';
+      const isActive = (catId === this.activeStickerCategory);
+      const label = this.t(def.key || `cat_${def.id}`) || `${def.icon} ${def.fallback || def.name}`;
+      return `<button type="button" class="sticker-cat-btn${isActive ? ' active' : ''}" data-category="${def.id}" data-i18n="${def.key || `cat_${def.id}`}">${label}</button>`;
+    }).join('');
+
+    this.attachStickerCategoryInteractions();
+  }
+
+  attachStickerCategoryInteractions() {
+    const bar = this.stickersCategoriesBar || document.getElementById('stickersCategoriesBar');
+    if (!bar) return;
+
+    const buttons = Array.from(bar.querySelectorAll('.sticker-cat-btn'));
+
+    buttons.forEach(btn => {
+      let holdTimer = null;
+      let isReordering = false;
       let startX = 0;
-      let scrollLeft = 0;
-      let hasDragged = false;
+      let startY = 0;
+      let initialBarScroll = 0;
+      let hasScrolled = false;
+      let autoScrollAnim = null;
 
-      // Mouse drag-to-scroll
-      this.stickersCategoriesBar.addEventListener('mousedown', (e) => {
-        isDown = true;
-        hasDragged = false;
-        startX = e.pageX - this.stickersCategoriesBar.offsetLeft;
-        scrollLeft = this.stickersCategoriesBar.scrollLeft;
-      });
-
-      window.addEventListener('mouseup', () => {
-        isDown = false;
-      });
-
-      this.stickersCategoriesBar.addEventListener('mousemove', (e) => {
-        if (!isDown) return;
-        const x = e.pageX - this.stickersCategoriesBar.offsetLeft;
-        const walk = (x - startX) * 1.5;
-        if (Math.abs(walk) > 4) {
-          hasDragged = true;
+      const stopAutoScroll = () => {
+        if (autoScrollAnim) {
+          cancelAnimationFrame(autoScrollAnim);
+          autoScrollAnim = null;
         }
-        this.stickersCategoriesBar.scrollLeft = scrollLeft - walk;
-      });
+      };
 
-      // Mouse Wheel -> Horizontal Scroll
-      this.stickersCategoriesBar.addEventListener('wheel', (e) => {
-        if (e.deltaY !== 0) {
-          e.preventDefault();
-          this.stickersCategoriesBar.scrollLeft += e.deltaY;
+      const checkAutoScroll = (clientX) => {
+        const barRect = bar.getBoundingClientRect();
+        const edgeZone = 40;
+        const maxScroll = bar.scrollWidth - bar.clientWidth;
+
+        stopAutoScroll();
+
+        if (clientX < barRect.left + edgeZone && bar.scrollLeft > 0) {
+          const speed = Math.max(3, (barRect.left + edgeZone - clientX) * 0.25);
+          const step = () => {
+            if (!isReordering) return;
+            bar.scrollLeft = Math.max(0, bar.scrollLeft - speed);
+            autoScrollAnim = requestAnimationFrame(step);
+          };
+          autoScrollAnim = requestAnimationFrame(step);
+        } else if (clientX > barRect.right - edgeZone && bar.scrollLeft < maxScroll) {
+          const speed = Math.max(3, (clientX - (barRect.right - edgeZone)) * 0.25);
+          const step = () => {
+            if (!isReordering) return;
+            bar.scrollLeft = Math.min(maxScroll, bar.scrollLeft + speed);
+            autoScrollAnim = requestAnimationFrame(step);
+          };
+          autoScrollAnim = requestAnimationFrame(step);
         }
+      };
+
+      const startHold = (clientX, clientY) => {
+        clearTimeout(holdTimer);
+        stopAutoScroll();
+        startX = clientX;
+        startY = clientY;
+        initialBarScroll = bar.scrollLeft;
+        hasScrolled = false;
+        isReordering = false;
+
+        holdTimer = setTimeout(() => {
+          isReordering = true;
+          triggerHaptic([35, 50]);
+          btn.classList.add('is-reordering');
+          bar.classList.add('is-reordering');
+        }, 260);
+      };
+
+      const handleMove = (clientX, clientY) => {
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+
+        if (!isReordering) {
+          if (Math.hypot(dx, dy) > 8) {
+            clearTimeout(holdTimer);
+            holdTimer = null;
+            hasScrolled = true;
+          }
+          return;
+        }
+
+        // In reordering mode: swap adjacent tabs when crossing their center
+        checkAutoScroll(clientX);
+
+        const siblings = Array.from(bar.querySelectorAll('.sticker-cat-btn'));
+        const currentIndex = siblings.indexOf(btn);
+
+        // Check if moving to the right
+        if (currentIndex < siblings.length - 1) {
+          const nextBtn = siblings[currentIndex + 1];
+          const nextRect = nextBtn.getBoundingClientRect();
+          const nextMid = nextRect.left + nextRect.width / 2;
+          if (clientX > nextMid) {
+            nextBtn.after(btn);
+            triggerHaptic(15);
+            return;
+          }
+        }
+
+        // Check if moving to the left
+        if (currentIndex > 0) {
+          const prevBtn = siblings[currentIndex - 1];
+          const prevRect = prevBtn.getBoundingClientRect();
+          const prevMid = prevRect.left + prevRect.width / 2;
+          if (clientX < prevMid) {
+            prevBtn.before(btn);
+            triggerHaptic(15);
+            return;
+          }
+        }
+      };
+
+      const endInteraction = (clientX, clientY) => {
+        clearTimeout(holdTimer);
+        holdTimer = null;
+        stopAutoScroll();
+
+        if (isReordering) {
+          isReordering = false;
+          btn.classList.remove('is-reordering');
+          bar.classList.remove('is-reordering');
+
+          // Read final DOM order and save
+          const currentOrder = Array.from(bar.querySelectorAll('.sticker-cat-btn'))
+            .map(b => b.dataset.category)
+            .filter(Boolean);
+
+          this.saveStickerCategoryOrder(currentOrder);
+          triggerHaptic(20);
+
+          this._justReorderedStickerTab = true;
+          setTimeout(() => {
+            this._justReorderedStickerTab = false;
+          }, 320);
+        }
+      };
+
+      // Touch events (Mobile)
+      btn.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        startHold(touch.clientX, touch.clientY);
+      }, { passive: true });
+
+      btn.addEventListener('touchmove', (e) => {
+        if (e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        if (isReordering && e.cancelable) e.preventDefault();
+        handleMove(touch.clientX, touch.clientY);
       }, { passive: false });
 
-      // Click Category Button
-      this.stickersCategoriesBar.addEventListener('click', (e) => {
-        if (hasDragged) return; // Prevent click trigger after dragging
-        const btn = e.target.closest('.sticker-cat-btn');
-        if (btn && btn.dataset.category) {
+      btn.addEventListener('touchend', (e) => {
+        const touch = (e.changedTouches && e.changedTouches[0]) || (e.touches && e.touches[0]);
+        endInteraction(touch ? touch.clientX : startX, touch ? touch.clientY : startY);
+      }, { passive: true });
+
+      btn.addEventListener('touchcancel', () => {
+        endInteraction(startX, startY);
+      }, { passive: true });
+
+      // Mouse events (Desktop)
+      btn.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        startHold(e.clientX, e.clientY);
+
+        const onMouseMove = (ev) => {
+          if (isReordering && ev.cancelable) ev.preventDefault();
+          handleMove(ev.clientX, ev.clientY);
+        };
+
+        const onMouseUp = (ev) => {
+          window.removeEventListener('mousemove', onMouseMove);
+          window.removeEventListener('mouseup', onMouseUp);
+          endInteraction(ev.clientX, ev.clientY);
+        };
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+      });
+
+      // Regular click to select category
+      btn.addEventListener('click', (e) => {
+        if (this._justReorderedStickerTab || hasScrolled) return;
+        const category = btn.dataset.category;
+        if (category) {
           triggerHaptic(15);
           btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-          this.renderStickersCatalog(btn.dataset.category);
+          this.renderStickersCatalog(category);
         }
       });
-    }
+    });
 
     // 4. Context Menu Actions
     if (this.btnStickerRotate) {
@@ -9159,7 +9029,10 @@ class NotebookApp {
     }
     this.dismissActiveKeyboard();
     this.closeStickerContextMenu();
-    this.renderStickersCatalog(this.activeStickerCategory || 'animals');
+    this.renderStickersCategoryTabs();
+    const order = this.loadStickerCategoryOrder();
+    const catToOpen = (this.activeStickerCategory && order.includes(this.activeStickerCategory)) ? this.activeStickerCategory : (order[0] || 'fall');
+    this.renderStickersCatalog(catToOpen);
     if (this.stickersModalBackdrop) {
       this._stickersModalOpenedAt = Date.now();
       this.stickersModalBackdrop.classList.add('open');
@@ -9192,7 +9065,7 @@ class NotebookApp {
 
     container.innerHTML = items.map(stk => {
       const previewHtml = stk.img
-        ? `<img src="${stk.img}" alt="" draggable="false" class="sticker-picker-img" loading="lazy" onerror="if(!this.dataset.retried){this.dataset.retried='1';setTimeout(()=>{this.src='${stk.img}?v=0.0.91';},300);}" />`
+        ? `<img src="${stk.img}" alt="" draggable="false" class="sticker-picker-img" loading="lazy" onerror="if(!this.dataset.retried){this.dataset.retried='1';setTimeout(()=>{this.src='${stk.img}?v=0.1.0';},300);}" />`
         : stk.svg;
       return `
         <div class="sticker-picker-card" data-type="${stk.id}">
@@ -10174,7 +10047,7 @@ class MaineCoonPetSystem {
   feedFish() {
     if (this.data.treats <= 0) {
       triggerHaptic([10, 40]);
-      const msg = this.getLocalizedText('no_fish') || 'Нет камушков! Выполняйте дела в блокноте, чтобы заработать угощение 🟤';
+      const msg = this.app.t('pet_no_brown_treats') || 'Нет камушков! Выполняйте дела в блокноте, чтобы заработать угощение 🟤';
       this.app.showToast(msg, '🟤');
       this.setThought('Мяу? 🥺🐾');
       return;
@@ -10202,7 +10075,7 @@ class MaineCoonPetSystem {
   feedGolden() {
     if (this.data.goldenTreats <= 0) {
       triggerHaptic([10, 40]);
-      const msg = this.getLocalizedText('no_golden') || 'Нет золотых консервов! Закрывайте важные дела дня, чтобы заработать 🥫';
+      const msg = this.app.t('pet_no_golden_treats') || 'Нет золотых консервов! Закрывайте важные дела дня, чтобы заработать 🥫';
       this.app.showToast(msg, '🥫');
       this.setThought('Мррр? 🥺🥫');
       return;
@@ -10232,14 +10105,14 @@ class MaineCoonPetSystem {
       this.data.xpToNext = Math.round(this.data.xpToNext * 1.45);
 
       triggerHaptic([40, 80, 40]);
-      this.app.showToast(`🎉 Уровень дружбы повышен: ${this.data.name} теперь ${this.data.level} уровня!`, '🏆');
+      this.app.showToast(this.app.t('pet_level_up', { name: this.data.name, level: this.data.level }), '🏆');
       this.setThought(`МЯУ! Муррр-муррр! ⭐🐾`);
     }
   }
 
   renamePet() {
-    const current = this.data.name || 'Мейни';
-    const newName = prompt('Введите имя для вашего котёнка-мейнкуна:', current);
+    const current = this.data.name || this.app.t('pet_default_name') || 'Мейни';
+    const newName = prompt(this.app.t('pet_rename_prompt') || 'Введите имя для вашего котёнка-мейнкуна:', current);
     if (newName && newName.trim()) {
       this.data.name = newName.trim().slice(0, 20);
       this.saveData();
@@ -10306,17 +10179,17 @@ class MaineCoonPetSystem {
     const isSleeping = this.data.hunger <= 10 || this.data.happiness <= 10;
 
     if (this.petHungerStatus) {
-      if (isSleeping) this.petHungerStatus.textContent = 'Спит клубочком... 💤';
-      else if (this.data.hunger >= 75) this.petHungerStatus.textContent = 'Сытый и довольный 😋';
-      else if (this.data.hunger >= 40) this.petHungerStatus.textContent = 'Не откажется от камушка 🟤';
-      else this.petHungerStatus.textContent = 'Сильно проголодался! 🥺';
+      if (isSleeping) this.petHungerStatus.textContent = this.app.t('pet_status_sleeping');
+      else if (this.data.hunger >= 75) this.petHungerStatus.textContent = this.app.t('pet_status_full');
+      else if (this.data.hunger >= 40) this.petHungerStatus.textContent = this.app.t('pet_status_hungry_mild');
+      else this.petHungerStatus.textContent = this.app.t('pet_status_hungry_severe');
     }
 
     if (this.petHappinessStatus) {
-      if (isSleeping) this.petHappinessStatus.textContent = 'Хррр-пссс... 💤';
-      else if (this.data.happiness >= 75) this.petHappinessStatus.textContent = 'Мурчит от радости 💖';
-      else if (this.data.happiness >= 40) this.petHappinessStatus.textContent = 'Спокойный и уютный 🐾';
-      else this.petHappinessStatus.textContent = 'Хочет ласки и внимания 🥺';
+      if (isSleeping) this.petHappinessStatus.textContent = this.app.t('pet_status_sleep_sound');
+      else if (this.data.happiness >= 75) this.petHappinessStatus.textContent = this.app.t('pet_status_purring');
+      else if (this.data.happiness >= 40) this.petHappinessStatus.textContent = this.app.t('pet_status_happy');
+      else this.petHappinessStatus.textContent = this.app.t('pet_status_lonely');
     }
 
     // Toggle sleeping animation & SVG pose (with memoized rendering)
@@ -10346,7 +10219,7 @@ class MaineCoonPetSystem {
 
   renderFullModal() {
     if (this.petModalNameTitle) this.petModalNameTitle.textContent = this.data.name;
-    if (this.petLevelBadge) this.petLevelBadge.textContent = `Ур. ${this.data.level}`;
+    if (this.petLevelBadge) this.petLevelBadge.textContent = this.app.t('pet_level_badge', { level: this.data.level });
 
     const xpPercent = Math.min(100, Math.round((this.data.xp / this.data.xpToNext) * 100));
     if (this.petXpBarFill) this.petXpBarFill.style.width = `${xpPercent}%`;
@@ -10360,10 +10233,10 @@ class MaineCoonPetSystem {
     }
 
     if (this.petFishCountLabel) {
-      this.petFishCountLabel.textContent = `В запасе: ${this.data.treats} шт.`;
+      this.petFishCountLabel.textContent = this.app.t('pet_treat_count', { count: this.data.treats });
     }
     if (this.petGoldenCountLabel) {
-      this.petGoldenCountLabel.textContent = `В запасе: ${this.data.goldenTreats} шт.`;
+      this.petGoldenCountLabel.textContent = this.app.t('pet_treat_count', { count: this.data.goldenTreats });
     }
 
     this.updateGaugeUI();
