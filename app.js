@@ -54,9 +54,27 @@ const Plan4UStorage = {
   db: null,
   BASE_DIR: 'Plan4U',
   PHOTOS_DIR: 'Plan4U/photos',
-  initPromise: null,
+  cleanOldBackupsFromLocalStorage() {
+    try {
+      if (typeof localStorage === 'undefined') return;
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith('plan4u_backups/') || key.startsWith('plan4u_backup'))) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(k => {
+        try { localStorage.removeItem(k); } catch (e) { }
+      });
+      if (keysToRemove.length > 0) {
+        console.log(`Plan4U Storage: Cleaned ${keysToRemove.length} backup entries from LocalStorage to preserve quota`);
+      }
+    } catch (e) { }
+  },
 
   init() {
+    this.cleanOldBackupsFromLocalStorage();
     if (!this.initPromise) {
       this.initPromise = (async () => {
         try {
@@ -186,10 +204,17 @@ const Plan4UStorage = {
     const jsonStr = typeof data === 'string' ? data : JSON.stringify(data);
     if (!jsonStr || jsonStr === 'undefined' || jsonStr === 'null') return;
 
-    // 1. LocalStorage mirror
-    try {
-      localStorage.setItem(`plan4u_${filename}`, jsonStr);
-    } catch (e) { }
+    // 1. LocalStorage mirror (exclude huge backup snapshots to prevent QuotaExceededError)
+    if (!filename.startsWith('backups/')) {
+      try {
+        localStorage.setItem(`plan4u_${filename}`, jsonStr);
+      } catch (e) {
+        this.cleanOldBackupsFromLocalStorage();
+        try {
+          localStorage.setItem(`plan4u_${filename}`, jsonStr);
+        } catch (e2) { }
+      }
+    }
 
     if (this.initPromise) await this.initPromise.catch(() => { });
 
@@ -418,17 +443,39 @@ const PRIORITIES = [
   { id: 'важный', label: 'Важный', class: 'p-important', icon: '⭐' }
 ];
 
+function inferSectionFromText(text) {
+  if (!text || typeof text !== 'string') return null;
+  const t = text.toLowerCase();
+  if (/молитв|библи|евангел|храм|церк|служб|исповед|причаст|духовн|псалом|писани|бог|свящ|сповідь|біблі|літург|литург/.test(t)) {
+    return 'spiritual';
+  }
+  if (/уборк|стирк|мыть|помыть|пылесос|ремонт|посуд|прибра|прибиран/.test(t)) {
+    return 'household';
+  }
+  if (/приготов|сварить|обед|ужин|завтрак|суп|рецепт|кухн|готуват|вечеря|обід|сніданок/.test(t)) {
+    return 'cook';
+  }
+  return null;
+}
+
 function getTaskSection(task) {
   if (!task) return 'personal';
   if (task.section) {
     const s = task.section.toLowerCase();
     if (s.includes('духовн') || s === 'spiritual') return 'spiritual';
-    if (s.includes('личн') || s === 'personal') return 'personal';
+    if (s.includes('личн') || s === 'personal') {
+      // If task was defaulted/corrupted to 'personal' but clearly belongs to spiritual affairs by text:
+      const inferred = inferSectionFromText(task.text);
+      if (inferred === 'spiritual') return 'spiritual';
+      return 'personal';
+    }
     if (s.includes('дом') || s.includes('семейн') || s.includes('семья') || s === 'household' || s === 'family') return 'household';
     if (s.includes('готов') || s.includes('кухн') || s.includes('еда') || s.includes('cook') || s.includes('meal')) return 'cook';
     if (s.includes('друг') || s.includes('план') || s === 'other') return 'other';
     return task.section;
   }
+  const inferred = inferSectionFromText(task.text);
+  if (inferred) return inferred;
   const p = (task.period || '').toUpperCase();
   if (p === 'УТРО') return 'spiritual';
   if (p === 'ДЕНЬ') return 'personal';
@@ -1362,7 +1409,7 @@ const DEFAULT_STICKER_CATEGORIES = [
 class NotebookApp {
   constructor() {
     window.appInstance = this;
-    this._isHydrating = true;
+    this._isHydrating = false;
     this.hasDeferredTaskFlag = localStorage.getItem('todo_notebook_flag_defer') === '1';
     this.hasExportedBackupFlag = localStorage.getItem('todo_notebook_flag_backup') === '1';
     this.initCloudSync();
@@ -1432,6 +1479,7 @@ class NotebookApp {
 
       // Only restore from disk if LocalStorage had NO data (e.g. WebView cache was cleared by Android)
       if (!hasLocalDaily && !hasLocalTasks) {
+        this._isHydrating = true;
         const [
           savedDaily,
           savedTasks,
@@ -1526,6 +1574,8 @@ class NotebookApp {
       }
     } catch (e) {
       console.warn('Storage hydration error:', e);
+    } finally {
+      this._isHydrating = false;
     }
   }
 
@@ -1564,7 +1614,7 @@ class NotebookApp {
   // Flush all in-memory changes to LocalStorage, IndexedDB and Native Filesystem
   flushAllSaves() {
     try {
-      if (this._isHydrating) return;
+      if (this._isHydrating && (!this.tasks || !this.dailyTasks)) return;
       this.flushSaveTasks();
       this.saveDailyTasks();
       this.saveDayHistory();
@@ -1875,8 +1925,18 @@ class NotebookApp {
     try {
       if (!this.dailyTasks || typeof this.dailyTasks !== 'object') return;
       const dailyJson = JSON.stringify(this.dailyTasks);
-      localStorage.setItem('todo_notebook_daily_tasks', dailyJson);
-      localStorage.setItem('plan4u_daily_tasks.json', dailyJson);
+      try {
+        localStorage.setItem('todo_notebook_daily_tasks', dailyJson);
+        localStorage.setItem('plan4u_daily_tasks.json', dailyJson);
+      } catch (quotaErr) {
+        Plan4UStorage.cleanOldBackupsFromLocalStorage?.();
+        try {
+          localStorage.setItem('todo_notebook_daily_tasks', dailyJson);
+          localStorage.setItem('plan4u_daily_tasks.json', dailyJson);
+        } catch (retryErr) {
+          console.warn('LocalStorage quota warning:', retryErr);
+        }
+      }
       Plan4UStorage.saveFile('daily_tasks.json', this.dailyTasks);
       this.triggerBackgroundBackup?.();
     } catch (e) {
@@ -1900,7 +1960,15 @@ class NotebookApp {
   saveDayHistory() {
     try {
       if (!this.dayHistory || typeof this.dayHistory !== 'object') return;
-      localStorage.setItem('todo_notebook_day_history', JSON.stringify(this.dayHistory));
+      const histJson = JSON.stringify(this.dayHistory);
+      try {
+        localStorage.setItem('todo_notebook_day_history', histJson);
+      } catch (quotaErr) {
+        Plan4UStorage.cleanOldBackupsFromLocalStorage?.();
+        try {
+          localStorage.setItem('todo_notebook_day_history', histJson);
+        } catch (retryErr) { }
+      }
       Plan4UStorage.saveFile('day_history.json', this.dayHistory);
       this.triggerBackgroundBackup?.();
     } catch (e) {
@@ -1942,15 +2010,43 @@ class NotebookApp {
             if (nonTodoTaskIds.has(String(hItem.id))) return;
 
             const exists = this.dailyTasks[d].some(t => String(t.id) === String(hItem.id) || (t.text === hItem.text && t.completed));
+            const recoveredSection = hItem.section || (hItem.place && getTaskSection({ section: hItem.place, text: hItem.text })) || getTaskSection(hItem) || inferSectionFromText(hItem.text) || 'personal';
             if (!exists) {
               this.dailyTasks[d].push({
                 id: hItem.id || generateTaskId(),
                 text: hItem.text,
-                section: hItem.place || hItem.period || 'personal',
+                section: recoveredSection,
                 completed: true,
                 date: d
               });
               changed = true;
+            } else {
+              // Self-healing: if task exists in dailyTasks[d] but section was corrupted to 'personal', restore accurate section
+              const existingTask = this.dailyTasks[d].find(t => String(t.id) === String(hItem.id) || (t.text === hItem.text && t.completed));
+              if (existingTask && (!existingTask.section || existingTask.section === 'personal')) {
+                const targetSec = hItem.section || inferSectionFromText(existingTask.text);
+                if (targetSec && targetSec !== 'personal') {
+                  existingTask.section = targetSec;
+                  changed = true;
+                }
+              }
+            }
+          });
+        }
+      }
+    }
+
+    // Self-healing: scan past days in dailyTasks to repair any spiritual tasks that were corrupted to 'personal'
+    if (this.dailyTasks && typeof this.dailyTasks === 'object') {
+      for (const d in this.dailyTasks) {
+        if (d < todayStr && Array.isArray(this.dailyTasks[d])) {
+          this.dailyTasks[d].forEach(t => {
+            if (t && (!t.section || t.section === 'personal')) {
+              const inferred = inferSectionFromText(t.text);
+              if (inferred && inferred !== 'personal') {
+                t.section = inferred;
+                changed = true;
+              }
             }
           });
         }
@@ -1999,30 +2095,6 @@ class NotebookApp {
         changed = true;
       }
     });
-
-    // 2. Clean up any completed tasks from past days that might have leaked into today as completed
-    const pastCompletedMap = new Map();
-    pastDateKeys.forEach(pastDate => {
-      const pList = this.dailyTasks[pastDate] || [];
-      pList.forEach(t => {
-        if (t.completed && t.text && t.text.trim()) {
-          pastCompletedMap.set(`${t.text.trim()}___${t.section || ''}`, true);
-        }
-      });
-    });
-
-    if (this.dailyTasks[todayStr].length > 0) {
-      const initialLen = this.dailyTasks[todayStr].length;
-      this.dailyTasks[todayStr] = this.dailyTasks[todayStr].filter(t => {
-        if (t.completed && pastCompletedMap.has(`${(t.text || '').trim()}___${t.section || ''}`)) {
-          return false;
-        }
-        return true;
-      });
-      if (this.dailyTasks[todayStr].length !== initialLen) {
-        changed = true;
-      }
-    }
 
     if (changed) {
       if ((this.selectedDate || todayStr) === todayStr && this.tasks) {
@@ -2126,14 +2198,19 @@ class NotebookApp {
     }
 
     // Daily todo tasks for selected date
-    if (this.dailyTasks[targetDate] && Array.isArray(this.dailyTasks[targetDate])) {
+    if (this.dailyTasks[targetDate] && Array.isArray(this.dailyTasks[targetDate]) && this.dailyTasks[targetDate].length > 0) {
       persistentTasks.todo = this.dailyTasks[targetDate];
+    } else if (persistentTasks.todo && Array.isArray(persistentTasks.todo) && persistentTasks.todo.length > 0) {
+      // If dailyTasks for target date had no tasks yet but persistentTasks.todo had saved tasks, preserve them into dailyTasks!
+      this.dailyTasks[targetDate] = persistentTasks.todo;
     } else {
-      const allDailyKeys = Object.keys(this.dailyTasks);
-      if (allDailyKeys.length === 0 && (!persistentTasks.todo || persistentTasks.todo.length === 0)) {
-        this.dailyTasks[targetDate] = JSON.parse(JSON.stringify(INITIAL_TASKS.todo || []));
-      } else {
-        this.dailyTasks[targetDate] = [];
+      if (!this.dailyTasks[targetDate]) {
+        const allDailyKeys = Object.keys(this.dailyTasks);
+        if (allDailyKeys.length === 0 && (!persistentTasks.todo || persistentTasks.todo.length === 0)) {
+          this.dailyTasks[targetDate] = JSON.parse(JSON.stringify(INITIAL_TASKS.todo || []));
+        } else {
+          this.dailyTasks[targetDate] = [];
+        }
       }
       persistentTasks.todo = this.dailyTasks[targetDate];
     }
@@ -2171,7 +2248,13 @@ class NotebookApp {
         localStorage.setItem('todo_notebook_tasks', tasksJson);
         localStorage.setItem('plan4u_tasks.json', tasksJson);
       } catch (lsErr) {
-        console.warn('LocalStorage quota warning:', lsErr);
+        Plan4UStorage.cleanOldBackupsFromLocalStorage?.();
+        try {
+          localStorage.setItem('todo_notebook_tasks', tasksJson);
+          localStorage.setItem('plan4u_tasks.json', tasksJson);
+        } catch (retryErr) {
+          console.warn('LocalStorage quota warning:', retryErr);
+        }
       }
       Plan4UStorage.saveFile('tasks.json', this.tasks);
       this.triggerBackgroundBackup?.();
@@ -4668,7 +4751,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.1.0',
+      appVersion: '0.1.1',
       email: this.cloudEmail,
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
@@ -4899,7 +4982,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.1.0',
+      appVersion: '0.1.1',
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
       sections: this.tabSections || {},
@@ -5899,17 +5982,23 @@ class NotebookApp {
       const tabTitle = activeTab ? activeTab.title : this.currentTab;
 
       const existingIdx = this.dayHistory[targetDate].findIndex(h => String(h.id) === String(task.id));
+      const taskSection = task.section || getTaskSection(task) || 'personal';
       if (existingIdx === -1) {
         this.dayHistory[targetDate].push({
           id: task.id,
           tabId: this.currentTab,
           tabTitle: tabTitle,
           text: task.text,
+          section: taskSection,
           period: task.period || '',
-          place: task.place || '',
+          place: task.place || taskSection,
           watchType: task.watchType || '',
           completedAt: new Date().toISOString()
         });
+      } else {
+        if (!this.dayHistory[targetDate][existingIdx].section) {
+          this.dayHistory[targetDate][existingIdx].section = taskSection;
+        }
       }
     } else {
       if (this.currentTab === 'watch') {
@@ -5978,11 +6067,13 @@ class NotebookApp {
       }
     }
 
-    // PHASE 4: Defer heavy operations (saving data, achievements check, widget updates)
+    // Synchronously flush changes to ensure instant persistence
+    this.saveTasks();
+    this.saveDayHistory();
+
+    // PHASE 4: Defer heavy visual/computational operations (achievements check, widget updates)
     // to avoid dropping frames during the animation
     setTimeout(() => {
-      this.saveTasks();
-      this.saveDayHistory();
       this.checkAchievements(true);
       this.updateWorkloadWidget();
     }, 150);
@@ -6109,7 +6200,7 @@ class NotebookApp {
   }
 
   // Open Task Modal with interactive fields matching current active tab
-  openTaskModal() {
+  openTaskModal(defaultSection = null) {
     const todayStr = this.getTodayDateString();
     if (this.currentTab === 'todo' && this.selectedDate < todayStr) {
       triggerHaptic(15);
@@ -6125,7 +6216,13 @@ class NotebookApp {
     }
     this.editingTaskId = null;
     this.tempPhotoData = null;
+    this._activeSectionForNewTask = defaultSection || null;
     this.renderDynamicForm(this.currentTab);
+
+    const sectionSelect = this.dynamicFormFields ? this.dynamicFormFields.querySelector('#taskSectionSelect') : null;
+    if (sectionSelect && defaultSection) {
+      sectionSelect.value = defaultSection;
+    }
 
     const modalTitle = document.getElementById('modalTitle');
     if (modalTitle) modalTitle.textContent = 'Новая запись';
@@ -6219,6 +6316,12 @@ class NotebookApp {
     const notesInput = this.dynamicFormFields.querySelector('#taskExtraNotes');
     if (notesInput && task.notes) {
       notesInput.value = task.notes;
+    }
+
+    // Populate section
+    const sectionSelect = this.dynamicFormFields.querySelector('#taskSectionSelect');
+    if (sectionSelect) {
+      sectionSelect.value = task.section || getTaskSection(task) || 'personal';
     }
 
     this._taskModalOpenedAt = Date.now();
@@ -6442,6 +6545,12 @@ class NotebookApp {
     };
 
     if (tabId === 'todo') {
+      const todoSections = this.getTabSections('todo');
+      const sectionOptions = todoSections.map(s => {
+        const title = (s.key && this.t(s.key)) ? this.t(s.key) : `${s.icon ? s.icon + ' ' : ''}${s.name}`;
+        return `<option value="${s.id}">${this.escapeHtml(title)}</option>`;
+      }).join('');
+
       // 1) Streamlined Edit Form for Todo notebook
       html = `
         <div class="form-section-card">
@@ -6450,6 +6559,17 @@ class NotebookApp {
             <div class="autocomplete-wrapper">
               <input type="text" id="taskTextInput" placeholder="${this.t('task_text_placeholder')}" required autocomplete="off">
               <div class="autocomplete-dropdown" id="taskTextDropdown"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section-card">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="taskSectionSelect">📁 ${this.settings.lang === 'en' ? 'Notebook section' : (this.settings.lang === 'uk' ? 'Розділ блокнота' : 'Раздел блокнота')}</label>
+            <div style="margin-top: 5px;">
+              <select id="taskSectionSelect" class="section-select-field">
+                ${sectionOptions}
+              </select>
             </div>
           </div>
         </div>
@@ -6838,8 +6958,24 @@ class NotebookApp {
         if (targetTab === 'todo') {
           const timeInput = (this.dynamicFormFields ? this.dynamicFormFields.querySelector('#taskTimeInput') : null) || document.getElementById('taskTimeInput');
           task.time = timeInput ? (timeInput.value.trim() || null) : null;
+          const secSelect = (this.dynamicFormFields ? this.dynamicFormFields.querySelector('#taskSectionSelect') : null) || document.getElementById('taskSectionSelect');
+          if (secSelect && secSelect.value) {
+            task.section = secSelect.value;
+          }
           if (task.time) {
             this.scheduleTaskNotification(task);
+          }
+          const targetDate = this.selectedDate || todayStr;
+          if (this.dailyTasks && this.dailyTasks[targetDate]) {
+            const dTask = this.dailyTasks[targetDate].find(t => String(t.id) === String(task.id));
+            if (dTask) {
+              dTask.text = task.text;
+              dTask.section = task.section;
+              dTask.priority = task.priority;
+              dTask.color = task.color;
+              dTask.notes = task.notes;
+              dTask.time = task.time;
+            }
           }
         }
         this.saveTasks();
@@ -6871,7 +7007,8 @@ class NotebookApp {
     if (targetTab === 'todo') {
       const timeInput = (this.dynamicFormFields ? this.dynamicFormFields.querySelector('#taskTimeInput') : null) || document.getElementById('taskTimeInput');
       newTask.time = timeInput ? (timeInput.value.trim() || null) : null;
-      newTask.section = 'personal';
+      const secSelect = (this.dynamicFormFields ? this.dynamicFormFields.querySelector('#taskSectionSelect') : null) || document.getElementById('taskSectionSelect');
+      newTask.section = (secSelect && secSelect.value) ? secSelect.value : (this._activeSectionForNewTask || 'personal');
       if (newTask.time) {
         this.scheduleTaskNotification(newTask);
       }
@@ -9065,7 +9202,7 @@ class NotebookApp {
 
     container.innerHTML = items.map(stk => {
       const previewHtml = stk.img
-        ? `<img src="${stk.img}" alt="" draggable="false" class="sticker-picker-img" loading="lazy" onerror="if(!this.dataset.retried){this.dataset.retried='1';setTimeout(()=>{this.src='${stk.img}?v=0.1.0';},300);}" />`
+        ? `<img src="${stk.img}" alt="" draggable="false" class="sticker-picker-img" loading="lazy" onerror="if(!this.dataset.retried){this.dataset.retried='1';setTimeout(()=>{this.src='${stk.img}?v=0.1.1';},300);}" />`
         : stk.svg;
       return `
         <div class="sticker-picker-card" data-type="${stk.id}">

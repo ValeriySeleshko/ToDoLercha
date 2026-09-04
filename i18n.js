@@ -257,7 +257,7 @@
       pet_no_brown_treats: 'Нет коричневых камушков! Выполняйте дела в блокноте, чтобы заработать 🟤',
       pet_no_golden_treats: 'Нет золотых консервов! Закрывайте важные дела дня, чтобы заработать 🥫',
       pet_level_up: '🎉 Уровень дружбы повышен: {name} теперь {level} уровня!',
-      app_version_footer: 'Plan4U • Версия 0.1.0'
+      app_version_footer: 'Plan4U • Версия 0.1.1'
     },
 
     // ==========================================
@@ -508,7 +508,7 @@
       pet_no_brown_treats: 'Немає коричневих камінчиків! Виконуйте справи в блокноті, щоб заробити 🟤',
       pet_no_golden_treats: 'Немає золотих консервів! Закривайте важливі справи дня, щоб заробити 🥫',
       pet_level_up: '🎉 Рівень дружби підвищено: {name} тепер {level} рівня!',
-      app_version_footer: 'Plan4U • Версія 0.1.0'
+      app_version_footer: 'Plan4U • Версія 0.1.1'
     },
 
     // ==========================================
@@ -759,7 +759,7 @@
       pet_no_brown_treats: 'Out of brown pebbles! Complete tasks in notebook to earn 🟤',
       pet_no_golden_treats: 'Out of golden canned treats! Complete priority tasks to earn 🥫',
       pet_level_up: '🎉 Friendship level increased: {name} is now level {level}!',
-      app_version_footer: 'Plan4U • Version 0.1.0'
+      app_version_footer: 'Plan4U • Version 0.1.1'
     }
   };
 
