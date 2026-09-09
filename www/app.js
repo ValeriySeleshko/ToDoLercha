@@ -1647,6 +1647,7 @@ class NotebookApp {
         this.dailyTasks[todayStr] = [];
       }
       this.tasks.todo = this.dailyTasks[todayStr];
+      this.saveTasks();
       this.updateDateWidget();
       this.renderTabs();
       this.render();
@@ -1695,6 +1696,7 @@ class NotebookApp {
           this.dailyTasks[todayStr] = [];
         }
         this.tasks.todo = this.dailyTasks[todayStr];
+        this.saveTasks();
         this.updateDateWidget();
         this.renderTabs();
         this.render();
@@ -2079,14 +2081,17 @@ class NotebookApp {
       if (uncompleted.length > 0) {
         // Move uncompleted tasks to today, resetting completed flag to false
         uncompleted.forEach(origTask => {
-          const alreadyInToday = this.dailyTasks[todayStr].some(t => String(t.id) === String(origTask.id) || (t.text === origTask.text && t.section === origTask.section));
-          if (!alreadyInToday) {
+          const existingInToday = this.dailyTasks[todayStr].find(t => String(t.id) === String(origTask.id) || (t.text === origTask.text && t.section === origTask.section));
+          if (!existingInToday) {
             const rolledTask = {
               ...origTask,
               date: todayStr,
               completed: false
             };
             this.dailyTasks[todayStr].push(rolledTask);
+          } else {
+            existingInToday.date = todayStr;
+            existingInToday.completed = false;
           }
         });
 
@@ -2095,6 +2100,68 @@ class NotebookApp {
         changed = true;
       }
     });
+
+    // 2. Clean up any completed tasks from past days that leaked into today
+    const pastCompletedIds = new Set();
+    const pastCompletedTexts = new Set();
+    pastDateKeys.forEach(pastDate => {
+      const pList = this.dailyTasks[pastDate] || [];
+      pList.forEach(t => {
+        if (t && t.completed && t.text && t.text.trim()) {
+          if (t.id) pastCompletedIds.add(String(t.id));
+          pastCompletedTexts.add(`${t.text.trim().toLowerCase()}___${t.section || ''}`);
+        }
+      });
+      if (this.dayHistory && Array.isArray(this.dayHistory[pastDate])) {
+        this.dayHistory[pastDate].forEach(h => {
+          if (h && h.id && (!h.tabId || h.tabId === 'todo')) {
+            pastCompletedIds.add(String(h.id));
+            if (h.text && h.text.trim()) {
+              pastCompletedTexts.add(`${h.text.trim().toLowerCase()}___${h.section || ''}`);
+            }
+          }
+        });
+      }
+    });
+
+    // Tasks recorded as genuinely completed today
+    const todayCompletedIds = new Set();
+    if (this.dayHistory && Array.isArray(this.dayHistory[todayStr])) {
+      this.dayHistory[todayStr].forEach(h => {
+        if (h && h.id && (!h.tabId || h.tabId === 'todo')) {
+          todayCompletedIds.add(String(h.id));
+        }
+      });
+    }
+
+    if (this.dailyTasks[todayStr] && this.dailyTasks[todayStr].length > 0) {
+      const initialLen = this.dailyTasks[todayStr].length;
+      this.dailyTasks[todayStr] = this.dailyTasks[todayStr].filter(t => {
+        if (!t || t.isEmpty || !t.text || !t.text.trim()) return true;
+
+        if (t.completed) {
+          const tId = String(t.id || '');
+          // If task matches an ID completed in a past day, it belongs strictly in the past archive!
+          if (tId && pastCompletedIds.has(tId)) {
+            return false;
+          }
+          // If task explicitly has a past date stamped on it:
+          if (t.date && t.date < todayStr) {
+            return false;
+          }
+          // If text matches a past completed task and was NOT genuinely completed today:
+          const textKey = `${t.text.trim().toLowerCase()}___${t.section || ''}`;
+          if (pastCompletedTexts.has(textKey) && !todayCompletedIds.has(tId)) {
+            return false;
+          }
+        }
+        return true;
+      });
+
+      if (this.dailyTasks[todayStr].length !== initialLen) {
+        changed = true;
+      }
+    }
 
     if (changed) {
       if ((this.selectedDate || todayStr) === todayStr && this.tasks) {
@@ -2198,10 +2265,12 @@ class NotebookApp {
     }
 
     // Daily todo tasks for selected date
+    const hasAnyDailyTasks = Object.keys(this.dailyTasks).some(d => Array.isArray(this.dailyTasks[d]) && this.dailyTasks[d].length > 0);
+
     if (this.dailyTasks[targetDate] && Array.isArray(this.dailyTasks[targetDate]) && this.dailyTasks[targetDate].length > 0) {
       persistentTasks.todo = this.dailyTasks[targetDate];
-    } else if (persistentTasks.todo && Array.isArray(persistentTasks.todo) && persistentTasks.todo.length > 0) {
-      // If dailyTasks for target date had no tasks yet but persistentTasks.todo had saved tasks, preserve them into dailyTasks!
+    } else if (!hasAnyDailyTasks && persistentTasks.todo && Array.isArray(persistentTasks.todo) && persistentTasks.todo.length > 0) {
+      // Legacy migration only: if dailyTasks dictionary was completely empty across all dates
       this.dailyTasks[targetDate] = persistentTasks.todo;
     } else {
       if (!this.dailyTasks[targetDate]) {
@@ -4751,7 +4820,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.1.1',
+      appVersion: '0.1.2',
       email: this.cloudEmail,
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
@@ -4944,6 +5013,10 @@ class NotebookApp {
 
     // 12. Apply visual state & update UI components
     this.currentTab = this.tabs.length > 0 ? this.tabs[0].id : 'todo';
+    this.rolloverPastUncompletedTasks();
+    if (this.dailyTasks && this.dailyTasks[targetDate]) {
+      this.tasks.todo = this.dailyTasks[targetDate];
+    }
     this.applySettings();
     this.updateDateWidget();
     this.updateTrophyWidgetAura();
@@ -4982,7 +5055,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.1.1',
+      appVersion: '0.1.2',
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
       sections: this.tabSections || {},
@@ -9202,7 +9275,7 @@ class NotebookApp {
 
     container.innerHTML = items.map(stk => {
       const previewHtml = stk.img
-        ? `<img src="${stk.img}" alt="" draggable="false" class="sticker-picker-img" loading="lazy" onerror="if(!this.dataset.retried){this.dataset.retried='1';setTimeout(()=>{this.src='${stk.img}?v=0.1.1';},300);}" />`
+        ? `<img src="${stk.img}" alt="" draggable="false" class="sticker-picker-img" loading="lazy" onerror="if(!this.dataset.retried){this.dataset.retried='1';setTimeout(()=>{this.src='${stk.img}?v=0.1.2';},300);}" />`
         : stk.svg;
       return `
         <div class="sticker-picker-card" data-type="${stk.id}">
