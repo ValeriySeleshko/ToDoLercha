@@ -2627,10 +2627,14 @@ class NotebookApp {
     if (habitCount === 0) {
       targetHeight = 56 + addRowHeight;
     } else {
-      // Deterministic layout calculation avoiding synchronous reflow loops:
-      // each habit row is 35px high with 3px gap, plus top/bottom padding 12px
-      const calculatedHeight = (habitCount * 35) + (Math.max(0, habitCount - 1) * 3) + 12 + addRowHeight;
-      targetHeight = calculatedHeight;
+      let measuredHeight = 0;
+      if (this.habitsListContainer && this.habitsListContainer.children.length > 0) {
+        measuredHeight = this.habitsListContainer.scrollHeight + addRowHeight + 6;
+      }
+      const currentFontSize = this.settings?.fontSize || 14;
+      const baseRowHeight = Math.max(38, currentFontSize * 2.3);
+      const calculatedHeight = (habitCount * baseRowHeight) + (Math.max(0, habitCount - 1) * 3) + 14 + addRowHeight;
+      targetHeight = Math.max(measuredHeight, calculatedHeight);
     }
 
     const maxAllowed = Math.floor(window.innerHeight * 0.72);
@@ -2933,8 +2937,14 @@ class NotebookApp {
 
         if (habit.type === 'numeric') {
           // Numeric habit cell
-          const curVal = typeof hEntry === 'object' ? (hEntry.current || 0) : (hEntry ? (habit.target?.value || 1) : 0);
-          const tgtVal = (habit.target && habit.target.value) ? habit.target.value : 1;
+          const tgtVal = Number((habit.target && habit.target.value) ? habit.target.value : 1);
+          let curVal = 0;
+          if (typeof hEntry === 'object') {
+            curVal = (hEntry.current !== undefined) ? Number(hEntry.current) : (hEntry.completed ? tgtVal : 0);
+          } else if (hEntry) {
+            curVal = tgtVal;
+          }
+          curVal = Number(curVal) || 0;
           const isDone = curVal >= tgtVal;
           const pct = Math.min(Math.max((curVal / tgtVal) * 100, 0), 100);
 
@@ -3146,6 +3156,13 @@ class NotebookApp {
       backdrop.classList.remove('open');
       backdrop.setAttribute('aria-hidden', 'true');
     }
+    const periodMenu = document.getElementById('habitPeriodDropdownMenu');
+    const periodBtn = document.getElementById('habitPeriodDropdownBtn');
+    if (periodMenu) periodMenu.classList.remove('show');
+    if (periodBtn) {
+      periodBtn.classList.remove('open');
+      periodBtn.setAttribute('aria-expanded', 'false');
+    }
     this.currentEditingHabitId = null;
   }
 
@@ -3235,7 +3252,6 @@ class NotebookApp {
     if (idInput) idInput.value = '';
     if (titleInput) {
       titleInput.value = '';
-      setTimeout(() => titleInput.focus(), 80);
     }
     if (targetInput) targetInput.value = '8000';
     if (customUnitInput) customUnitInput.value = '';
@@ -3296,7 +3312,15 @@ class NotebookApp {
     const idInput = document.getElementById('habitEditId');
     const titleInput = document.getElementById('habitTitleInput');
     const title = titleInput ? titleInput.value.trim() : '';
-    if (!title) return;
+    if (!title) {
+      if (titleInput) {
+        titleInput.focus();
+        if (typeof titleInput.reportValidity === 'function') {
+          titleInput.reportValidity();
+        }
+      }
+      return;
+    }
 
     const isNumeric = document.getElementById('habitTypeBtnNumeric')?.classList.contains('active');
     const type = isNumeric ? 'numeric' : 'boolean';
@@ -3472,7 +3496,6 @@ class NotebookApp {
     }
 
     // Section 1: Multi-Period History Bar Chart (12 columns: days, weeks, months, years)
-    const periodSelect = document.getElementById('habitChartPeriodSelect');
     let activePeriod = this.currentHabitChartPeriod;
     if (!activePeriod) {
       try {
@@ -3484,19 +3507,7 @@ class NotebookApp {
     }
     this.currentHabitChartPeriod = activePeriod;
 
-    if (periodSelect) {
-      periodSelect.value = activePeriod;
-      if (!periodSelect.dataset.hasListener) {
-        periodSelect.dataset.hasListener = 'true';
-        periodSelect.addEventListener('change', () => {
-          this.currentHabitChartPeriod = periodSelect.value;
-          try {
-            localStorage.setItem('plan4u_habit_chart_period', periodSelect.value);
-          } catch(e) {}
-          this.renderHabitChart(this.currentHabitInModal || habit, this.currentHabitStats || stats, periodSelect.value);
-        });
-      }
-    }
+    this.updateHabitPeriodDropdownUI(activePeriod);
     this.currentHabitInModal = habit;
     this.currentHabitStats = stats;
     this.renderHabitChart(habit, stats, activePeriod);
@@ -3505,6 +3516,36 @@ class NotebookApp {
     this.renderCalendarHeatmap(habit, stats);
     this.renderHabitFrequencyGrid(habit, stats);
     this.initHabitViewToggle();
+  }
+
+  // Update custom habit chart period dropdown UI
+  updateHabitPeriodDropdownUI(activePeriod) {
+    const periodSelect = document.getElementById('habitChartPeriodSelect');
+    if (periodSelect) periodSelect.value = activePeriod;
+
+    const currentIconEl = document.getElementById('habitPeriodCurrentIcon');
+    const currentLabelEl = document.getElementById('habitPeriodCurrentLabel');
+    const dropdownWrap = document.getElementById('habitPeriodDropdownWrap');
+
+    const periodMeta = {
+      days: { icon: '☀️', key: 'habit_chart_period_days', def: 'По дням' },
+      weeks: { icon: '📅', key: 'habit_chart_period_weeks', def: 'По неделям' },
+      months: { icon: '🗓️', key: 'habit_chart_period_months', def: 'По месяцам' },
+      years: { icon: '📈', key: 'habit_chart_period_years', def: 'По годам' }
+    };
+
+    const meta = periodMeta[activePeriod] || periodMeta.weeks;
+    if (currentIconEl) currentIconEl.textContent = meta.icon;
+    if (currentLabelEl) {
+      currentLabelEl.textContent = window.Plan4UI18n ? Plan4UI18n.t(meta.key, {}, this.currentLang) : meta.def;
+      currentLabelEl.setAttribute('data-i18n', meta.key);
+    }
+
+    if (dropdownWrap) {
+      dropdownWrap.querySelectorAll('.habit-period-opt').forEach(opt => {
+        opt.classList.toggle('active', opt.dataset.period === activePeriod);
+      });
+    }
   }
 
   // Render 12-column bar chart for selected period (days / weeks / months / years)
@@ -4552,17 +4593,18 @@ class NotebookApp {
 
     if (!backdrop) return;
 
-    const tgt = (habit.target && habit.target.value) ? habit.target.value : 1;
+    const tgt = Number(habit.target?.value) || 1;
     const step = this.getHabitAutoStep(habit);
     const unit = habit.target?.unit || '';
 
     const hEntry = habit.history && habit.history[dateStr];
     let cur = 0;
     if (typeof hEntry === 'object') {
-      cur = hEntry.current || 0;
+      cur = (hEntry.current !== undefined) ? Number(hEntry.current) : (hEntry.completed ? tgt : 0);
     } else if (hEntry) {
       cur = tgt;
     }
+    cur = Number(cur) || 0;
 
     if (titleEl) titleEl.textContent = habit.title;
     if (dateEl) {
@@ -4579,6 +4621,7 @@ class NotebookApp {
     if (inputEl) {
       inputEl.value = cur;
       inputEl.step = step;
+      inputEl.min = '0';
     }
 
     const pct = Math.min(Math.max((cur / tgt) * 100, 0), 100);
@@ -4609,18 +4652,19 @@ class NotebookApp {
     const habit = (this.habits || []).find(h => h.id === this.currentStepperHabitId);
     if (!habit) return;
 
-    const tgt = (habit.target && habit.target.value) ? habit.target.value : 1;
+    const dateStr = this.currentStepperDate;
+    const tgt = Number(habit.target?.value) || 1;
     let val = Math.max(0, Number(Number(newVal).toFixed(2)));
 
     if (!habit.history) habit.history = {};
 
-    const wasCompleted = habit.history[this.currentStepperDate]?.completed;
+    const wasCompleted = !!habit.history[dateStr]?.completed;
     const isNowCompleted = val >= tgt;
 
     if (val === 0) {
-      delete habit.history[this.currentStepperDate];
+      delete habit.history[dateStr];
     } else {
-      habit.history[this.currentStepperDate] = {
+      habit.history[dateStr] = {
         current: val,
         target: tgt,
         completed: isNowCompleted,
@@ -4639,7 +4683,7 @@ class NotebookApp {
 
     this.saveHabits();
 
-    // Surgical in-place update of numeric cell button if present in DOM
+    // In-place update of numeric cell button if present in DOM
     if (this.habitsListContainer) {
       const cellBtn = this.habitsListContainer.querySelector(`button[data-habit-id="${habit.id}"][data-date="${dateStr}"]`);
       if (cellBtn) {
@@ -4674,7 +4718,7 @@ class NotebookApp {
     const progressFill = document.getElementById('habitStepperProgressFill');
 
     if (curValEl) curValEl.textContent = val;
-    if (inputEl) inputEl.value = val;
+    if (inputEl && document.activeElement !== inputEl) inputEl.value = val;
     const pct = Math.min(Math.max((val / tgt) * 100, 0), 100);
     if (progressFill) progressFill.style.width = `${pct}%`;
   }
@@ -5609,6 +5653,15 @@ class NotebookApp {
       if (!container || !container.classList.contains('is-expanded')) {
         return;
       }
+      // Do not collapse substrate drawer if habit modal or stepper popover is open
+      const habitModal = document.getElementById('habitModalBackdrop');
+      if (habitModal && habitModal.classList.contains('open')) {
+        return;
+      }
+      const stepperModal = document.getElementById('habitStepperBackdrop');
+      if (stepperModal && stepperModal.classList.contains('open')) {
+        return;
+      }
       // Ignore if drawer was just opened in this exact event tick (< 150ms)
       if (this._substrateDrawerOpenedAt && (Date.now() - this._substrateDrawerOpenedAt < 150)) {
         return;
@@ -5689,12 +5742,17 @@ class NotebookApp {
     closeBtn?.addEventListener('click', handleClose);
     cancelBtn?.addEventListener('click', handleClose);
 
+    let startedOnBackdrop = false;
     if (backdrop) {
+      backdrop.addEventListener('pointerdown', (e) => {
+        startedOnBackdrop = (e.target === backdrop);
+      });
       backdrop.addEventListener('click', (e) => {
-        if (e.target === backdrop) {
+        if (startedOnBackdrop && e.target === backdrop) {
           if (Date.now() - (this._habitModalOpenedAt || 0) < 350) return;
           handleClose(e);
         }
+        startedOnBackdrop = false;
       });
     }
 
@@ -5767,11 +5825,108 @@ class NotebookApp {
       }
     });
 
-    // Form submit
-    form?.addEventListener('submit', (e) => {
-      e.preventDefault();
+    const submitBtn = document.getElementById('habitModalSubmitBtn');
+    let isSubmittingHabit = false;
+    const triggerSave = (e) => {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      if (isSubmittingHabit) return;
+      isSubmittingHabit = true;
+      setTimeout(() => { isSubmittingHabit = false; }, 500);
+
       this.saveHabitFromModal();
+    };
+
+    let submitPointerDown = false;
+    let submitPointerY = 0;
+
+    submitBtn?.addEventListener('pointerdown', (e) => {
+      submitPointerDown = true;
+      submitPointerY = e.clientY;
+      try {
+        if (submitBtn.setPointerCapture) {
+          submitBtn.setPointerCapture(e.pointerId);
+        }
+      } catch (err) {}
     });
+
+    submitBtn?.addEventListener('pointerup', (e) => {
+      if (submitPointerDown) {
+        submitPointerDown = false;
+        try {
+          if (submitBtn.releasePointerCapture) {
+            submitBtn.releasePointerCapture(e.pointerId);
+          }
+        } catch (err) {}
+        if (Math.abs(e.clientY - submitPointerY) < 25) {
+          triggerSave(e);
+        }
+      }
+    });
+
+    submitBtn?.addEventListener('pointercancel', () => {
+      submitPointerDown = false;
+    });
+
+    submitBtn?.addEventListener('click', triggerSave);
+
+    // Form submit
+    form?.addEventListener('submit', triggerSave);
+
+    // Custom Habit Period Dropdown in Stats
+    const periodWrap = document.getElementById('habitPeriodDropdownWrap');
+    const periodBtn = document.getElementById('habitPeriodDropdownBtn');
+    const periodMenu = document.getElementById('habitPeriodDropdownMenu');
+
+    if (periodBtn && periodMenu) {
+      periodBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        triggerHaptic(10);
+        const isOpen = periodMenu.classList.contains('show');
+        periodMenu.classList.toggle('show', !isOpen);
+        periodBtn.classList.toggle('open', !isOpen);
+        periodBtn.setAttribute('aria-expanded', String(!isOpen));
+      });
+
+      periodMenu.querySelectorAll('.habit-period-opt').forEach(opt => {
+        opt.addEventListener('click', (e) => {
+          e.stopPropagation();
+          triggerHaptic(15);
+          const chosenPeriod = opt.dataset.period;
+          if (!chosenPeriod) return;
+
+          this.currentHabitChartPeriod = chosenPeriod;
+          try {
+            localStorage.setItem('plan4u_habit_chart_period', chosenPeriod);
+          } catch(err) {}
+
+          this.updateHabitPeriodDropdownUI(chosenPeriod);
+
+          periodMenu.classList.remove('show');
+          periodBtn.classList.remove('open');
+          periodBtn.setAttribute('aria-expanded', 'false');
+
+          if (this.currentHabitInModal || this.currentEditingHabitId) {
+            const h = this.currentHabitInModal || (this.habits || []).find(x => x.id === this.currentEditingHabitId);
+            if (h) {
+              const stats = this.currentHabitStats || this.calculateHabitStats(h);
+              this.renderHabitChart(h, stats, chosenPeriod);
+            }
+          }
+        });
+      });
+
+      // Close period menu on click outside
+      document.addEventListener('click', (e) => {
+        if (!periodWrap || !periodWrap.contains(e.target)) {
+          periodMenu.classList.remove('show');
+          periodBtn.classList.remove('open');
+          periodBtn.setAttribute('aria-expanded', 'false');
+        }
+      });
+    }
   }
 
   // Initialize Quick Stepper event listeners
@@ -5787,7 +5942,24 @@ class NotebookApp {
     const quickComplete = document.getElementById('habitQuickCompleteBtn');
     const quickReset = document.getElementById('habitQuickResetBtn');
 
-    const handleClose = (e) => {
+    const commitInput = () => {
+      if (!this.currentStepperHabitId || !this.currentStepperDate || !inputEl) return;
+      const rawVal = parseFloat(inputEl.value);
+      const val = isNaN(rawVal) ? 0 : Math.max(0, rawVal);
+      this.setHabitStepperValue(val);
+    };
+
+    const handleSaveAndClose = (e) => {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      commitInput();
+      triggerHaptic(15);
+      this.closeHabitStepper();
+    };
+
+    const handleCancelClose = (e) => {
       if (e) {
         e.preventDefault();
         e.stopPropagation();
@@ -5796,24 +5968,55 @@ class NotebookApp {
       this.closeHabitStepper();
     };
 
-    closeBtn?.addEventListener('click', handleClose);
-    doneBtn?.addEventListener('click', handleClose);
+    closeBtn?.addEventListener('click', handleCancelClose);
+    doneBtn?.addEventListener('click', handleSaveAndClose);
 
+    let startedOnStepperBackdrop = false;
     if (backdrop) {
+      backdrop.addEventListener('pointerdown', (e) => {
+        startedOnStepperBackdrop = (e.target === backdrop);
+      });
       backdrop.addEventListener('click', (e) => {
-        if (e.target === backdrop) {
+        if (startedOnStepperBackdrop && e.target === backdrop) {
           if (Date.now() - (this._stepperOpenedAt || 0) < 300) return;
-          handleClose(e);
+          handleSaveAndClose(e);
         }
+        startedOnStepperBackdrop = false;
       });
     }
+
+    // Live preview while typing
+    inputEl?.addEventListener('input', () => {
+      if (!this.currentStepperHabitId) return;
+      const habit = (this.habits || []).find(h => h.id === this.currentStepperHabitId);
+      const tgt = Number(habit?.target?.value) || 1;
+      const rawVal = parseFloat(inputEl.value);
+      const val = isNaN(rawVal) ? 0 : Math.max(0, rawVal);
+
+      const curValEl = document.getElementById('habitStepperCurrentVal');
+      const progressFill = document.getElementById('habitStepperProgressFill');
+      if (curValEl) curValEl.textContent = val;
+      const pct = Math.min(Math.max((val / tgt) * 100, 0), 100);
+      if (progressFill) progressFill.style.width = `${pct}%`;
+    });
+
+    inputEl?.addEventListener('change', () => {
+      commitInput();
+    });
+
+    inputEl?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleSaveAndClose(e);
+      }
+    });
 
     const getHabitCurrent = () => {
       if (!this.currentStepperHabitId || !this.currentStepperDate) return 0;
       const habit = (this.habits || []).find(h => h.id === this.currentStepperHabitId);
       const hEntry = habit && habit.history && habit.history[this.currentStepperDate];
-      if (typeof hEntry === 'object') return hEntry.current || 0;
-      if (hEntry) return (habit && habit.target && habit.target.value) ? habit.target.value : 1;
+      if (typeof hEntry === 'object') return (hEntry.current !== undefined) ? Number(hEntry.current) : (hEntry.completed ? (Number(habit?.target?.value) || 1) : 0);
+      if (hEntry) return Number(habit?.target?.value) || 1;
       return 0;
     };
 
@@ -5833,11 +6036,6 @@ class NotebookApp {
       const step = this.getHabitAutoStep(habit);
       const cur = getHabitCurrent();
       this.setHabitStepperValue(cur + step);
-    });
-
-    inputEl?.addEventListener('change', () => {
-      const val = parseFloat(inputEl.value) || 0;
-      this.setHabitStepperValue(val);
     });
 
     quick1?.addEventListener('click', (e) => {
@@ -5862,7 +6060,7 @@ class NotebookApp {
       e.preventDefault();
       if (!this.currentStepperHabitId) return;
       const habit = (this.habits || []).find(h => h.id === this.currentStepperHabitId);
-      const tgt = (habit && habit.target && habit.target.value) ? habit.target.value : 1;
+      const tgt = Number(habit?.target?.value) || 1;
       this.setHabitStepperValue(tgt);
     });
 
@@ -6904,6 +7102,7 @@ class NotebookApp {
     if (this.folderTabsBar) {
       this.renderTabs();
     }
+    this.updateSubstrateTrayHeight();
   }
 
   // Play subtle audio pop on task completion with cached AudioContext
@@ -7690,7 +7889,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.1.5',
+      appVersion: '0.1.6',
       email: this.cloudEmail,
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
@@ -7933,7 +8132,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.1.5',
+      appVersion: '0.1.6',
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
       sections: this.tabSections || {},

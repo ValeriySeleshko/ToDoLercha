@@ -331,8 +331,8 @@ body.app-ready .app-viewport {
   border-radius: 7px;
   border: 1.5px solid var(--primary-magenta);
   background: #ffffff;
-  font-family: var(--font-ui);
-  font-size: 11.5px;
+  font-family: var(--task-font-family, var(--font-note));
+  font-size: var(--task-font-size, 14px);
   font-weight: 600;
   color: #1e2229;
   outline: none;
@@ -379,9 +379,9 @@ body.app-ready .app-viewport {
   display: flex;
   align-items: center;
   width: 100%;
-  padding: 2px 14px;
+  padding: 4px 14px;
   box-sizing: border-box;
-  min-height: 32px;
+  min-height: 34px;
   border-radius: 6px;
   -webkit-transform: translateZ(0);
   transform: translateZ(0);
@@ -407,15 +407,22 @@ body.app-ready .app-viewport {
 }
 
 .habit-title-text {
-  font-family: var(--font-ui);
-  font-size: 12px;
-  font-weight: 700;
+  font-family: var(--task-font-family, var(--font-note));
+  font-size: var(--task-font-size, 14px);
+  font-weight: var(--task-font-weight, 700);
+  -webkit-text-stroke: var(--task-text-stroke, 0px);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
   color: #2b303b;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: normal;
   cursor: pointer;
+  line-height: 1.25;
   letter-spacing: -0.1px;
+  padding: 1px 0;
+  transition: color 0.12s ease;
 }
 
 .habit-title-text:hover {
@@ -432,6 +439,8 @@ body.app-ready .app-viewport {
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+  align-self: center;
 }
 
 .habit-row:hover .habit-delete-btn {
@@ -542,19 +551,19 @@ body.app-ready .app-viewport {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  overflow: hidden;
   cursor: pointer;
   flex: 1;
+  justify-content: center;
 }
 
 .habit-sub-badge {
-  font-size: 9.5px;
+  font-size: clamp(9px, calc(var(--task-font-size, 14px) * 0.72), 11px);
   font-weight: 600;
   color: #8b92a0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-top: -1px;
+  white-space: normal;
+  line-height: 1.15;
+  margin-top: 2px;
+  overflow-wrap: break-word;
 }
 
 /* Numeric Habit Day Cell */
@@ -809,35 +818,181 @@ body.app-ready .app-viewport {
 .habit-chart-title-group {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .habit-chart-title-icon {
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1;
 }
 
-.habit-chart-period-select {
+/* Custom Habit Stats Period Dropdown */
+.habit-period-dropdown-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  z-index: 25;
+}
+
+.habit-period-dropdown-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #ffffff;
+  border: 1.5px solid rgba(var(--primary-rgb, 216, 58, 136), 0.3);
+  border-radius: 20px;
+  padding: 4px 12px 4px 9px;
+  font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
   font-size: 12.5px;
   font-weight: 750;
-  color: #334155;
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  padding: 3px 8px;
+  color: #1e293b;
   cursor: pointer;
-  outline: none;
-  font-family: inherit;
-  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(var(--primary-rgb, 216, 58, 136), 0.08);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-.habit-chart-period-select:hover {
+.habit-period-dropdown-btn:hover {
+  background: rgba(var(--primary-rgb, 216, 58, 136), 0.05);
   border-color: var(--primary-magenta);
+  transform: translateY(-0.5px);
+  box-shadow: 0 4px 12px rgba(var(--primary-rgb, 216, 58, 136), 0.16);
 }
 
-.habit-chart-period-select:focus {
+.habit-period-dropdown-btn:active,
+.habit-period-dropdown-btn.open {
+  background: rgba(var(--primary-rgb, 216, 58, 136), 0.09);
   border-color: var(--primary-magenta);
-  box-shadow: 0 0 0 2px rgba(var(--primary-rgb, 216, 58, 136), 0.15);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb, 216, 58, 136), 0.18);
+}
+
+.habit-period-icon {
+  font-size: 14px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.habit-period-label {
+  letter-spacing: -0.1px;
+  white-space: nowrap;
+}
+
+.habit-period-chevron {
+  color: var(--primary-magenta);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+}
+
+.habit-period-dropdown-btn.open .habit-period-chevron {
+  transform: rotate(180deg);
+}
+
+/* Dropdown Menu Box */
+.habit-period-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 165px;
+  background: #ffffff;
+  border: 1.5px solid rgba(var(--primary-rgb, 216, 58, 136), 0.22);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.14), 0 2px 8px rgba(0, 0, 0, 0.06);
+  padding: 5px;
+  display: none;
+  flex-direction: column;
+  gap: 3px;
+  z-index: 100;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  animation: habitPeriodMenuFade 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.habit-period-dropdown-menu.show {
+  display: flex;
+}
+
+@keyframes habitPeriodMenuFade {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.habit-period-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: var(--font-ui, inherit);
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  transition: all 0.15s ease;
+  width: 100%;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.habit-period-opt:hover {
+  background: rgba(var(--primary-rgb, 216, 58, 136), 0.08);
+  color: var(--primary-magenta);
+  transform: translateX(2px);
+}
+
+.habit-period-opt.active {
+  background: rgba(var(--primary-rgb, 216, 58, 136), 0.12);
+  color: var(--primary-magenta);
+  font-weight: 750;
+}
+
+.habit-period-opt-icon {
+  font-size: 14px;
+  line-height: 1;
+  width: 18px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.habit-period-opt-name {
+  flex: 1;
+  letter-spacing: -0.1px;
+}
+
+.habit-period-opt-check {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--primary-magenta);
+  opacity: 0;
+  transform: scale(0.5);
+  transition: all 0.15s ease;
+}
+
+.habit-period-opt.active .habit-period-opt-check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.habit-chart-period-select.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .habit-stat-target-badge {
@@ -1576,7 +1731,8 @@ body.app-ready .app-viewport {
 }
 
 .habit-step-input {
-  width: 90px;
+  width: 108px;
+  min-width: 90px;
   height: 44px;
   border-radius: 12px;
   border: 1.5px solid var(--primary-magenta);
@@ -1586,6 +1742,14 @@ body.app-ready .app-viewport {
   font-weight: 800;
   color: #1e293b;
   outline: none;
+  -moz-appearance: textfield;
+  padding: 0 4px;
+}
+
+.habit-step-input::-webkit-outer-spin-button,
+.habit-step-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .habit-stepper-quick-actions {
@@ -5221,6 +5385,42 @@ body.theme-dark {
 
 .app-frame.theme-dark .habit-stat-section-title {
   color: #f1f5f9;
+}
+
+.app-frame.theme-dark .habit-period-dropdown-btn {
+  background: #1e2433;
+  border-color: rgba(var(--primary-rgb, 216, 58, 136), 0.4);
+  color: #f1f5f9;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.app-frame.theme-dark .habit-period-dropdown-btn:hover {
+  background: #252d3f;
+  border-color: var(--primary-magenta);
+}
+
+.app-frame.theme-dark .habit-period-dropdown-btn.open {
+  background: #283044;
+}
+
+.app-frame.theme-dark .habit-period-dropdown-menu {
+  background: #1a202c;
+  border-color: rgba(var(--primary-rgb, 216, 58, 136), 0.35);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+.app-frame.theme-dark .habit-period-opt {
+  color: #cbd5e1;
+}
+
+.app-frame.theme-dark .habit-period-opt:hover {
+  background: rgba(var(--primary-rgb, 216, 58, 136), 0.18);
+  color: #ffffff;
+}
+
+.app-frame.theme-dark .habit-period-opt.active {
+  background: rgba(var(--primary-rgb, 216, 58, 136), 0.25);
+  color: #ffffff;
 }
 
 .app-frame.theme-dark .habit-chart-period-select {
