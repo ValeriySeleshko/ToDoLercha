@@ -38,6 +38,112 @@ function triggerHaptic(pattern = 20) {
   } catch (e) { }
 }
 
+// Lightweight Vanilla Canvas Confetti & Stars Salute (~45 lines, zero dependencies)
+function launchConfetti() {
+  try {
+    let canvas = document.getElementById('confettiCanvas');
+    if (!canvas) {
+      canvas = document.createElement('canvas');
+      canvas.id = 'confettiCanvas';
+      canvas.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:999999;';
+      document.body.appendChild(canvas);
+    }
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    ctx.scale(dpr, dpr);
+
+    const colors = ['#FF4D80', '#FFB703', '#06D6A0', '#118AB2', '#8338EC', '#FF6B6B', '#FFD166', '#48CAE4', '#F72585'];
+    const particles = [];
+    const count = 75;
+
+    for (let i = 0; i < count; i++) {
+      const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.15;
+      const speed = Math.random() * 11 + 13;
+      particles.push({
+        x: w * (0.35 + Math.random() * 0.3),
+        y: h + 10,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        gravity: 0.42,
+        drag: 0.985,
+        size: Math.random() * 7 + 6,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        rotation: Math.random() * Math.PI * 2,
+        rotationSpeed: (Math.random() - 0.5) * 0.25,
+        flip: Math.random() * Math.PI * 2,
+        flipSpeed: Math.random() * 0.2 + 0.1,
+        isStar: Math.random() < 0.35,
+        opacity: 1,
+        decay: Math.random() * 0.008 + 0.008
+      });
+    }
+
+    if (window._confettiAnimId) cancelAnimationFrame(window._confettiAnimId);
+
+    function render() {
+      ctx.clearRect(0, 0, w, h);
+      let alive = 0;
+
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        if (p.opacity <= 0 || p.y > h + 40) continue;
+        alive++;
+
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += p.gravity;
+        p.vx *= p.drag;
+        p.vy *= p.drag;
+        p.rotation += p.rotationSpeed;
+        p.flip += p.flipSpeed;
+        if (p.vy > 0) p.opacity = Math.max(0, p.opacity - p.decay);
+
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rotation);
+        ctx.scale(1, Math.cos(p.flip));
+        ctx.globalAlpha = p.opacity;
+        ctx.fillStyle = p.color;
+
+        if (p.isStar) {
+          ctx.beginPath();
+          for (let s = 0; s < 5; s++) {
+            const a1 = (s * 4 * Math.PI) / 5 - Math.PI / 2;
+            const a2 = a1 + (2 * Math.PI) / 10;
+            const r1 = p.size;
+            const r2 = p.size * 0.45;
+            ctx[s === 0 ? 'moveTo' : 'lineTo'](Math.cos(a1) * r1, Math.sin(a1) * r1);
+            ctx.lineTo(Math.cos(a2) * r2, Math.sin(a2) * r2);
+          }
+          ctx.closePath();
+          ctx.fill();
+        } else {
+          ctx.fillRect(-p.size / 2, -p.size / 3, p.size, p.size * 0.65);
+        }
+        ctx.restore();
+      }
+
+      if (alive > 0) {
+        window._confettiAnimId = requestAnimationFrame(render);
+      } else {
+        ctx.clearRect(0, 0, w, h);
+        if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas);
+      }
+    }
+
+    window._confettiAnimId = requestAnimationFrame(render);
+  } catch (err) {
+    console.warn('Confetti error:', err);
+  }
+}
+window.launchConfetti = launchConfetti;
+
 /**
  * Plan4U Dedicated Device Storage System
  * Manages structured folder layout on device:
@@ -1465,6 +1571,11 @@ class NotebookApp {
     // Start background hydration from Plan4UStorage (Native Device Filesystem & IndexedDB)
     this.hydrateFromStorage();
 
+    // Check and spawn Maine secret quest if eligible ("Записки лапкой")
+    if (window.MaineQuests && typeof window.MaineQuests.checkAndSpawnQuest === 'function') {
+      window.MaineQuests.checkAndSpawnQuest(this);
+    }
+
     // Seamless, jitter-free initial reveal once fonts and DOM are fully calculated
     this.revealAppWhenReady();
   }
@@ -1490,7 +1601,8 @@ class NotebookApp {
           savedDayHistory,
           savedHistory,
           savedPet,
-          savedStickers
+          savedStickers,
+          savedHabits
         ] = await Promise.all([
           Plan4UStorage.loadFile('daily_tasks.json', null),
           Plan4UStorage.loadFile('tasks.json', null),
@@ -1501,7 +1613,8 @@ class NotebookApp {
           Plan4UStorage.loadFile('day_history.json', null),
           Plan4UStorage.loadFile('history.json', null),
           Plan4UStorage.loadFile('pet.json', null),
-          Plan4UStorage.loadFile('stickers.json', null)
+          Plan4UStorage.loadFile('stickers.json', null),
+          Plan4UStorage.loadFile('habits.json', null)
         ]);
 
         let hasRestored = false;
@@ -1556,6 +1669,13 @@ class NotebookApp {
         if (savedStickers && typeof savedStickers === 'object') {
           this.stickers = savedStickers;
           this.renderStickers();
+        }
+
+        if (Array.isArray(savedHabits) && savedHabits.length > 0) {
+          this.habits = savedHabits;
+          this.saveHabits();
+          this.renderHabits();
+          this.updateWeekDaysProgress();
         }
 
         if (hasRestored) {
@@ -1623,6 +1743,7 @@ class NotebookApp {
       this.saveAchievementsData();
       this.saveHistory();
       this.saveStickers();
+      this.saveHabits();
       if (this.tabSections && window.Plan4UStorage) {
         Plan4UStorage.saveFile('sections.json', this.tabSections);
       }
@@ -1654,6 +1775,9 @@ class NotebookApp {
       this.renderStickers();
       this.updateWorkloadWidget();
       this.syncWithNativeWidget();
+      if (window.MaineQuests && typeof window.MaineQuests.checkAndSpawnQuest === 'function') {
+        window.MaineQuests.checkAndSpawnQuest(this);
+      }
     }
   }
 
@@ -1703,6 +1827,9 @@ class NotebookApp {
         this.renderStickers();
         this.updateWorkloadWidget();
         this.syncWithNativeWidget();
+        if (window.MaineQuests && typeof window.MaineQuests.checkAndSpawnQuest === 'function') {
+          window.MaineQuests.checkAndSpawnQuest(this);
+        }
       }
     };
 
@@ -2203,6 +2330,2385 @@ class NotebookApp {
         this.widgetDate.title = `${dict.selectedDay}: ${dateNum} ${months[dateObj.getMonth()]} (${dayName.toUpperCase()})`;
       }
     }
+
+    this.renderWeekDays();
+  }
+
+  // Render Week Days horizontal block (7 circles for rolling 7-day window ending on TODAY)
+  renderWeekDays() {
+    if (!this.weekDaysBar) return;
+    const todayStr = this.getTodayDateString();
+    const [ty, tm, td] = todayStr.split('-').map(Number);
+    const todayObj = new Date(ty, tm - 1, td);
+
+    const lang = this.settings.lang || 'ru';
+    const dict = I18N[lang] || I18N.ru;
+
+    const daysShort = dict.weekdaysShort || ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+    const months = dict.monthsNominative || ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+
+    let track = this.weekDaysBar.querySelector('.week-days-track');
+    if (!track) {
+      track = document.createElement('div');
+      track.className = 'week-days-track';
+      track.id = 'weekDaysTrack';
+      this.weekDaysBar.appendChild(track);
+    }
+    track.innerHTML = '';
+
+    for (let i = 0; i < 7; i++) {
+      const dayOffset = 6 - i; // 6, 5, 4, 3, 2, 1, 0 (i=6 is today)
+      const dayDate = new Date(todayObj);
+      dayDate.setDate(todayObj.getDate() - dayOffset);
+      const dayDateStr = `${dayDate.getFullYear()}-${String(dayDate.getMonth() + 1).padStart(2, '0')}-${String(dayDate.getDate()).padStart(2, '0')}`;
+      const isToday = (i === 6);
+      const dowIndex = (dayDate.getDay() + 6) % 7; // 0=Mon, 1=Tue, ..., 6=Sun
+      const isWeekend = (dowIndex === 5 || dowIndex === 6);
+
+      const circle = document.createElement('div');
+      circle.className = `week-day-circle${isToday ? ' is-today' : ''}${isWeekend ? ' is-weekend' : ''}`;
+      circle.dataset.date = dayDateStr;
+      circle.dataset.dayIndex = i;
+      circle.title = `${dayDate.getDate()} ${months[dayDate.getMonth()]} (${daysShort[dowIndex]})`;
+
+      // Circular SVG Progress Ring (clockwise progress, matching Widget 2 reference)
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('class', 'week-day-progress-ring');
+      svg.setAttribute('viewBox', '0 0 36 36');
+
+      const bg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      bg.setAttribute('class', 'week-day-progress-bg');
+      bg.setAttribute('cx', '18');
+      bg.setAttribute('cy', '18');
+      bg.setAttribute('r', '15.9155');
+
+      const fill = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      fill.setAttribute('class', 'week-day-progress-fill');
+      fill.setAttribute('cx', '18');
+      fill.setAttribute('cy', '18');
+      fill.setAttribute('r', '15.9155');
+      fill.setAttribute('stroke-dasharray', '100');
+      fill.setAttribute('stroke-dashoffset', '100');
+
+      svg.appendChild(bg);
+      svg.appendChild(fill);
+      circle.appendChild(svg);
+
+      const span = document.createElement('span');
+      span.className = 'week-day-name';
+      span.textContent = daysShort[dowIndex];
+      circle.appendChild(span);
+
+      // Verified Badge (top-right checkmark when all habits completed)
+      const badge = document.createElement('div');
+      badge.className = 'week-day-badge';
+      badge.setAttribute('aria-hidden', 'true');
+      badge.innerHTML = '<svg viewBox="0 0 10 10" width="7" height="7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 5.2 4.2 7.4 8 2.8"></polyline></svg>';
+      circle.appendChild(badge);
+
+      track.appendChild(circle);
+    }
+
+    this.updateWeekDaysProgress();
+    this.renderHabits();
+  }
+
+  // Update circular progress ring on each of the 7 week day circles (clockwise fill)
+  updateWeekDaysProgress() {
+    if (!this.weekDaysBar) return;
+    const circles = this.weekDaysBar.querySelectorAll('.week-day-circle');
+    if (!circles || circles.length === 0) return;
+
+    const todayStr = this.getTodayDateString();
+
+    circles.forEach(circle => {
+      let dateStr = circle.dataset.date;
+      if (!dateStr) {
+        if (circle.classList.contains('is-today')) {
+          dateStr = todayStr;
+          circle.dataset.date = dateStr;
+        } else {
+          const dayIdx = parseInt(circle.dataset.dayIndex, 10);
+          if (!isNaN(dayIdx)) {
+            const [y, m, d] = todayStr.split('-').map(Number);
+            const todayObj = new Date(y, m - 1, d);
+            const targetDate = new Date(todayObj);
+            targetDate.setDate(todayObj.getDate() - (6 - dayIdx));
+            dateStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
+            circle.dataset.date = dateStr;
+          }
+        }
+      }
+      if (!dateStr) return;
+
+      // 1. Tasks for dateStr
+      let list = [];
+      if (dateStr === todayStr && this.tasks && this.tasks.todo) {
+        list = this.tasks.todo;
+      } else if (this.dailyTasks && this.dailyTasks[dateStr]) {
+        list = this.dailyTasks[dateStr];
+      }
+
+      const activeTasks = (list || []).filter(t => !t.isEmpty && (t.text && t.text.trim().length > 0));
+      const totalTasks = activeTasks.length;
+      const completedTasks = activeTasks.filter(t => t.completed).length;
+
+      // 2. Habits for dateStr (from habit tracker with schedule & numeric progress support)
+      const allHabits = (this.habits && Array.isArray(this.habits)) ? this.habits : [];
+      let scheduledHabitsCount = 0;
+      let completedHabitsScore = 0;
+
+      const [yVal, mVal, dVal] = dateStr.split('-').map(Number);
+      const dayDateObj = new Date(yVal, mVal - 1, dVal);
+      const dayDow = dayDateObj.getDay(); // 0 is Sun, 1 is Mon...
+
+      allHabits.forEach(h => {
+        const hEntry = h.history && h.history[dateStr];
+        let frac = 0;
+        if (h.type === 'numeric') {
+          const cur = typeof hEntry === 'object' ? (hEntry.current || 0) : (hEntry ? (h.target?.value || 1) : 0);
+          const tgt = (h.target && h.target.value) ? h.target.value : 1;
+          frac = Math.min(Math.max(cur / tgt, 0), 1.0);
+        } else {
+          const done = typeof hEntry === 'object' ? !!hEntry.completed : !!hEntry;
+          frac = done ? 1.0 : 0.0;
+        }
+
+        if (h.schedule?.type === 'weekdays') {
+          const dows = h.schedule.daysOfWeek || [1, 2, 3, 4, 5];
+          const isScheduled = dows.includes(dayDow);
+          if (isScheduled) {
+            scheduledHabitsCount++;
+            completedHabitsScore += frac;
+          } else if (frac > 0) {
+            scheduledHabitsCount++;
+            completedHabitsScore += frac;
+          }
+        } else if (h.schedule?.type === 'periodic') {
+          if (frac > 0) {
+            // Completed on this date: counts as scheduled and completed
+            scheduledHabitsCount++;
+            completedHabitsScore += frac;
+          }
+          // If not completed on this date, a periodic habit with a floating schedule
+          // is not tied to this specific day, so it does not penalize the daily progress circle.
+        } else {
+          // Daily schedule
+          scheduledHabitsCount++;
+          completedHabitsScore += frac;
+        }
+      });
+
+      const totalHabits = scheduledHabitsCount;
+      const completedHabits = completedHabitsScore;
+
+      // Calculate fraction: habits and tasks both fill the progress ring
+      let fraction = 0;
+      let total = 0;
+      let completed = 0;
+
+      const habitFrac = totalHabits > 0 ? (completedHabits / totalHabits) : 0;
+      const taskFrac = totalTasks > 0 ? (completedTasks / totalTasks) : 0;
+
+      if (totalHabits > 0 && totalTasks > 0) {
+        fraction = Math.max(habitFrac, taskFrac, (completedTasks + completedHabits) / (totalTasks + totalHabits));
+        total = totalHabits + totalTasks;
+        completed = completedHabits + completedTasks;
+      } else if (totalHabits > 0) {
+        fraction = habitFrac;
+        total = totalHabits;
+        completed = completedHabits;
+      } else if (totalTasks > 0) {
+        fraction = taskFrac;
+        total = totalTasks;
+        completed = completedTasks;
+      }
+
+      fraction = Math.min(Math.max(fraction, 0), 1);
+
+      const fillCircle = circle.querySelector('.week-day-progress-fill');
+      if (fillCircle) {
+        const offset = 100 * (1 - fraction);
+        fillCircle.style.strokeDasharray = '100';
+        fillCircle.style.strokeDashoffset = offset.toFixed(1);
+        fillCircle.setAttribute('stroke-dasharray', '100');
+        fillCircle.setAttribute('stroke-dashoffset', offset.toFixed(1));
+        fillCircle.style.opacity = fraction > 0 ? '1' : '0';
+        if (fraction === 1 && total > 0) {
+          fillCircle.classList.add('is-completed-all');
+        } else {
+          fillCircle.classList.remove('is-completed-all');
+        }
+      }
+
+      // Verified Badge: all scheduled habits for this day are completed
+      let badge = circle.querySelector('.week-day-badge');
+      if (!badge) {
+        badge = document.createElement('div');
+        badge.className = 'week-day-badge';
+        badge.setAttribute('aria-hidden', 'true');
+        badge.innerHTML = '<svg viewBox="0 0 10 10" width="7" height="7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 5.2 4.2 7.4 8 2.8"></polyline></svg>';
+        circle.appendChild(badge);
+      }
+
+      const allHabitsCompleted = (totalHabits > 0 && completedHabits >= totalHabits);
+      circle.classList.toggle('has-verified-badge', allHabitsCompleted);
+
+      // Tooltip
+      const dayName = circle.querySelector('.week-day-name')?.textContent || '';
+      if (total > 0) {
+        const pct = Math.round(fraction * 100);
+        const verifiedNote = allHabitsCompleted ? ' ✓ (все привычки выполнены)' : '';
+        circle.title = `${dayName} (${dateStr}): выполнено ${completed} из ${total} (${pct}%)${verifiedNote}`;
+      } else {
+        circle.title = `${dayName} (${dateStr})`;
+      }
+    });
+  }
+
+  // Toggle substrate drawer: slide tabs and tasks down to reveal habit tracker
+  toggleSubstrateDrawer(forceState, isSilent = false) {
+    const container = document.getElementById('tabsSubstrateContainer');
+    if (!container) return;
+    const isCurrentlyExpanded = container.classList.contains('is-expanded');
+    const targetState = (forceState !== undefined) ? forceState : !isCurrentlyExpanded;
+    if (targetState === isCurrentlyExpanded) return;
+
+    if (!isSilent) {
+      triggerHaptic(20);
+    }
+
+    if (targetState) {
+      this._substrateDrawerOpenedAt = Date.now();
+      // Render habits and update height only if dirty or empty to ensure instantaneous 60fps opening
+      const habitsList = document.getElementById('habitsListContainer');
+      const hasContent = habitsList && habitsList.children.length > 0;
+      if (this._habitsDirty || !hasContent) {
+        this.renderHabits();
+        this.updateSubstrateTrayHeight();
+      }
+    } else {
+      this._substrateDrawerOpenedAt = 0;
+      this.closeAddHabitInput();
+    }
+
+    const isExpanded = container.classList.toggle('is-expanded', targetState);
+
+    if (this.weekDaysBar) {
+      this.weekDaysBar.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+      this.weekDaysBar.classList.toggle('is-expanded', isExpanded);
+    }
+    if (this.weekDaysTrack) {
+      this.weekDaysTrack.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+    }
+    const tray = document.getElementById('substrateTray');
+    if (tray) {
+      tray.setAttribute('aria-hidden', isExpanded ? 'false' : 'true');
+    }
+  }
+
+  // Helper to cleanly collapse substrate drawer back to original state
+  collapseSubstrateDrawer(isSilent = true) {
+    this.toggleSubstrateDrawer(false, isSilent);
+  }
+
+  // Update substrate tray height adaptively based on habits count & content
+  updateSubstrateTrayHeight() {
+    const container = document.getElementById('tabsSubstrateContainer');
+    const tray = document.getElementById('substrateTray');
+    if (!container || !tray) return;
+
+    const habitCount = (this.habits && Array.isArray(this.habits)) ? this.habits.length : 0;
+    const addRow = document.getElementById('habitAddRow');
+    const isAddRowVisible = addRow && addRow.style.display !== 'none';
+    const addRowHeight = isAddRowVisible ? 40 : 0;
+
+    let targetHeight = 0;
+    if (habitCount === 0) {
+      targetHeight = 56 + addRowHeight;
+    } else {
+      // Deterministic layout calculation avoiding synchronous reflow loops:
+      // each habit row is 35px high with 3px gap, plus top/bottom padding 12px
+      const calculatedHeight = (habitCount * 35) + (Math.max(0, habitCount - 1) * 3) + 12 + addRowHeight;
+      targetHeight = calculatedHeight;
+    }
+
+    const maxAllowed = Math.floor(window.innerHeight * 0.72);
+    const finalHeight = Math.min(Math.max(targetHeight, 52), maxAllowed);
+
+    container.style.setProperty('--substrate-tray-height', `${finalHeight}px`);
+    tray.style.setProperty('--substrate-tray-height', `${finalHeight}px`);
+  }
+
+  // ==========================================================================
+  // ADVANCED HABIT TRACKER METHODS
+  // ==========================================================================
+
+  // Load habits from LocalStorage & Plan4UStorage with normalization
+  loadHabits() {
+    let habitsList = [];
+    const activePresetId = window.INITIAL_HABITS_ID || 'wife_v1';
+    const lastPresetLoaded = localStorage.getItem('plan4u_habits_preset_id');
+
+    try {
+      const saved = localStorage.getItem('plan4u_habits') || localStorage.getItem('plan4u_habits.json');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) habitsList = parsed;
+      }
+    } catch (e) {
+      console.warn('Could not load habits:', e);
+    }
+
+    // If active preset is defined, apply it if empty, if containing old default habits, or if preset switched
+    const isOldDefault = habitsList.some(h => h.id === 'h_read' || h.id === 'h_meditate');
+    if (window.INITIAL_HABITS && Array.isArray(window.INITIAL_HABITS) && window.INITIAL_HABITS.length > 0) {
+      if (!habitsList.length || isOldDefault || lastPresetLoaded !== activePresetId) {
+        habitsList = JSON.parse(JSON.stringify(window.INITIAL_HABITS));
+        localStorage.setItem('plan4u_habits', JSON.stringify(habitsList));
+        localStorage.setItem('plan4u_habits_preset_id', activePresetId);
+      }
+    } else if (!habitsList || habitsList.length === 0 || isOldDefault) {
+      // Clean 2 habits baseline for store/personal use
+      habitsList = [
+        {
+          id: 'h_water',
+          title: '💧 Пить 2л воды',
+          type: 'numeric',
+          target: { value: 2, unit: 'л', step: 0.2 },
+          schedule: { type: 'daily' },
+          history: {}
+        },
+        {
+          id: 'h_sport',
+          title: '🏃 Зарядка',
+          type: 'boolean',
+          schedule: { type: 'daily' },
+          history: {}
+        }
+      ];
+      localStorage.setItem('plan4u_habits', JSON.stringify(habitsList));
+      localStorage.setItem('plan4u_habits_preset_id', 'clean_v1');
+    }
+
+    // Normalize each habit to support new schema while keeping backwards compatibility
+    habitsList.forEach(h => {
+      if (!h.type) h.type = 'boolean';
+      if (!h.history || typeof h.history !== 'object') h.history = {};
+      if (h.type === 'numeric') {
+        if (!h.target) h.target = { value: 1, unit: '' };
+        if (!h.target.value) h.target.value = 1;
+        let autoStep = Number((h.target.value / 10).toFixed(2));
+        if (Number.isInteger(h.target.value) && autoStep >= 1) {
+          autoStep = Math.round(autoStep);
+        }
+        h.target.step = Math.max(0.01, autoStep);
+      }
+      if (!h.schedule) h.schedule = { type: 'daily' };
+      if (h.schedule.type === 'weekdays' && !Array.isArray(h.schedule.daysOfWeek)) {
+        h.schedule.daysOfWeek = [1, 2, 3, 4, 5];
+      }
+      if (h.schedule.type === 'periodic' && !h.schedule.targetCount) {
+        h.schedule.targetCount = 3;
+        h.schedule.period = 'week';
+      }
+    });
+
+    return habitsList;
+  }
+
+  // Get auto-calculated step (1/10th of target value)
+  getHabitAutoStep(habit) {
+    if (!habit) return 1;
+    const val = (habit.target && habit.target.value) ? habit.target.value : 1;
+    let step = Number((val / 10).toFixed(2));
+    if (Number.isInteger(val) && step >= 1) {
+      step = Math.round(step);
+    }
+    return Math.max(0.01, step);
+  }
+
+  // Save habits to LocalStorage & Plan4UStorage
+  saveHabits() {
+    try {
+      localStorage.setItem('plan4u_habits', JSON.stringify(this.habits));
+      if (window.Plan4UStorage && typeof Plan4UStorage.saveFile === 'function') {
+        Plan4UStorage.saveFile('habits.json', this.habits);
+      }
+      this.triggerBackgroundBackup?.();
+      this.scheduleCloudSync?.();
+    } catch (e) {
+      console.warn('Could not save habits:', e);
+    }
+  }
+
+  // Render habits rows with titles (left 1/3) and 7 day checkboxes/progress cells (right 2/3)
+  renderHabits() {
+    if (!this.habitsListContainer) {
+      this.habitsListContainer = document.getElementById('habitsListContainer');
+      if (!this.habitsListContainer) return;
+    }
+
+    const todayStr = this.getTodayDateString();
+    const [ty, tm, td] = todayStr.split('-').map(Number);
+    const todayObj = new Date(ty, tm - 1, td);
+
+    // Clean up any accidental future dates in habits history
+    if (this.habits && Array.isArray(this.habits)) {
+      let cleaned = false;
+      this.habits.forEach(h => {
+        if (h.history && typeof h.history === 'object') {
+          Object.keys(h.history).forEach(ds => {
+            if (ds > todayStr) {
+              delete h.history[ds];
+              cleaned = true;
+            }
+          });
+        }
+      });
+      if (cleaned) {
+        this.saveHabits();
+      }
+    }
+
+    // 7-day rolling window ending on TODAY (index 6 is today)
+    const weekDates = [];
+    for (let i = 0; i < 7; i++) {
+      const dayOffset = 6 - i;
+      const dayDate = new Date(todayObj);
+      dayDate.setDate(todayObj.getDate() - dayOffset);
+      const dayDateStr = `${dayDate.getFullYear()}-${String(dayDate.getMonth() + 1).padStart(2, '0')}-${String(dayDate.getDate()).padStart(2, '0')}`;
+      weekDates.push(dayDateStr);
+    }
+
+    if (!this.habits || this.habits.length === 0) {
+      this.habitsListContainer.innerHTML = '';
+      const emptyEl = document.createElement('div');
+      emptyEl.className = 'habits-empty-state habit-empty-hint';
+      emptyEl.textContent = window.Plan4UI18n ? Plan4UI18n.t('habit_empty_hint', {}, this.currentLang) : 'Нажмите «+ Привычка», чтобы добавить первую цель';
+      this.habitsListContainer.appendChild(emptyEl);
+      this._habitsDirty = false;
+      this.updateSubstrateTrayHeight();
+      return;
+    }
+
+    const fragment = document.createDocumentFragment();
+
+    this.habits.forEach(habit => {
+      const row = document.createElement('div');
+      row.className = 'habit-row';
+      row.dataset.habitId = habit.id;
+
+      // Col 1: Habit title box (left 1/3)
+      const colTitle = document.createElement('div');
+      colTitle.className = 'habit-col-title';
+
+      const titleBox = document.createElement('div');
+      titleBox.className = 'habit-title-box';
+      titleBox.title = 'Нажмите для настройки и статистики привычки';
+
+      const titleSpan = document.createElement('span');
+      titleSpan.className = 'habit-title-text';
+      titleSpan.textContent = habit.title;
+
+      // Subtitle badge showing target or schedule
+      const subBadge = document.createElement('span');
+      subBadge.className = 'habit-sub-badge';
+
+      let periodicCompletions = 0;
+      let periodicTarget = 3;
+      if (habit.schedule?.type === 'periodic') {
+        periodicTarget = habit.schedule.targetCount || 3;
+        const period = habit.schedule.period || 'week';
+        if (period === 'month') {
+          const daysInMonth = new Date(ty, tm, 0).getDate();
+          for (let d = 1; d <= daysInMonth; d++) {
+            const cds = `${ty}-${String(tm).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const hEntry = habit.history && habit.history[cds];
+            if (habit.type === 'numeric') {
+              const cur = typeof hEntry === 'object' ? (hEntry.current || 0) : (hEntry ? (habit.target?.value || 1) : 0);
+              const tgt = (habit.target && habit.target.value) ? habit.target.value : 1;
+              if (cur >= tgt) periodicCompletions++;
+            } else {
+              if (typeof hEntry === 'object' ? !!hEntry.completed : !!hEntry) periodicCompletions++;
+            }
+          }
+        } else {
+          // 'week' - Monday to Sunday containing today
+          const monOffset = (todayObj.getDay() + 6) % 7;
+          const mondayDate = new Date(todayObj);
+          mondayDate.setDate(todayObj.getDate() - monOffset);
+          for (let i = 0; i < 7; i++) {
+            const cd = new Date(mondayDate);
+            cd.setDate(mondayDate.getDate() + i);
+            const cds = `${cd.getFullYear()}-${String(cd.getMonth() + 1).padStart(2, '0')}-${String(cd.getDate()).padStart(2, '0')}`;
+            const hEntry = habit.history && habit.history[cds];
+            if (habit.type === 'numeric') {
+              const cur = typeof hEntry === 'object' ? (hEntry.current || 0) : (hEntry ? (habit.target?.value || 1) : 0);
+              const tgt = (habit.target && habit.target.value) ? habit.target.value : 1;
+              if (cur >= tgt) periodicCompletions++;
+            } else {
+              if (typeof hEntry === 'object' ? !!hEntry.completed : !!hEntry) periodicCompletions++;
+            }
+          }
+        }
+      }
+
+      if (habit.type === 'numeric') {
+        const valStr = habit.target?.value || '';
+        const unitStr = habit.target?.unit || '';
+        if (habit.schedule?.type === 'weekdays') {
+          const shortWd = window.Plan4UI18n ? Plan4UI18n.t('habit_sub_weekdays_short', {}, this.currentLang) : 'по дням';
+          subBadge.textContent = `${valStr} ${unitStr} • ${shortWd}`;
+        } else if (habit.schedule?.type === 'periodic') {
+          const targetMet = periodicCompletions >= periodicTarget;
+          const periodicText = targetMet
+            ? (window.Plan4UI18n ? Plan4UI18n.t('habit_sub_periodic_met', { done: periodicCompletions, target: periodicTarget }, this.currentLang) : `${periodicCompletions} из ${periodicTarget} • выполнено 🎯`)
+            : (window.Plan4UI18n ? Plan4UI18n.t('habit_sub_periodic_progress', { done: periodicCompletions, target: periodicTarget }, this.currentLang) : `${periodicCompletions} из ${periodicTarget} на этой неделе`);
+          subBadge.textContent = `${valStr} ${unitStr} • ${periodicText}`;
+        } else {
+          const dailyStr = window.Plan4UI18n ? Plan4UI18n.t('habit_sub_daily', {}, this.currentLang) : 'в день';
+          subBadge.textContent = `${valStr} ${unitStr} ${dailyStr}`;
+        }
+      } else {
+        if (habit.schedule?.type === 'weekdays') {
+          subBadge.textContent = window.Plan4UI18n ? Plan4UI18n.t('habit_sub_weekdays', {}, this.currentLang) : 'По дням недели';
+        } else if (habit.schedule?.type === 'periodic') {
+          const targetMet = periodicCompletions >= periodicTarget;
+          subBadge.textContent = targetMet
+            ? (window.Plan4UI18n ? Plan4UI18n.t('habit_sub_periodic_met', { done: periodicCompletions, target: periodicTarget }, this.currentLang) : `${periodicCompletions} из ${periodicTarget} • выполнено 🎯`)
+            : (window.Plan4UI18n ? Plan4UI18n.t('habit_sub_periodic_progress', { done: periodicCompletions, target: periodicTarget }, this.currentLang) : `${periodicCompletions} из ${periodicTarget} на этой неделе`);
+        } else {
+          subBadge.textContent = '';
+        }
+      }
+
+      titleBox.appendChild(titleSpan);
+      if (subBadge.textContent) {
+        titleBox.appendChild(subBadge);
+      }
+
+      // Tap on title opens modal in edit / stats mode
+      titleBox.addEventListener('click', (e) => {
+        e.stopPropagation();
+        triggerHaptic(15);
+        this.openHabitModal('edit', habit.id);
+      });
+
+      colTitle.appendChild(titleBox);
+
+      // Col 2: 7 Checkboxes / progress cells (right 2/3)
+      const colChecks = document.createElement('div');
+      colChecks.className = 'habit-col-checks';
+
+      weekDates.forEach((dateStr) => {
+        const isToday = (dateStr === todayStr);
+        const isFuture = (dateStr > todayStr);
+        const [dy, dm, dd] = dateStr.split('-').map(Number);
+        const cellDateObj = new Date(dy, dm - 1, dd);
+        const cellDow = cellDateObj.getDay(); // 0 is Sunday, 1 is Monday...
+
+        // Check if day is scheduled
+        let isScheduledDay = true;
+        if (habit.schedule?.type === 'weekdays') {
+          const dows = habit.schedule.daysOfWeek || [1, 2, 3, 4, 5];
+          isScheduledDay = dows.includes(cellDow);
+        } else if (habit.schedule?.type === 'periodic') {
+          const hEntryForCell = habit.history && habit.history[dateStr];
+          const isCellDone = habit.type === 'numeric'
+            ? ((typeof hEntryForCell === 'object' ? (hEntryForCell.current || 0) : (hEntryForCell ? (habit.target?.value || 1) : 0)) >= (habit.target?.value || 1))
+            : (typeof hEntryForCell === 'object' ? !!hEntryForCell.completed : !!hEntryForCell);
+
+          // If target met and cell is not done, it is a rest day (dashed subtle border)
+          if (!isCellDone && periodicCompletions >= periodicTarget) {
+            isScheduledDay = false;
+          }
+        }
+
+        const hEntry = habit.history && habit.history[dateStr];
+        const checkBtn = document.createElement('button');
+        checkBtn.type = 'button';
+        checkBtn.dataset.habitId = habit.id;
+        checkBtn.dataset.date = dateStr;
+
+        if (habit.type === 'numeric') {
+          // Numeric habit cell
+          const curVal = typeof hEntry === 'object' ? (hEntry.current || 0) : (hEntry ? (habit.target?.value || 1) : 0);
+          const tgtVal = (habit.target && habit.target.value) ? habit.target.value : 1;
+          const isDone = curVal >= tgtVal;
+          const pct = Math.min(Math.max((curVal / tgtVal) * 100, 0), 100);
+
+          let cls = 'habit-check-btn is-numeric';
+          if (isDone) cls += ' checked';
+          if (isToday) cls += ' is-today';
+          if (isFuture) cls += ' is-future';
+          if (!isScheduledDay) cls += ' is-scheduled-off';
+          checkBtn.className = cls;
+          if (isFuture) checkBtn.disabled = true;
+
+          checkBtn.title = `${dateStr}: ${curVal} / ${tgtVal} ${habit.target?.unit || ''} (${Math.round((curVal / tgtVal) * 100)}%)`;
+
+          if (isDone) {
+            checkBtn.innerHTML = `
+              <div class="habit-cell-fill-bar" style="height: 100%;"></div>
+              <svg class="habit-cell-check-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="position: relative; z-index: 2;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            `;
+          } else if (curVal > 0) {
+            const pctInt = Math.min(99, Math.max(1, Math.round(pct)));
+            checkBtn.innerHTML = `
+              <div class="habit-cell-fill-bar" style="height: ${pct}%;"></div>
+              <span class="habit-cell-num">${pctInt}%</span>
+            `;
+          } else {
+            checkBtn.innerHTML = `
+              <div class="habit-cell-fill-bar" style="height: 0%;"></div>
+            `;
+          }
+
+          checkBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (dateStr > this.getTodayDateString()) return;
+            triggerHaptic(15);
+            this.openHabitStepper(habit.id, dateStr, checkBtn);
+          });
+        } else {
+          // Boolean habit cell
+          const isChecked = typeof hEntry === 'object' ? !!hEntry.completed : !!hEntry;
+
+          let cls = 'habit-check-btn';
+          if (isChecked) cls += ' checked';
+          if (isToday) cls += ' is-today';
+          if (isFuture) cls += ' is-future';
+          if (!isScheduledDay) cls += ' is-scheduled-off';
+          checkBtn.className = cls;
+          if (isFuture) checkBtn.disabled = true;
+
+          checkBtn.title = isChecked ? `${dateStr}: Выполнено` : dateStr;
+          if (isChecked) {
+            checkBtn.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+          }
+
+          checkBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (dateStr > this.getTodayDateString()) return;
+            this.toggleHabitDay(habit.id, dateStr, checkBtn);
+          });
+        }
+
+        colChecks.appendChild(checkBtn);
+      });
+
+      row.appendChild(colTitle);
+      row.appendChild(colChecks);
+      fragment.appendChild(row);
+    });
+
+    this.habitsListContainer.innerHTML = '';
+    this.habitsListContainer.appendChild(fragment);
+    this._habitsDirty = false;
+    this.updateSubstrateTrayHeight();
+  }
+
+  // Toggle habit completed for a specific date (boolean)
+  toggleHabitDay(habitId, dateStr, buttonEl) {
+    const todayStr = this.getTodayDateString();
+    if (dateStr > todayStr) return; // Disallow marking habits in the future
+
+    const habit = (this.habits || []).find(h => h.id === habitId);
+    if (!habit) return;
+
+    if (!habit.history) habit.history = {};
+    const hEntry = habit.history[dateStr];
+    const isCurrentlyChecked = typeof hEntry === 'object' ? !!hEntry.completed : !!hEntry;
+    const willBeChecked = !isCurrentlyChecked;
+
+    if (willBeChecked) {
+      habit.history[dateStr] = { completed: true, timestamp: Date.now() };
+      triggerHaptic(20);
+      this.playCompletionSound();
+      const stats = this.calculateHabitStats(habit);
+      this.checkHabitPetMilestone(habit, stats.currentStreak);
+    } else {
+      delete habit.history[dateStr];
+      triggerHaptic(10);
+    }
+
+    // Surgical in-place DOM update instead of destroying and rebuilding all habits!
+    if (buttonEl) {
+      buttonEl.classList.toggle('checked', willBeChecked);
+      buttonEl.title = willBeChecked ? `${dateStr}: Выполнено` : dateStr;
+      if (willBeChecked) {
+        buttonEl.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+      } else {
+        buttonEl.innerHTML = '';
+      }
+    }
+
+    // Update periodic subtitle badge if this habit is periodic
+    if (habit.schedule?.type === 'periodic' && this.habitsListContainer) {
+      const row = this.habitsListContainer.querySelector(`[data-habit-id="${habit.id}"]`);
+      const subBadge = row?.querySelector('.habit-sub-badge');
+      if (subBadge) {
+        let periodicCompletions = 0;
+        const periodicTarget = habit.schedule.targetCount || 3;
+        const period = habit.schedule.period || 'week';
+        if (period === 'month') {
+          const [ty, tm] = todayStr.split('-').map(Number);
+          const daysInMonth = new Date(ty, tm, 0).getDate();
+          for (let d = 1; d <= daysInMonth; d++) {
+            const cds = `${ty}-${String(tm).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const cEntry = habit.history[cds];
+            if (typeof cEntry === 'object' ? !!cEntry.completed : !!cEntry) periodicCompletions++;
+          }
+        } else {
+          const [ty, tm, td] = todayStr.split('-').map(Number);
+          const todayDateObj = new Date(ty, tm - 1, td);
+          const monOffset = (todayDateObj.getDay() + 6) % 7;
+          const mondayDate = new Date(todayDateObj);
+          mondayDate.setDate(todayDateObj.getDate() - monOffset);
+          for (let i = 0; i < 7; i++) {
+            const cd = new Date(mondayDate);
+            cd.setDate(mondayDate.getDate() + i);
+            const cds = `${cd.getFullYear()}-${String(cd.getMonth() + 1).padStart(2, '0')}-${String(cd.getDate()).padStart(2, '0')}`;
+            const cEntry = habit.history[cds];
+            if (typeof cEntry === 'object' ? !!cEntry.completed : !!cEntry) periodicCompletions++;
+          }
+        }
+        const targetMet = periodicCompletions >= periodicTarget;
+        subBadge.textContent = targetMet
+          ? (window.Plan4UI18n ? Plan4UI18n.t('habit_sub_periodic_met', { done: periodicCompletions, target: periodicTarget }, this.currentLang) : `${periodicCompletions} из ${periodicTarget} • выполнено 🎯`)
+          : (window.Plan4UI18n ? Plan4UI18n.t('habit_sub_periodic_progress', { done: periodicCompletions, target: periodicTarget }, this.currentLang) : `${periodicCompletions} из ${periodicTarget} на этой неделе`);
+      }
+    }
+
+    this.saveHabits();
+    this.updateWeekDaysProgress();
+  }
+
+  // Open the Habit Modal in 'create' or 'edit' mode
+  openHabitModal(mode = 'create', habitId = null) {
+    this.dismissActiveKeyboard();
+    this._habitModalOpenedAt = Date.now();
+    this.currentEditingHabitId = habitId;
+
+    const backdrop = document.getElementById('habitModalBackdrop');
+    const titleEl = document.getElementById('habitModalTitle');
+    const tabsEl = document.getElementById('habitModalTabs');
+    const statsPane = document.getElementById('habitStatsPane');
+    const formPane = document.getElementById('habitModalForm');
+    const dangerZone = document.getElementById('habitDangerZone');
+    const submitBtn = document.getElementById('habitModalSubmitBtn');
+
+    if (!backdrop) return;
+
+    if (mode === 'edit' && habitId) {
+      const habit = (this.habits || []).find(h => h.id === habitId);
+      if (!habit) return;
+
+      if (titleEl) titleEl.textContent = habit.title;
+      if (tabsEl) tabsEl.style.display = 'flex';
+      if (dangerZone) dangerZone.style.display = 'block';
+      if (submitBtn) submitBtn.textContent = window.Plan4UI18n ? Plan4UI18n.t('habit_btn_save', {}, this.currentLang) : 'Сохранить';
+
+      // Switch to stats tab by default in edit mode
+      this.switchHabitModalTab('stats');
+      this.populateHabitForm(habit);
+
+      backdrop.classList.add('open');
+      backdrop.setAttribute('aria-hidden', 'false');
+      triggerHaptic(15);
+
+      requestAnimationFrame(() => {
+        this.renderHabitStats(habit);
+      });
+      return;
+    } else {
+      // Create mode
+      if (titleEl) titleEl.textContent = window.Plan4UI18n ? Plan4UI18n.t('habit_modal_title_new', {}, this.currentLang) : 'Новая привычка';
+      if (tabsEl) tabsEl.style.display = 'none';
+      if (statsPane) statsPane.style.display = 'none';
+      if (formPane) formPane.style.display = 'flex';
+      if (dangerZone) dangerZone.style.display = 'none';
+      if (submitBtn) submitBtn.textContent = window.Plan4UI18n ? Plan4UI18n.t('habit_btn_create', {}, this.currentLang) : 'Создать привычку';
+
+      this.resetHabitForm();
+    }
+
+    backdrop.classList.add('open');
+    backdrop.setAttribute('aria-hidden', 'false');
+    triggerHaptic(15);
+  }
+
+  // Close the Habit Modal
+  closeHabitModal() {
+    const backdrop = document.getElementById('habitModalBackdrop');
+    if (backdrop) {
+      backdrop.classList.remove('open');
+      backdrop.setAttribute('aria-hidden', 'true');
+    }
+    this.currentEditingHabitId = null;
+  }
+
+  // Switch tabs in habit modal (stats vs settings)
+  switchHabitModalTab(tabName) {
+    const tabStatsBtn = document.getElementById('habitTabBtnStats');
+    const tabSettingsBtn = document.getElementById('habitTabBtnSettings');
+    const statsPane = document.getElementById('habitStatsPane');
+    const formPane = document.getElementById('habitModalForm');
+
+    if (tabName === 'stats') {
+      tabStatsBtn?.classList.add('active');
+      tabSettingsBtn?.classList.remove('active');
+      if (statsPane) statsPane.style.display = 'flex';
+      if (formPane) formPane.style.display = 'none';
+    } else {
+      tabSettingsBtn?.classList.add('active');
+      tabStatsBtn?.classList.remove('active');
+      if (formPane) formPane.style.display = 'flex';
+      if (statsPane) statsPane.style.display = 'none';
+    }
+  }
+
+  // Populate habit form with existing habit data
+  populateHabitForm(habit) {
+    const idInput = document.getElementById('habitEditId');
+    const titleInput = document.getElementById('habitTitleInput');
+    const targetInput = document.getElementById('habitTargetInput');
+    const customUnitInput = document.getElementById('habitUnitCustomInput');
+    const periodicCountInput = document.getElementById('habitPeriodicCountInput');
+    const periodicSelect = document.getElementById('habitPeriodicSelect');
+
+    if (idInput) idInput.value = habit.id;
+    if (titleInput) titleInput.value = habit.title;
+
+    // Type
+    this.setHabitFormType(habit.type || 'boolean');
+
+    if (habit.type === 'numeric') {
+      if (targetInput) targetInput.value = habit.target?.value || 1;
+
+      // Select unit chip
+      const currentUnit = habit.target?.unit || '';
+      let matchedChip = false;
+      document.querySelectorAll('#habitUnitChips .habit-unit-chip').forEach(chip => {
+        if (chip.dataset.unit === currentUnit) {
+          chip.classList.add('active');
+          matchedChip = true;
+        } else {
+          chip.classList.remove('active');
+        }
+      });
+      if (customUnitInput) {
+        customUnitInput.value = matchedChip ? '' : currentUnit;
+      }
+    }
+
+    // Schedule
+    const schedType = habit.schedule?.type || 'daily';
+    const radio = document.querySelector(`input[name="habitScheduleRadio"][value="${schedType}"]`);
+    if (radio) {
+      radio.checked = true;
+      this.updateHabitScheduleUI(schedType);
+    }
+
+    if (schedType === 'weekdays') {
+      const dows = habit.schedule?.daysOfWeek || [1, 2, 3, 4, 5];
+      document.querySelectorAll('#habitWeekdaysPicker .habit-dow-btn').forEach(btn => {
+        const val = Number(btn.dataset.dow);
+        btn.classList.toggle('active', dows.includes(val));
+      });
+    } else if (schedType === 'periodic') {
+      if (periodicCountInput) periodicCountInput.value = habit.schedule?.targetCount || 3;
+      if (periodicSelect) periodicSelect.value = habit.schedule?.period || 'week';
+    }
+  }
+
+  // Reset habit form for creating a new habit
+  resetHabitForm() {
+    const idInput = document.getElementById('habitEditId');
+    const titleInput = document.getElementById('habitTitleInput');
+    const targetInput = document.getElementById('habitTargetInput');
+    const customUnitInput = document.getElementById('habitUnitCustomInput');
+    const periodicCountInput = document.getElementById('habitPeriodicCountInput');
+    const periodicSelect = document.getElementById('habitPeriodicSelect');
+
+    if (idInput) idInput.value = '';
+    if (titleInput) {
+      titleInput.value = '';
+      setTimeout(() => titleInput.focus(), 80);
+    }
+    if (targetInput) targetInput.value = '8000';
+    if (customUnitInput) customUnitInput.value = '';
+
+    // Default: Boolean type
+    this.setHabitFormType('boolean');
+
+    // Default unit chip: 'шагов'
+    document.querySelectorAll('#habitUnitChips .habit-unit-chip').forEach(chip => {
+      chip.classList.toggle('active', chip.dataset.unit === 'шагов');
+    });
+
+    // Default schedule: daily
+    const dailyRadio = document.querySelector('input[name="habitScheduleRadio"][value="daily"]');
+    if (dailyRadio) {
+      dailyRadio.checked = true;
+      this.updateHabitScheduleUI('daily');
+    }
+
+    // Weekdays default: Пн-Пт active
+    document.querySelectorAll('#habitWeekdaysPicker .habit-dow-btn').forEach(btn => {
+      const d = Number(btn.dataset.dow);
+      btn.classList.toggle('active', [1, 2, 3, 4, 5].includes(d));
+    });
+
+    if (periodicCountInput) periodicCountInput.value = '3';
+    if (periodicSelect) periodicSelect.value = 'week';
+  }
+
+  // Set active habit type in form UI
+  setHabitFormType(type) {
+    const btnBool = document.getElementById('habitTypeBtnBoolean');
+    const btnNum = document.getElementById('habitTypeBtnNumeric');
+    const numOpts = document.getElementById('habitNumericOptions');
+
+    if (type === 'numeric') {
+      btnNum?.classList.add('active');
+      btnBool?.classList.remove('active');
+      if (numOpts) numOpts.style.display = 'block';
+    } else {
+      btnBool?.classList.add('active');
+      btnNum?.classList.remove('active');
+      if (numOpts) numOpts.style.display = 'none';
+    }
+  }
+
+  // Update schedule picker visibility
+  updateHabitScheduleUI(schedType) {
+    const weekdaysPicker = document.getElementById('habitWeekdaysPicker');
+    const periodicPicker = document.getElementById('habitPeriodicPicker');
+
+    if (weekdaysPicker) weekdaysPicker.style.display = (schedType === 'weekdays') ? 'flex' : 'none';
+    if (periodicPicker) periodicPicker.style.display = (schedType === 'periodic') ? 'block' : 'none';
+  }
+
+  // Save habit from modal form submission
+  saveHabitFromModal() {
+    const idInput = document.getElementById('habitEditId');
+    const titleInput = document.getElementById('habitTitleInput');
+    const title = titleInput ? titleInput.value.trim() : '';
+    if (!title) return;
+
+    const isNumeric = document.getElementById('habitTypeBtnNumeric')?.classList.contains('active');
+    const type = isNumeric ? 'numeric' : 'boolean';
+
+    let targetObj = null;
+    if (isNumeric) {
+      const targetInput = document.getElementById('habitTargetInput');
+      const customUnitInput = document.getElementById('habitUnitCustomInput');
+      const activeUnitChip = document.querySelector('#habitUnitChips .habit-unit-chip.active');
+
+      const val = Math.max(0.1, parseFloat(targetInput?.value) || 1);
+      // Auto-calculate step as 1/10th of target
+      let step = Number((val / 10).toFixed(2));
+      if (Number.isInteger(val) && step >= 1) {
+        step = Math.round(step);
+      }
+      step = Math.max(0.01, step);
+      const unit = (customUnitInput?.value.trim()) || (activeUnitChip?.dataset.unit) || '';
+
+      targetObj = { value: val, unit: unit, step: step };
+    }
+
+    // Schedule
+    const schedRadio = document.querySelector('input[name="habitScheduleRadio"]:checked');
+    const schedType = schedRadio ? schedRadio.value : 'daily';
+    const scheduleObj = { type: schedType };
+
+    if (schedType === 'weekdays') {
+      const dows = [];
+      document.querySelectorAll('#habitWeekdaysPicker .habit-dow-btn.active').forEach(btn => {
+        dows.push(Number(btn.dataset.dow));
+      });
+      scheduleObj.daysOfWeek = dows.length > 0 ? dows : [1, 2, 3, 4, 5];
+    } else if (schedType === 'periodic') {
+      const countInput = document.getElementById('habitPeriodicCountInput');
+      const selectPeriod = document.getElementById('habitPeriodicSelect');
+      scheduleObj.targetCount = Math.max(1, parseInt(countInput?.value, 10) || 3);
+      scheduleObj.period = selectPeriod ? selectPeriod.value : 'week';
+    }
+
+    const editId = idInput ? idInput.value : '';
+    if (editId) {
+      // Update existing
+      const habit = (this.habits || []).find(h => h.id === editId);
+      if (habit) {
+        habit.title = title;
+        habit.type = type;
+        if (targetObj) habit.target = targetObj;
+        habit.schedule = scheduleObj;
+      }
+    } else {
+      // Create new habit
+      const newHabit = {
+        id: 'h_' + Date.now(),
+        title: title,
+        type: type,
+        target: targetObj,
+        schedule: scheduleObj,
+        created: Date.now(),
+        history: {}
+      };
+      if (!this.habits) this.habits = [];
+      this.habits.push(newHabit);
+    }
+
+    this.saveHabits();
+    this.renderHabits();
+    this.updateWeekDaysProgress();
+    this.closeHabitModal();
+    triggerHaptic(25);
+  }
+
+  // Delete habit with modal confirmation
+  deleteHabit(habitId) {
+    const habit = (this.habits || []).find(h => h.id === habitId);
+    if (!habit) return;
+
+    const confirmTitle = window.Plan4UI18n ? Plan4UI18n.t('habit_delete_confirm_title', {}, this.currentLang) : 'Удалить привычку?';
+    const confirmMsg = window.Plan4UI18n
+      ? Plan4UI18n.t('habit_delete_confirm_msg', { title: habit.title }, this.currentLang)
+      : `Вы действительно хотите удалить цель «${habit.title}»?`;
+
+    if (this.showConfirmModal) {
+      this.showConfirmModal({
+        title: confirmTitle,
+        message: confirmMsg,
+        icon: '🗑️',
+        confirmText: 'Удалить',
+        onConfirm: () => {
+          this.habits = (this.habits || []).filter(h => h.id !== habitId);
+          this.saveHabits();
+          this.renderHabits();
+          this.updateWeekDaysProgress();
+          this.closeHabitModal();
+          triggerHaptic(15);
+        }
+      });
+    } else {
+      this.habits = (this.habits || []).filter(h => h.id !== habitId);
+      this.saveHabits();
+      this.renderHabits();
+      this.updateWeekDaysProgress();
+      this.closeHabitModal();
+      triggerHaptic(15);
+    }
+  }
+
+  // Render habit statistics & analytical sections
+  renderHabitStats(habit) {
+    const streakValEl = document.getElementById('habitStatStreakVal');
+    const streakSubEl = document.getElementById('habitStatStreakSub');
+    const recordValEl = document.getElementById('habitStatRecordVal');
+    const recordSubEl = document.getElementById('habitStatRecordSub');
+    const rateValEl = document.getElementById('habitStatRateVal');
+    const rateSubEl = document.getElementById('habitStatRateSub');
+    const dynamicIconEl = document.getElementById('habitStatDynamicIcon');
+    const dynamicValEl = document.getElementById('habitStatDynamicVal');
+    const dynamicLblEl = document.getElementById('habitStatDynamicLbl');
+    const dynamicSubEl = document.getElementById('habitStatDynamicSub');
+
+    const stats = this.calculateHabitStats(habit);
+
+    const dayUnit = window.Plan4UI18n ? Plan4UI18n.t('habit_days_unit', {}, this.currentLang) : 'дн.';
+    const weekUnit = window.Plan4UI18n ? Plan4UI18n.t('habit_weeks_unit', {}, this.currentLang) : 'нед.';
+    const unitSuffix = habit.schedule?.type === 'periodic' ? weekUnit : dayUnit;
+
+    // 1. Current Streak Card with date range
+    if (streakValEl) streakValEl.textContent = `${stats.currentStreak} ${unitSuffix}`;
+    if (streakSubEl) {
+      if (stats.currentStreak > 0 && stats.currentStreakRange) {
+        streakSubEl.textContent = this.formatStreakDateRange(stats.currentStreakRange.start, stats.currentStreakRange.end);
+      } else {
+        streakSubEl.textContent = '—';
+      }
+    }
+
+    // 2. Best Streak Card with date range
+    if (recordValEl) recordValEl.textContent = `${stats.bestStreak} ${unitSuffix}`;
+    if (recordSubEl) {
+      if (stats.bestStreak > 0 && stats.bestStreakRange) {
+        recordSubEl.textContent = this.formatStreakDateRange(stats.bestStreakRange.start, stats.bestStreakRange.end);
+      } else {
+        recordSubEl.textContent = window.Plan4UI18n ? Plan4UI18n.t('habit_stat_all_time', {}, this.currentLang) : 'за все время';
+      }
+    }
+
+    // 3. Rate Card
+    if (rateValEl) rateValEl.textContent = `${stats.rate}%`;
+    if (rateSubEl) {
+      rateSubEl.textContent = window.Plan4UI18n ? Plan4UI18n.t('habit_stat_days_30', {}, this.currentLang) : 'за 30 дней';
+    }
+
+    // 4. Dynamic Contextual Card (This Week / Daily Avg)
+    if (dynamicValEl && dynamicLblEl && dynamicSubEl) {
+      if (habit.type === 'numeric') {
+        if (dynamicIconEl) dynamicIconEl.textContent = '💧';
+        dynamicLblEl.textContent = window.Plan4UI18n ? Plan4UI18n.t('habit_stat_avg_day', {}, this.currentLang) : 'В среднем в день';
+        dynamicValEl.textContent = `${stats.avgPerDay} ${habit.target?.unit || ''}`;
+        dynamicSubEl.textContent = `цель: ${habit.target?.value || 1} ${habit.target?.unit || ''}`;
+      } else {
+        if (dynamicIconEl) dynamicIconEl.textContent = '🎯';
+        dynamicLblEl.textContent = window.Plan4UI18n ? Plan4UI18n.t('habit_stat_this_week', {}, this.currentLang) : 'На этой неделе';
+        dynamicValEl.textContent = `${stats.thisWeekCount} / ${stats.thisWeekTarget} ${dayUnit}`;
+        if (stats.thisWeekCount >= stats.thisWeekTarget) {
+          const metStr = window.Plan4UI18n ? Plan4UI18n.t('habit_stat_target_met', {}, this.currentLang) : '';
+          dynamicSubEl.textContent = (metStr && metStr !== 'habit_stat_target_met') ? metStr : 'норма выполнена 🎯';
+        } else {
+          const left = stats.thisWeekTarget - stats.thisWeekCount;
+          const leftStr = window.Plan4UI18n ? Plan4UI18n.t('habit_stat_days_left', { days: left }, this.currentLang) : '';
+          dynamicSubEl.textContent = (leftStr && leftStr !== 'habit_stat_days_left') ? leftStr : `осталось ${left} дн.`;
+        }
+      }
+    }
+
+    // Section 1: Multi-Period History Bar Chart (12 columns: days, weeks, months, years)
+    const periodSelect = document.getElementById('habitChartPeriodSelect');
+    let activePeriod = this.currentHabitChartPeriod;
+    if (!activePeriod) {
+      try {
+        activePeriod = localStorage.getItem('plan4u_habit_chart_period');
+      } catch(e) {}
+    }
+    if (!activePeriod) {
+      activePeriod = 'weeks';
+    }
+    this.currentHabitChartPeriod = activePeriod;
+
+    if (periodSelect) {
+      periodSelect.value = activePeriod;
+      if (!periodSelect.dataset.hasListener) {
+        periodSelect.dataset.hasListener = 'true';
+        periodSelect.addEventListener('change', () => {
+          this.currentHabitChartPeriod = periodSelect.value;
+          try {
+            localStorage.setItem('plan4u_habit_chart_period', periodSelect.value);
+          } catch(e) {}
+          this.renderHabitChart(this.currentHabitInModal || habit, this.currentHabitStats || stats, periodSelect.value);
+        });
+      }
+    }
+    this.currentHabitInModal = habit;
+    this.currentHabitStats = stats;
+    this.renderHabitChart(habit, stats, activePeriod);
+
+    // Section 2: Heatmap & Weekday Activity Calendar (4 weeks aligned to Mon-Sun) & Frequency Matrix
+    this.renderCalendarHeatmap(habit, stats);
+    this.renderHabitFrequencyGrid(habit, stats);
+    this.initHabitViewToggle();
+  }
+
+  // Render 12-column bar chart for selected period (days / weeks / months / years)
+  renderHabitChart(habit, stats, period = 'weeks') {
+    const barsContainer = document.getElementById('habitWeeklyBars');
+    const targetBadge = document.getElementById('habitStatTargetBadge');
+    if (!barsContainer) return;
+
+    const periodData = (stats.chartPeriods && stats.chartPeriods[period]) ? stats.chartPeriods[period] : (stats.chartPeriods?.weeks || null);
+    const bars = periodData ? periodData.bars : (stats.weeklyBars || []);
+    const targetVal = periodData ? periodData.target : (stats.targetPerWeek || 1);
+
+    if (targetBadge && periodData) {
+      const avgVal = periodData.avgStr || periodData.targetStr || '—';
+      const avgBadgeText = window.Plan4UI18n
+        ? Plan4UI18n.t('habit_stat_avg_badge', { val: avgVal }, this.currentLang)
+        : `В среднем: ${avgVal}`;
+      targetBadge.textContent = (avgBadgeText && avgBadgeText !== 'habit_stat_avg_badge')
+        ? avgBadgeText
+        : `В среднем: ${avgVal}`;
+      if (periodData.targetStr) {
+        targetBadge.title = `Цель: ${periodData.targetStr}`;
+      }
+    }
+
+    barsContainer.innerHTML = '';
+    const fragment = document.createDocumentFragment();
+
+    const maxCount = Math.max(targetVal, ...bars.map(b => b.count), 1);
+
+    bars.forEach(item => {
+      const col = document.createElement('div');
+      col.className = `habit-chart-col${item.isTargetMet ? ' is-target-met' : ''}${item.isCurrent ? ' is-current-week' : ''}${item.isYearStart ? ' is-year-start' : ''}`;
+      if (item.tooltip) {
+        col.title = item.tooltip;
+      }
+
+      const hasCount = item.count > 0;
+      const valText = hasCount ? item.count : '';
+      const pctHeight = hasCount
+        ? Math.min(100, Math.max(10, Math.round((item.count / maxCount) * 100)))
+        : 0;
+
+      const subTagHtml = item.yearTag
+        ? `<span class="habit-chart-sub-tag">${item.yearTag}</span>`
+        : (item.monthTag ? `<span class="habit-chart-sub-tag">${item.monthTag}</span>` : '');
+
+      col.innerHTML = `
+        <span class="habit-chart-val">${valText}</span>
+        <div class="habit-chart-bar${hasCount ? '' : ' is-zero'}" style="height: ${hasCount ? pctHeight + '%' : '2px'};"></div>
+        <span class="habit-chart-lbl${item.isYearStart ? ' is-year-start' : ''}">${item.label || ''}${subTagHtml}</span>
+      `;
+      fragment.appendChild(col);
+    });
+
+    // Add target threshold line
+    if (targetVal <= maxCount && maxCount > 0) {
+      const targetPct = Math.min(100, Math.round((targetVal / maxCount) * 100));
+      const bottomPx = 24 + Math.round((targetPct / 100) * 82);
+      const line = document.createElement('div');
+      line.className = 'habit-chart-target-line';
+      line.style.bottom = `${bottomPx}px`;
+      fragment.appendChild(line);
+    }
+    barsContainer.appendChild(fragment);
+  }
+
+  // Format date range for streak bars (e.g. "30 мая — 9 сен")
+  formatStreakDateRange(startStr, endStr) {
+    if (!startStr) return '—';
+    const months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+    const fmt = (s) => {
+      if (!s) return '';
+      const [y, m, d] = s.split('-').map(Number);
+      return `${d} ${months[m - 1]}`;
+    };
+    if (startStr === endStr) {
+      return fmt(startStr);
+    }
+    return `${fmt(startStr)} — ${fmt(endStr)}`;
+  }
+
+  // Render 4-week calendar heatmap aligned to Monday-Sunday with weekday headers & best day highlight
+  renderCalendarHeatmap(habit, stats) {
+    const heatmapGrid = document.getElementById('habitHeatmapGrid');
+    const insight = document.getElementById('habitWeekdaysInsight');
+
+    // Highlight best day in weekday labels
+    const dowLabels = document.querySelectorAll('#habitHeatmapDows .habit-heat-dow');
+    dowLabels.forEach(el => {
+      const dow = Number(el.dataset.dow);
+      if (stats.bestDow && stats.bestDow.dow === dow && stats.bestDow.rate > 0) {
+        el.classList.add('is-best-day');
+        el.title = `⭐ ${stats.bestDow.rate}%`;
+      } else {
+        el.classList.remove('is-best-day');
+        el.removeAttribute('title');
+      }
+    });
+
+    if (heatmapGrid) {
+      heatmapGrid.innerHTML = '';
+      const fragment = document.createDocumentFragment();
+      const today = new Date();
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+      const currentDow = (today.getDay() + 6) % 7; // 0 for Mon ... 6 for Sun
+      const currentMonday = new Date(today);
+      currentMonday.setDate(today.getDate() - currentDow);
+      currentMonday.setHours(0, 0, 0, 0);
+
+      const startMonday = new Date(currentMonday);
+      startMonday.setDate(currentMonday.getDate() - 21); // 3 weeks back Monday (4 weeks total)
+
+      for (let i = 0; i < 28; i++) {
+        const d = new Date(startMonday);
+        d.setDate(startMonday.getDate() + i);
+        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+        const cell = document.createElement('div');
+        const isFuture = dateStr > todayStr;
+        const isToday = dateStr === todayStr;
+
+        if (isFuture) {
+          cell.className = 'habit-heat-cell is-future';
+          cell.innerHTML = `<span class="habit-heat-date-num">${d.getDate()}</span>`;
+        } else {
+          const level = stats.heatLevels[dateStr] || 0;
+          cell.className = `habit-heat-cell level-${level}${isToday ? ' is-today' : ''}`;
+          cell.title = `${dateStr}: ${stats.heatLabels[dateStr] || '0%'}`;
+          if (level === 3) {
+            cell.innerHTML = `
+              <span class="habit-heat-date-num">${d.getDate()}</span>
+              <span class="habit-heat-check-badge" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="6.5" height="6.5" stroke="currentColor" stroke-width="4.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </span>
+            `;
+          } else {
+            cell.innerHTML = `<span class="habit-heat-date-num">${d.getDate()}</span>`;
+          }
+        }
+        fragment.appendChild(cell);
+      }
+      heatmapGrid.appendChild(fragment);
+    }
+
+    if (insight) {
+      if (stats.bestDow && stats.bestDow.rate > 0) {
+        insight.textContent = window.Plan4UI18n
+          ? Plan4UI18n.t('habit_stat_best_day', { day: stats.bestDow.name, rate: stats.bestDow.rate }, this.currentLang)
+          : `⭐ Лучший день — ${stats.bestDow.name} (${stats.bestDow.rate}%)`;
+        insight.style.display = 'flex';
+      } else {
+        insight.style.display = 'none';
+      }
+    }
+  }
+
+  // Initialize Segmented Toggle between 4-week Calendar Heatmap and Frequency Matrix
+  initHabitViewToggle() {
+    const btnHeatmap = document.getElementById('habitViewBtnHeatmap');
+    const btnFrequency = document.getElementById('habitViewBtnFrequency');
+    const paneHeatmap = document.getElementById('habitPaneHeatmap');
+    const paneFrequency = document.getElementById('habitPaneFrequency');
+
+    if (!btnHeatmap || !btnFrequency || !paneHeatmap || !paneFrequency) return;
+
+    let savedMode = 'heatmap';
+    try {
+      savedMode = localStorage.getItem('plan4u_habit_view_mode') || 'heatmap';
+    } catch(e) {}
+
+    const applyViewMode = (mode) => {
+      if (mode === 'frequency') {
+        btnFrequency.classList.add('active');
+        btnFrequency.setAttribute('aria-selected', 'true');
+        btnHeatmap.classList.remove('active');
+        btnHeatmap.setAttribute('aria-selected', 'false');
+        paneHeatmap.style.display = 'none';
+        paneFrequency.style.display = 'block';
+      } else {
+        btnHeatmap.classList.add('active');
+        btnHeatmap.setAttribute('aria-selected', 'true');
+        btnFrequency.classList.remove('active');
+        btnFrequency.setAttribute('aria-selected', 'false');
+        paneHeatmap.style.display = 'block';
+        paneFrequency.style.display = 'none';
+      }
+    };
+
+    applyViewMode(savedMode);
+
+    if (!btnHeatmap.dataset.hasToggleListener) {
+      btnHeatmap.dataset.hasToggleListener = 'true';
+      btnFrequency.dataset.hasToggleListener = 'true';
+
+      btnHeatmap.addEventListener('click', () => {
+        triggerHaptic(12);
+        applyViewMode('heatmap');
+        try {
+          localStorage.setItem('plan4u_habit_view_mode', 'heatmap');
+        } catch(e) {}
+
+        const insight = document.getElementById('habitWeekdaysInsight');
+        if (insight && this.currentHabitStats?.bestDow) {
+          insight.textContent = window.Plan4UI18n
+            ? Plan4UI18n.t('habit_stat_best_day', { day: this.currentHabitStats.bestDow.name, rate: this.currentHabitStats.bestDow.rate }, this.currentLang)
+            : `⭐ Лучший день — ${this.currentHabitStats.bestDow.name} (${this.currentHabitStats.bestDow.rate}%)`;
+        }
+      });
+
+      btnFrequency.addEventListener('click', () => {
+        triggerHaptic(12);
+        applyViewMode('frequency');
+        try {
+          localStorage.setItem('plan4u_habit_view_mode', 'frequency');
+        } catch(e) {}
+
+        const insight = document.getElementById('habitWeekdaysInsight');
+        if (insight && this.currentHabitStats?.bestDow) {
+          insight.textContent = window.Plan4UI18n
+            ? Plan4UI18n.t('habit_stat_best_day', { day: this.currentHabitStats.bestDow.name, rate: this.currentHabitStats.bestDow.rate }, this.currentLang)
+            : `⭐ Самый активный день — ${this.currentHabitStats.bestDow.name} (${this.currentHabitStats.bestDow.rate}%)`;
+        }
+      });
+    }
+  }
+
+  // Render Frequency Matrix (Weekdays x Months bubble matrix inspired by Loop Habit Tracker)
+  renderHabitFrequencyGrid(habit, stats) {
+    const container = document.getElementById('habitFreqMatrixContainer');
+    if (!container || !stats.freqMonths || !stats.freqGrid) return;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'habit-freq-matrix-wrap';
+
+    const table = document.createElement('div');
+    table.className = 'habit-freq-table';
+    table.style.gridTemplateColumns = `26px repeat(${stats.freqMonths.length}, 1fr)`;
+
+    const unit = habit.target?.unit || '';
+
+    // 7 rows (Mon..Sun)
+    stats.freqGrid.forEach(row => {
+      // 1. Weekday label
+      const dowLabel = document.createElement('div');
+      dowLabel.className = 'habit-freq-dow-label';
+      dowLabel.textContent = row.dowLabel;
+      dowLabel.title = row.dowName;
+      table.appendChild(dowLabel);
+
+      // 2. Month bubble cells
+      row.months.forEach(cellData => {
+        const cell = document.createElement('div');
+        cell.className = 'habit-freq-cell';
+
+        const bubble = document.createElement('div');
+
+        if (cellData.scheduled === 0 || cellData.rate === 0) {
+          bubble.className = 'habit-freq-bubble is-empty';
+          bubble.style.width = '2.5px';
+          bubble.style.height = '2.5px';
+          bubble.style.opacity = '0.16';
+        } else {
+          bubble.className = 'habit-freq-bubble';
+          const size = Math.round(5 + (Math.pow(cellData.rate, 1.15) * 21));
+          bubble.style.width = `${size}px`;
+          bubble.style.height = `${size}px`;
+          bubble.style.opacity = `${(0.42 + (0.58 * Math.pow(cellData.rate, 0.75))).toFixed(2)}`;
+          if (cellData.rate >= 0.99) {
+            bubble.style.boxShadow = '0 0 8px rgba(var(--primary-rgb, 216, 58, 136), 0.75)';
+          }
+        }
+        cell.appendChild(bubble);
+
+        // Tooltip calculation
+        let tooltipText = '';
+        if (cellData.scheduled === 0) {
+          tooltipText = `${row.dowName}, ${cellData.monthLabel}: нет записей`;
+        } else if (habit.type === 'numeric' && cellData.avgVal !== null) {
+          tooltipText = `${row.dowName}, ${cellData.monthLabel}: ${cellData.completed} из ${cellData.scheduled} (${Math.round(cellData.rate * 100)}%) • в ср. ${cellData.avgVal}${unit ? ' ' + unit : ''}`;
+        } else {
+          tooltipText = `${row.dowName}, ${cellData.monthLabel}: ${cellData.completed} из ${cellData.scheduled} (${Math.round(cellData.rate * 100)}%)`;
+        }
+
+        cell.title = tooltipText;
+
+        cell.addEventListener('click', (e) => {
+          e.stopPropagation();
+          triggerHaptic(10);
+          wrap.querySelectorAll('.habit-freq-cell.is-selected').forEach(el => el.classList.remove('is-selected'));
+          cell.classList.add('is-selected');
+
+          const insight = document.getElementById('habitWeekdaysInsight');
+          if (insight) {
+            insight.textContent = `📍 ${tooltipText}`;
+            insight.style.display = 'flex';
+          }
+        });
+
+        table.appendChild(cell);
+      });
+    });
+
+    // Bottom row: Empty corner + Month labels
+    const emptyCorner = document.createElement('div');
+    table.appendChild(emptyCorner);
+
+    stats.freqMonths.forEach(m => {
+      const mLabel = document.createElement('div');
+      mLabel.className = 'habit-freq-month-label';
+      mLabel.textContent = m.label;
+      table.appendChild(mLabel);
+    });
+
+    wrap.appendChild(table);
+    container.innerHTML = '';
+    container.appendChild(wrap);
+  }
+
+
+
+  // Check and grant Pet treats upon reaching habit streak milestones
+  checkHabitPetMilestone(habit, streak) {
+    if (!this.petSystem || streak <= 0) return;
+    const milestones = [3, 7, 14, 21, 30, 50, 100];
+    if (!milestones.includes(streak)) return;
+
+    if (!habit.lastAwardedMilestoneStreak) habit.lastAwardedMilestoneStreak = 0;
+    if (habit.lastAwardedMilestoneStreak >= streak) return;
+
+    habit.lastAwardedMilestoneStreak = streak;
+    this.saveHabits();
+
+    const isGolden = streak >= 7;
+    if (isGolden) {
+      this.petSystem.data.goldenTreats = (this.petSystem.data.goldenTreats || 0) + 1;
+      this.petSystem.data.xp += 30;
+      this.petSystem.spawnFlyingTreat('🥫');
+    } else {
+      this.petSystem.data.treats = (this.petSystem.data.treats || 0) + 1;
+      this.petSystem.data.xp += 10;
+      this.petSystem.spawnFlyingTreat('🟤');
+    }
+
+    this.petSystem.saveData(true);
+    if (typeof this.petSystem.renderMiniCompanion === 'function') {
+      this.petSystem.renderMiniCompanion();
+    }
+
+    const rewardTitle = isGolden ? '🥫 Золотую консерву (+30 XP)' : '🟤 Коричневый камушек (+10 XP)';
+    if (this.showToast) {
+      this.showToast(`🐾 Мейни дарит ${rewardTitle} за серию ${streak} дней!`, '🎉');
+    }
+  }
+
+  // Calculate detailed streaks, records, total logged, success rate, weekly history, and weekday frequency
+  calculateHabitStats(habit) {
+    const history = habit.history || {};
+    const today = new Date();
+    let totalCount = 0;
+    let totalSum = 0;
+
+    const heatLevels = {};
+    const heatLabels = {};
+
+    let success30Count = 0;
+    let scheduled30Count = 0;
+
+    const isDayCompleted = (dateStr) => {
+      const hEntry = history[dateStr];
+      if (!hEntry) return false;
+      if (habit.type === 'numeric') {
+        const cur = typeof hEntry === 'object' ? (hEntry.current || 0) : (habit.target?.value || 1);
+        const tgt = (habit.target && habit.target.value) ? habit.target.value : 1;
+        return cur >= tgt;
+      }
+      return typeof hEntry === 'object' ? !!hEntry.completed : !!hEntry;
+    };
+
+    const isDayScheduled = (d) => {
+      if (habit.schedule?.type === 'weekdays') {
+        const dows = habit.schedule.daysOfWeek || [1, 2, 3, 4, 5];
+        return dows.includes(d.getDay());
+      }
+      return true;
+    };
+
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+      const scheduled = isDayScheduled(d);
+      if (scheduled) scheduled30Count++;
+
+      const hEntry = history[dateStr];
+      let frac = 0;
+      let val = 0;
+
+      if (habit.type === 'numeric') {
+        const cur = typeof hEntry === 'object' ? (hEntry.current || 0) : (hEntry ? (habit.target?.value || 1) : 0);
+        const tgt = (habit.target && habit.target.value) ? habit.target.value : 1;
+        frac = Math.min(cur / tgt, 1.0);
+        val = cur;
+        totalSum += cur;
+      } else {
+        const done = typeof hEntry === 'object' ? !!hEntry.completed : !!hEntry;
+        frac = done ? 1.0 : 0.0;
+        if (done) totalCount++;
+      }
+
+      if (frac >= 1.0) {
+        success30Count++;
+      }
+
+    }
+
+    let target30 = scheduled30Count;
+    if (habit.schedule?.type === 'periodic') {
+      const perCount = habit.schedule.targetCount || 3;
+      target30 = habit.schedule.period === 'month' ? perCount : Math.round(perCount * (30 / 7));
+    }
+    const rate = target30 > 0 ? Math.min(100, Math.round((success30Count / target30) * 100)) : 0;
+    const avgPerDay = scheduled30Count > 0 ? Number((totalSum / scheduled30Count).toFixed(1)) : 0;
+
+    // Calculate 28-day calendar window aligned to Monday 3 weeks ago -> this Sunday
+    const currentDow = (today.getDay() + 6) % 7; // 0 for Mon ... 6 for Sun
+    const currentMonday = new Date(today);
+    currentMonday.setDate(today.getDate() - currentDow);
+    currentMonday.setHours(0, 0, 0, 0);
+
+    const startMonday = new Date(currentMonday);
+    startMonday.setDate(currentMonday.getDate() - 21); // 3 weeks back Monday (4 full weeks = 28 days)
+
+    const dayItems = [];
+    const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    for (let i = 0; i < 28; i++) {
+      const cd = new Date(startMonday);
+      cd.setDate(startMonday.getDate() + i);
+      const ds = `${cd.getFullYear()}-${String(cd.getMonth() + 1).padStart(2, '0')}-${String(cd.getDate()).padStart(2, '0')}`;
+      const hEntry = history[ds];
+      let frac = 0;
+      let val = 0;
+      let completed = false;
+      if (habit.type === 'numeric') {
+        const cur = typeof hEntry === 'object' ? (hEntry.current || 0) : (hEntry ? (habit.target?.value || 1) : 0);
+        const tgt = (habit.target && habit.target.value) ? habit.target.value : 1;
+        frac = tgt > 0 ? (cur / tgt) : 0;
+        val = cur;
+        completed = cur >= tgt;
+      } else {
+        completed = typeof hEntry === 'object' ? !!hEntry.completed : !!hEntry;
+        frac = completed ? 1.0 : 0.0;
+      }
+      dayItems.push({ date: cd, dateStr: ds, frac, val, completed, isFuture: ds > todayDateStr });
+    }
+
+    if (habit.schedule?.type === 'periodic') {
+      const targetCount = habit.schedule.targetCount || 3;
+      for (let w = 0; w < 4; w++) {
+        const weekDays = dayItems.slice(w * 7, (w + 1) * 7);
+        const completedCount = weekDays.filter(d => d.completed).length;
+
+        weekDays.forEach(d => {
+          if (d.completed) {
+            heatLevels[d.dateStr] = 3;
+            heatLabels[d.dateStr] = `100% (✓) • ${completedCount} из ${targetCount} дн.`;
+          } else if (completedCount >= targetCount) {
+            // Rest day in a fully satisfied week: light theme fill ("светлая заливка")
+            heatLevels[d.dateStr] = 1;
+            heatLabels[d.dateStr] = `Норма недели выполнена 🎯 (${completedCount} из ${targetCount} дн.)`;
+          } else if (completedCount > 0) {
+            // Day in an active in-progress week: light theme fill ("светлая заливка")
+            heatLevels[d.dateStr] = 1;
+            heatLabels[d.dateStr] = `В процессе: ${completedCount} из ${targetCount} дн.`;
+          } else {
+            heatLevels[d.dateStr] = 0;
+            heatLabels[d.dateStr] = `0 из ${targetCount} дн.`;
+          }
+        });
+      }
+    } else {
+      dayItems.forEach(d => {
+        let level = 0;
+        if (d.frac >= 1.0) level = 3;
+        else if (d.frac >= 0.5) level = 2;
+        else if (d.frac > 0) level = 1;
+        heatLevels[d.dateStr] = level;
+        heatLabels[d.dateStr] = `${Math.round(d.frac * 100)}% (${d.val || (d.completed ? '✓' : '0')})`;
+      });
+    }
+
+    // Calculate completions for current week
+    let thisWeekCount = 0;
+    for (let d = 0; d <= currentDow; d++) {
+      const cd = new Date(currentMonday);
+      cd.setDate(currentMonday.getDate() + d);
+      const cds = `${cd.getFullYear()}-${String(cd.getMonth() + 1).padStart(2, '0')}-${String(cd.getDate()).padStart(2, '0')}`;
+      if (isDayCompleted(cds)) {
+        thisWeekCount++;
+      }
+    }
+
+    // --- Streak and Best Streak with date ranges ---
+    let currentStreak = 0;
+    let bestStreak = 0;
+    let currentStreakRange = null;
+    let bestStreakRange = null;
+
+    if (habit.schedule?.type === 'periodic') {
+      const targetCount = habit.schedule.targetCount || 3;
+      let tempStreak = 0;
+      let tempStart = null;
+      let tempEnd = null;
+
+      for (let w = 0; w < 26; w++) {
+        let weekCompleted = 0;
+        let weekFirstDay = null;
+        let weekLastDay = null;
+        for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+          const d = new Date(today);
+          d.setDate(today.getDate() - (w * 7 + dayOffset));
+          const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          if (isDayCompleted(ds)) {
+            weekCompleted++;
+            if (!weekLastDay) weekLastDay = ds;
+            weekFirstDay = ds;
+          }
+        }
+
+        if (weekCompleted >= targetCount) {
+          tempStreak++;
+          if (!tempEnd) tempEnd = weekLastDay;
+          tempStart = weekFirstDay;
+
+          if (w === 0 || tempStreak === w + 1) {
+            currentStreak = tempStreak;
+            currentStreakRange = { start: tempStart, end: tempEnd };
+          }
+          if (tempStreak >= bestStreak) {
+            bestStreak = tempStreak;
+            bestStreakRange = { start: tempStart, end: tempEnd };
+          }
+        } else {
+          if (w === 0) {
+            const daysLeftInCurWeek = 6 - currentDow;
+            const canStillMeet = daysLeftInCurWeek >= (targetCount - weekCompleted);
+            if (canStillMeet) {
+              continue;
+            } else {
+              currentStreak = 0;
+            }
+          }
+          tempStreak = 0;
+          tempStart = null;
+          tempEnd = null;
+        }
+      }
+    } else {
+      let streakRunning = true;
+      let tempStreak = 0;
+      let tempStart = null;
+      let tempEnd = null;
+
+      for (let i = 0; i < 365; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+        if (!isDayScheduled(d)) continue;
+
+        const done = isDayCompleted(ds);
+        if (done) {
+          tempStreak++;
+          if (!tempEnd) tempEnd = ds;
+          tempStart = ds;
+
+          if (streakRunning) {
+            currentStreak = tempStreak;
+            currentStreakRange = { start: tempStart, end: tempEnd };
+          }
+          if (tempStreak >= bestStreak) {
+            bestStreak = tempStreak;
+            bestStreakRange = { start: tempStart, end: tempEnd };
+          }
+        } else {
+          if (i === 0) {
+            // Today not done yet: don't break streak if yesterday was done
+            continue;
+          }
+          streakRunning = false;
+          tempStreak = 0;
+          tempStart = null;
+          tempEnd = null;
+        }
+      }
+    }
+
+    // --- 1. Multi-Period History Charts (12 columns each: days, weeks, months, years) ---
+    const defaultMonthNames = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+    const rawShortMonths = window.Plan4UI18n ? Plan4UI18n.t('monthsShort', {}, this.currentLang) : null;
+    const monthNames = Array.isArray(rawShortMonths) ? rawShortMonths : defaultMonthNames;
+
+    const targetVal = (habit.target && habit.target.value) ? habit.target.value : 1;
+    const unit = habit.target?.unit || '';
+    const dayUnit = window.Plan4UI18n ? Plan4UI18n.t('habit_days_unit', {}, this.currentLang) : 'дн.';
+
+    let earliestDate = habit.created ? new Date(habit.created) : new Date(today);
+    if (isNaN(earliestDate.getTime())) earliestDate = new Date(today);
+    if (habit.history && typeof habit.history === 'object') {
+      const historyDates = Object.keys(habit.history).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k)).sort();
+      if (historyDates.length > 0) {
+        const [y, m, d] = historyDates[0].split('-').map(Number);
+        const firstHistDate = new Date(y, m - 1, d);
+        if (!isNaN(firstHistDate.getTime()) && firstHistDate < earliestDate) {
+          earliestDate = firstHistDate;
+        }
+      }
+    }
+    const earliestDateStr = `${earliestDate.getFullYear()}-${String(earliestDate.getMonth() + 1).padStart(2, '0')}-${String(earliestDate.getDate()).padStart(2, '0')}`;
+
+    const formatAvg = (val) => {
+      if (val >= 10) return String(Math.round(val));
+      const rounded = Number(val.toFixed(1));
+      return rounded % 1 === 0 ? String(Math.round(rounded)) : String(rounded);
+    };
+
+    const perDay = window.Plan4UI18n ? Plan4UI18n.t('habit_period_per_day', {}, this.currentLang) : '/день';
+    const perWeek = window.Plan4UI18n ? Plan4UI18n.t('habit_period_per_week', {}, this.currentLang) : '/нед.';
+    const perMonth = window.Plan4UI18n ? Plan4UI18n.t('habit_period_per_month', {}, this.currentLang) : '/мес.';
+    const perYear = window.Plan4UI18n ? Plan4UI18n.t('habit_period_per_year', {}, this.currentLang) : '/год';
+
+    // A. 12 DAYS (Clean day numbers + 'Сег.' for today + tooltip)
+    const todayLabel = window.Plan4UI18n ? Plan4UI18n.t('habit_chart_today', {}, this.currentLang) : 'Сег.';
+    const dayBars = [];
+    const dayTarget = habit.type === 'numeric' ? targetVal : 1;
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const completed = isDayCompleted(ds);
+      const hEntry = history[ds];
+      const cur = habit.type === 'numeric'
+        ? (typeof hEntry === 'object' ? (hEntry.current || 0) : (hEntry ? targetVal : 0))
+        : (completed ? 1 : 0);
+      const isTargetMet = habit.type === 'numeric' ? cur >= targetVal : completed;
+
+      const isCurrent = (i === 0);
+      const isFirstOfMonth = (d.getDate() === 1);
+      const label = isCurrent ? todayLabel : String(d.getDate());
+      const countFormatted = habit.type === 'numeric' ? Number(cur.toFixed(1)) : (completed ? 1 : 0);
+      const tooltip = `${d.getDate()} ${monthNames[d.getMonth()]}: ${countFormatted}${habit.type === 'numeric' && unit ? ' ' + unit : ''}`;
+
+      dayBars.push({
+        label,
+        monthTag: isFirstOfMonth ? monthNames[d.getMonth()] : null,
+        tooltip,
+        dateStr: ds,
+        count: countFormatted,
+        target: dayTarget,
+        isTargetMet,
+        isCurrent
+      });
+    }
+    const dayTargetStr = habit.type === 'numeric' ? (unit ? `${targetVal} ${unit}${perDay}` : `${targetVal}${perDay}`) : `1 ${dayUnit}${perDay}`;
+    const activeDayBars = dayBars.filter(b => b.dateStr >= earliestDateStr);
+    const dayDivisor = Math.max(1, activeDayBars.length);
+    const dayTotalSum = dayBars.reduce((acc, b) => acc + (b.count || 0), 0);
+    const dayAvg = dayTotalSum / dayDivisor;
+    const dayAvgStr = habit.type === 'numeric'
+      ? (unit ? `${formatAvg(dayAvg)} ${unit}${perDay}` : `${formatAvg(dayAvg)}${perDay}`)
+      : `${formatAvg(dayAvg)}${perDay}`;
+
+    // B. 12 WEEKS (Option A: alternating dates + 'Тек.' for current week)
+    const curWeekLabel = window.Plan4UI18n ? Plan4UI18n.t('habit_chart_cur_week', {}, this.currentLang) : 'Тек.';
+    const weekBars = [];
+    const targetPerWeek = (habit.schedule?.type === 'periodic')
+      ? (habit.schedule.targetCount || 3)
+      : (habit.schedule?.type === 'weekdays' ? (habit.schedule.daysOfWeek?.length || 5) : 7);
+    const thisMonday = currentMonday;
+
+    for (let w = 11; w >= 0; w--) {
+      const weekMonday = new Date(thisMonday);
+      weekMonday.setDate(thisMonday.getDate() - (w * 7));
+      const weekSunday = new Date(weekMonday);
+      weekSunday.setDate(weekMonday.getDate() + 6);
+
+      let count = 0;
+      let sum = 0;
+
+      for (let d = 0; d < 7; d++) {
+        const cellDate = new Date(weekMonday);
+        cellDate.setDate(weekMonday.getDate() + d);
+        const ds = `${cellDate.getFullYear()}-${String(cellDate.getMonth() + 1).padStart(2, '0')}-${String(cellDate.getDate()).padStart(2, '0')}`;
+
+        if (isDayCompleted(ds)) {
+          count++;
+        }
+        const hEntry = history[ds];
+        if (habit.type === 'numeric' && hEntry) {
+          sum += typeof hEntry === 'object' ? (hEntry.current || 0) : (habit.target?.value || 1);
+        }
+      }
+
+      const isCurrent = (w === 0);
+      const isTargetMet = habit.type === 'numeric' ? (sum >= targetPerWeek * targetVal) : (count >= targetPerWeek);
+
+      // Alternating labels (even w: w=10, 8, 6, 4, 2) + current week 'Тек.' (w=0)
+      let label = '';
+      if (isCurrent) {
+        label = curWeekLabel;
+      } else if (w % 2 === 0) {
+        label = `${weekMonday.getDate()} ${monthNames[weekMonday.getMonth()]}`;
+      }
+
+      const weekRangeText = `${weekMonday.getDate()} ${monthNames[weekMonday.getMonth()]} — ${weekSunday.getDate()} ${monthNames[weekSunday.getMonth()]}`;
+      const countFormatted = habit.type === 'numeric' ? Number(sum.toFixed(1)) : count;
+      const tooltip = `${weekRangeText}: ${countFormatted}${habit.type === 'numeric' && unit ? ' ' + unit : ''}`;
+
+      weekBars.push({
+        label,
+        tooltip,
+        weekSunday,
+        count: countFormatted,
+        target: targetPerWeek,
+        isTargetMet,
+        isCurrent
+      });
+    }
+    const weekTargetStr = (habit.schedule?.type === 'periodic')
+      ? `${targetPerWeek}${perWeek}`
+      : (habit.schedule?.type === 'weekdays' ? `${targetPerWeek} ${dayUnit}${perWeek}` : `7 ${dayUnit}${perWeek}`);
+    const activeWeekBars = weekBars.filter(b => b.weekSunday >= earliestDate);
+    const weekDivisor = Math.max(1, activeWeekBars.length);
+    const weekTotalSum = weekBars.reduce((acc, b) => acc + (b.count || 0), 0);
+    const weekAvg = weekTotalSum / weekDivisor;
+    const weekAvgStr = habit.type === 'numeric'
+      ? (unit ? `${formatAvg(weekAvg)} ${unit}${perWeek}` : `${formatAvg(weekAvg)}${perWeek}`)
+      : (habit.schedule?.type === 'periodic'
+          ? `${formatAvg(weekAvg)}${perWeek}`
+          : `${formatAvg(weekAvg)} ${dayUnit}${perWeek}`);
+
+    // C. 12 MONTHS (Option A: clean 3 letters + year tag for January)
+    const monthBars = [];
+    let avgMonthTarget = 0;
+    for (let m = 11; m >= 0; m--) {
+      const targetDate = new Date(today.getFullYear(), today.getMonth() - m, 1);
+      const targetYear = targetDate.getFullYear();
+      const targetMonth = targetDate.getMonth();
+      const daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+
+      let count = 0;
+      let sum = 0;
+      let scheduledInMonth = 0;
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const cellDate = new Date(targetYear, targetMonth, day);
+        const ds = `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+        if (isDayScheduled(cellDate)) {
+          scheduledInMonth++;
+        }
+        if (isDayCompleted(ds)) {
+          count++;
+        }
+        const hEntry = history[ds];
+        if (habit.type === 'numeric' && hEntry) {
+          sum += typeof hEntry === 'object' ? (hEntry.current || 0) : targetVal;
+        }
+      }
+
+      let monthTarget = scheduledInMonth;
+      if (habit.schedule?.type === 'periodic') {
+        monthTarget = Math.round((habit.schedule.targetCount || 3) * (daysInMonth / 7));
+      }
+      if (m === 0) avgMonthTarget = monthTarget;
+
+      const isTargetMet = habit.type === 'numeric'
+        ? (sum >= monthTarget * targetVal && monthTarget > 0)
+        : (count >= monthTarget && monthTarget > 0);
+      const isCurrent = (m === 0);
+
+      // Clean 3-letter month label without year in main label
+      const label = monthNames[targetMonth];
+      const isYearStart = (targetMonth === 0); // January
+      const countFormatted = habit.type === 'numeric' ? Number(sum.toFixed(1)) : count;
+      const tooltip = `${monthNames[targetMonth].toUpperCase()} ${targetYear}: ${countFormatted}${habit.type === 'numeric' && unit ? ' ' + unit : ''}`;
+
+      monthBars.push({
+        label,
+        yearTag: isYearStart ? `'${String(targetYear).slice(-2)}` : null,
+        isYearStart,
+        tooltip,
+        year: targetYear,
+        month: targetMonth,
+        count: countFormatted,
+        target: monthTarget,
+        isTargetMet,
+        isCurrent
+      });
+    }
+    const monthTargetStr = habit.type === 'numeric'
+      ? `${Number((avgMonthTarget * targetVal).toFixed(0))} ${unit}${perMonth}`
+      : `~${avgMonthTarget} ${dayUnit}${perMonth}`;
+    const activeMonthBars = monthBars.filter(b => new Date(b.year, b.month + 1, 0) >= earliestDate);
+    const monthDivisor = Math.max(1, activeMonthBars.length);
+    const monthTotalSum = monthBars.reduce((acc, b) => acc + (b.count || 0), 0);
+    const monthAvg = monthTotalSum / monthDivisor;
+    const monthAvgStr = habit.type === 'numeric'
+      ? (unit ? `${formatAvg(monthAvg)} ${unit}${perMonth}` : `${formatAvg(monthAvg)}${perMonth}`)
+      : `${formatAvg(monthAvg)} ${dayUnit}${perMonth}`;
+
+    // D. 12 YEARS
+    const yearBars = [];
+    let avgYearTarget = 365;
+    for (let y = 11; y >= 0; y--) {
+      const targetYear = today.getFullYear() - y;
+      const isLeap = (targetYear % 4 === 0 && targetYear % 100 !== 0) || (targetYear % 400 === 0);
+      const daysInYear = isLeap ? 366 : 365;
+
+      let count = 0;
+      let sum = 0;
+
+      Object.keys(history).forEach(ds => {
+        if (ds.startsWith(String(targetYear))) {
+          if (isDayCompleted(ds)) {
+            count++;
+          }
+          const hEntry = history[ds];
+          if (habit.type === 'numeric' && hEntry) {
+            sum += typeof hEntry === 'object' ? (hEntry.current || 0) : targetVal;
+          }
+        }
+      });
+
+      let yearTarget = (habit.schedule?.type === 'periodic')
+        ? Math.round((habit.schedule.targetCount || 3) * 52)
+        : (habit.schedule?.type === 'weekdays' ? Math.round((habit.schedule.daysOfWeek?.length || 5) * 52) : daysInYear);
+
+      if (y === 0) avgYearTarget = yearTarget;
+
+      const isTargetMet = habit.type === 'numeric'
+        ? (sum >= yearTarget * targetVal && yearTarget > 0)
+        : (count >= yearTarget && yearTarget > 0);
+      const isCurrent = (y === 0);
+      const label = `'${String(targetYear).slice(-2)}`;
+      const countFormatted = habit.type === 'numeric' ? Number(sum.toFixed(1)) : count;
+      const tooltip = `${targetYear}: ${countFormatted}${habit.type === 'numeric' && unit ? ' ' + unit : ''}`;
+
+      yearBars.push({
+        label,
+        tooltip,
+        year: targetYear,
+        count: countFormatted,
+        target: yearTarget,
+        isTargetMet,
+        isCurrent
+      });
+    }
+    const yearTargetStr = habit.type === 'numeric'
+      ? `${Number((avgYearTarget * targetVal).toFixed(0))} ${unit}${perYear}`
+      : `~${avgYearTarget} ${dayUnit}${perYear}`;
+    const activeYearBars = yearBars.filter(b => new Date(b.year, 11, 31) >= earliestDate);
+    const yearDivisor = Math.max(1, activeYearBars.length);
+    const yearTotalSum = yearBars.reduce((acc, b) => acc + (b.count || 0), 0);
+    const yearAvg = yearTotalSum / yearDivisor;
+    const yearAvgStr = habit.type === 'numeric'
+      ? (unit ? `${formatAvg(yearAvg)} ${unit}${perYear}` : `${formatAvg(yearAvg)}${perYear}`)
+      : `${formatAvg(yearAvg)} ${dayUnit}${perYear}`;
+
+    const chartPeriods = {
+      days: { bars: dayBars, target: dayTarget, targetStr: dayTargetStr, avgStr: dayAvgStr },
+      weeks: { bars: weekBars, target: targetPerWeek, targetStr: weekTargetStr, avgStr: weekAvgStr },
+      months: { bars: monthBars, target: avgMonthTarget, targetStr: monthTargetStr, avgStr: monthAvgStr },
+      years: { bars: yearBars, target: avgYearTarget, targetStr: yearTargetStr, avgStr: yearAvgStr }
+    };
+
+    // --- Weekday Breakdown (past 60 days) ---
+    // Days: 1=Пн, 2=Вт, 3=Ср, 4=Чт, 5=Пт, 6=Сб, 0=Вс
+    const dowNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+    const dowOrder = [1, 2, 3, 4, 5, 6, 0];
+    const dowStats = {};
+
+    dowOrder.forEach(dow => {
+      dowStats[dow] = { dow, name: dowNames[dow], completed: 0, total: 0, rate: 0 };
+    });
+
+    for (let i = 0; i < 60; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const dow = d.getDay();
+
+      if (isDayScheduled(d)) {
+        dowStats[dow].total++;
+        if (isDayCompleted(ds)) {
+          dowStats[dow].completed++;
+        }
+      }
+    }
+
+    let bestDow = null;
+    let maxDowRate = -1;
+
+    dowOrder.forEach(dow => {
+      const item = dowStats[dow];
+      item.rate = item.total > 0 ? Math.round((item.completed / item.total) * 100) : 0;
+      if (item.rate > maxDowRate && item.total >= 2) {
+        maxDowRate = item.rate;
+        bestDow = item;
+      }
+    });
+
+    // --- Frequency Grid by Months x Weekdays (inspired by Loop Habit Tracker) ---
+    const freqMonths = [];
+    const startMonthDate = new Date(earliestDate.getFullYear(), earliestDate.getMonth(), 1);
+    const endMonthDate = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    let curMonthCursor = new Date(startMonthDate);
+    const minMonths = 6;
+    const earliestAllowed = new Date(today.getFullYear(), today.getMonth() - (minMonths - 1), 1);
+    if (curMonthCursor > earliestAllowed) {
+      curMonthCursor = earliestAllowed;
+    }
+
+    while (curMonthCursor <= endMonthDate) {
+      freqMonths.push({
+        year: curMonthCursor.getFullYear(),
+        month: curMonthCursor.getMonth(),
+        label: monthNames[curMonthCursor.getMonth()]
+      });
+      curMonthCursor = new Date(curMonthCursor.getFullYear(), curMonthCursor.getMonth() + 1, 1);
+    }
+
+    if (freqMonths.length > 9) {
+      freqMonths.splice(0, freqMonths.length - 9);
+    }
+
+    const freqGrid = [];
+    const dowNamesFull = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+    const dowNamesShort = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+    const todayDateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    dowOrder.forEach(dow => {
+      const row = {
+        dow,
+        dowLabel: dowNamesShort[dow],
+        dowName: dowNamesFull[dow],
+        months: []
+      };
+
+      freqMonths.forEach(m => {
+        let scheduled = 0;
+        let completed = 0;
+        let sumVal = 0;
+
+        const daysInMonth = new Date(m.year, m.month + 1, 0).getDate();
+        for (let day = 1; day <= daysInMonth; day++) {
+          const d = new Date(m.year, m.month, day);
+          if (d.getDay() !== dow) continue;
+          if (!isDayScheduled(d)) continue;
+
+          const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          if (ds > todayDateString) continue;
+
+          scheduled++;
+          if (isDayCompleted(ds)) {
+            completed++;
+          }
+          const hEntry = history[ds];
+          if (habit.type === 'numeric') {
+            const cur = typeof hEntry === 'object' ? (hEntry.current || 0) : (hEntry ? targetVal : 0);
+            sumVal += cur;
+          }
+        }
+
+        const cellRate = scheduled > 0 ? (completed / scheduled) : 0;
+        const avgVal = (scheduled > 0 && habit.type === 'numeric') ? Math.round(sumVal / scheduled) : null;
+
+        row.months.push({
+          year: m.year,
+          month: m.month,
+          monthLabel: m.label,
+          scheduled,
+          completed,
+          rate: cellRate,
+          avgVal
+        });
+      });
+
+      freqGrid.push(row);
+    });
+
+    const thisWeekTarget = (habit.schedule?.type === 'periodic')
+      ? (habit.schedule.targetCount || 3)
+      : (habit.schedule?.type === 'weekdays' ? (habit.schedule.daysOfWeek?.length || 5) : 7);
+
+    return {
+      currentStreak,
+      bestStreak: Math.max(bestStreak, currentStreak),
+      currentStreakRange,
+      bestStreakRange,
+      totalCount,
+      totalSum: Number(totalSum.toFixed(1)),
+      rate,
+      avgPerDay,
+      thisWeekCount,
+      thisWeekTarget,
+      heatLevels,
+      heatLabels,
+      chartPeriods,
+      weeklyBars: weekBars,
+      targetPerWeek,
+      dowList: dowOrder.map(dow => dowStats[dow]),
+      bestDow,
+      freqMonths,
+      freqGrid
+    };
+  }
+
+  // Open the Quick Stepper popover for logging numeric habits
+  openHabitStepper(habitId, dateStr, anchorEl) {
+    const todayStr = this.getTodayDateString();
+    if (dateStr > todayStr) return; // Disallow logging in the future
+
+    const habit = (this.habits || []).find(h => h.id === habitId);
+    if (!habit || habit.type !== 'numeric') return;
+
+    this.currentStepperHabitId = habitId;
+    this.currentStepperDate = dateStr;
+
+    const backdrop = document.getElementById('habitStepperBackdrop');
+    const titleEl = document.getElementById('habitStepperTitle');
+    const dateEl = document.getElementById('habitStepperDate');
+    const curValEl = document.getElementById('habitStepperCurrentVal');
+    const tgtValEl = document.getElementById('habitStepperTargetVal');
+    const unitEl = document.getElementById('habitStepperUnit');
+    const progressFill = document.getElementById('habitStepperProgressFill');
+    const inputEl = document.getElementById('habitStepInput');
+    const quick1 = document.getElementById('habitQuickStep1Btn');
+    const quick2 = document.getElementById('habitQuickStep2Btn');
+
+    if (!backdrop) return;
+
+    const tgt = (habit.target && habit.target.value) ? habit.target.value : 1;
+    const step = this.getHabitAutoStep(habit);
+    const unit = habit.target?.unit || '';
+
+    const hEntry = habit.history && habit.history[dateStr];
+    let cur = 0;
+    if (typeof hEntry === 'object') {
+      cur = hEntry.current || 0;
+    } else if (hEntry) {
+      cur = tgt;
+    }
+
+    if (titleEl) titleEl.textContent = habit.title;
+    if (dateEl) {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const dt = new Date(y, m - 1, d);
+      const dows = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+      const months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+      dateEl.textContent = `${dows[dt.getDay()]}, ${d} ${months[dt.getMonth()]}`;
+    }
+
+    if (curValEl) curValEl.textContent = cur;
+    if (tgtValEl) tgtValEl.textContent = tgt;
+    if (unitEl) unitEl.textContent = unit;
+    if (inputEl) {
+      inputEl.value = cur;
+      inputEl.step = step;
+    }
+
+    const pct = Math.min(Math.max((cur / tgt) * 100, 0), 100);
+    if (progressFill) progressFill.style.width = `${pct}%`;
+
+    if (quick1) quick1.textContent = `+${step}`;
+    if (quick2) quick2.textContent = `+${Number((step * 2).toFixed(2))}`;
+
+    this._stepperOpenedAt = Date.now();
+    backdrop.classList.add('open');
+    backdrop.setAttribute('aria-hidden', 'false');
+  }
+
+  // Close Quick Stepper popover
+  closeHabitStepper() {
+    const backdrop = document.getElementById('habitStepperBackdrop');
+    if (backdrop) {
+      backdrop.classList.remove('open');
+      backdrop.setAttribute('aria-hidden', 'true');
+    }
+    this.currentStepperHabitId = null;
+    this.currentStepperDate = null;
+  }
+
+  // Set numeric value in Quick Stepper
+  setHabitStepperValue(newVal) {
+    if (!this.currentStepperHabitId || !this.currentStepperDate) return;
+    const habit = (this.habits || []).find(h => h.id === this.currentStepperHabitId);
+    if (!habit) return;
+
+    const tgt = (habit.target && habit.target.value) ? habit.target.value : 1;
+    let val = Math.max(0, Number(Number(newVal).toFixed(2)));
+
+    if (!habit.history) habit.history = {};
+
+    const wasCompleted = habit.history[this.currentStepperDate]?.completed;
+    const isNowCompleted = val >= tgt;
+
+    if (val === 0) {
+      delete habit.history[this.currentStepperDate];
+    } else {
+      habit.history[this.currentStepperDate] = {
+        current: val,
+        target: tgt,
+        completed: isNowCompleted,
+        timestamp: Date.now()
+      };
+    }
+
+    if (!wasCompleted && isNowCompleted) {
+      triggerHaptic(25);
+      this.playCompletionSound();
+      const stats = this.calculateHabitStats(habit);
+      this.checkHabitPetMilestone(habit, stats.currentStreak);
+    } else {
+      triggerHaptic(15);
+    }
+
+    this.saveHabits();
+
+    // Surgical in-place update of numeric cell button if present in DOM
+    if (this.habitsListContainer) {
+      const cellBtn = this.habitsListContainer.querySelector(`button[data-habit-id="${habit.id}"][data-date="${dateStr}"]`);
+      if (cellBtn) {
+        const isDone = val >= tgt;
+        const pct = Math.min(Math.max((val / tgt) * 100, 0), 100);
+        cellBtn.classList.toggle('checked', isDone);
+        cellBtn.title = `${dateStr}: ${val} / ${tgt} ${habit.target?.unit || ''} (${Math.round((val / tgt) * 100)}%)`;
+        if (isDone) {
+          cellBtn.innerHTML = `
+            <div class="habit-cell-fill-bar" style="height: 100%;"></div>
+            <svg class="habit-cell-check-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="position: relative; z-index: 2;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          `;
+        } else if (val > 0) {
+          const pctInt = Math.min(99, Math.max(1, Math.round(pct)));
+          cellBtn.innerHTML = `
+            <div class="habit-cell-fill-bar" style="height: ${pct}%;"></div>
+            <span class="habit-cell-num">${pctInt}%</span>
+          `;
+        } else {
+          cellBtn.innerHTML = `
+            <div class="habit-cell-fill-bar" style="height: 0%;"></div>
+          `;
+        }
+      }
+    }
+
+    this.updateWeekDaysProgress();
+
+    // Update stepper UI
+    const curValEl = document.getElementById('habitStepperCurrentVal');
+    const inputEl = document.getElementById('habitStepInput');
+    const progressFill = document.getElementById('habitStepperProgressFill');
+
+    if (curValEl) curValEl.textContent = val;
+    if (inputEl) inputEl.value = val;
+    const pct = Math.min(Math.max((val / tgt) * 100, 0), 100);
+    if (progressFill) progressFill.style.width = `${pct}%`;
+  }
+
+  // Alias for legacy calls to open add habit
+  openAddHabitInput() {
+    const container = document.getElementById('tabsSubstrateContainer');
+    if (container && !container.classList.contains('is-expanded')) {
+      this.toggleSubstrateDrawer(true);
+    }
+    this.openHabitModal('create');
+  }
+
+  closeAddHabitInput() {
+    this.closeHabitModal();
+  }
+
+  // Legacy addNewHabit alias
+  addNewHabit(title) {
+    if (!title) return;
+    const newHabit = {
+      id: 'h_' + Date.now(),
+      title: title,
+      type: 'boolean',
+      schedule: { type: 'daily' },
+      created: Date.now(),
+      history: {}
+    };
+    if (!this.habits) this.habits = [];
+    this.habits.push(newHabit);
+    this.saveHabits();
+    this.renderHabits();
+    this.updateWeekDaysProgress();
+    triggerHaptic(25);
   }
 
   // Load tabs from LocalStorage & Plan4UStorage
@@ -2483,6 +4989,16 @@ class NotebookApp {
     this.widgetStreak = document.getElementById('widgetStreak');
     this.widgetMedal = document.getElementById('widgetMedal');
     this.widgetSettings = document.getElementById('widgetSettings');
+    this.weekDaysBar = document.getElementById('weekDaysBar');
+    this.weekDaysTrack = document.getElementById('weekDaysTrack');
+    this.btnAddHabit = document.getElementById('btnAddHabit');
+    this.habitAddSlot = document.getElementById('habitAddSlot');
+    this.habitAddRow = document.getElementById('habitAddRow');
+    this.habitInputField = document.getElementById('habitInputField');
+    this.habitBtnConfirm = document.getElementById('habitBtnConfirm');
+    this.habitBtnCancel = document.getElementById('habitBtnCancel');
+    this.habitsListContainer = document.getElementById('habitsListContainer');
+    this.habits = this.loadHabits();
 
     // Section Modals
     this.newSectionModalBackdrop = document.getElementById('newSectionModalBackdrop');
@@ -3076,6 +5592,284 @@ class NotebookApp {
         this.openSettingsModal();
       });
     }
+
+    if (this.weekDaysBar) {
+      this.weekDaysBar.addEventListener('click', (e) => {
+        // If clicking on Add Habit button or habit input row, do not toggle drawer
+        if (e.target.closest('#btnAddHabit') || e.target.closest('#habitAddSlot') || e.target.closest('#habitAddRow')) {
+          return;
+        }
+        this.toggleSubstrateDrawer();
+      });
+    }
+
+    // Auto-collapse habit tracker drawer on outside click/tap or focus change (tasks, stickers, tabs, etc.)
+    const handleOutsideHabits = (e) => {
+      const container = document.getElementById('tabsSubstrateContainer');
+      if (!container || !container.classList.contains('is-expanded')) {
+        return;
+      }
+      // Ignore if drawer was just opened in this exact event tick (< 150ms)
+      if (this._substrateDrawerOpenedAt && (Date.now() - this._substrateDrawerOpenedAt < 150)) {
+        return;
+      }
+
+      const target = e.target;
+      if (!target || !(target instanceof Element)) return;
+
+      const isInsideHabits = target.closest('#weekDaysBar')
+        || target.closest('#substrateTray')
+        || target.closest('#habitModalBackdrop')
+        || target.closest('#habitStepperBackdrop')
+        || target.closest('#confirmModalBackdrop');
+
+      if (isInsideHabits) return;
+
+      // If user clicked the Stickers button, let its handler open stickers and collapse habits
+      if (target.closest('#fabStickersBtn') || target.closest('.fab-stickers-wrapper')) {
+        return;
+      }
+
+      // Defer collapse to next frame so the clicked button or element
+      // (e.g. Settings gear, Trophy, Date, Tab, Task Checkbox) executes its action
+      // first without any layout reflow cancelling the click event.
+      requestAnimationFrame(() => {
+        this.collapseSubstrateDrawer(true);
+      });
+    };
+
+    // For focusin, only handle when focus shifts via keyboard navigation (not when clicking buttons)
+    // to prevent premature layout collapse before mouseup, which moves the button away and cancels the click event!
+    const handleOutsideFocus = (e) => {
+      const target = e.target;
+      if (!target || !(target instanceof Element)) return;
+      if (target.closest('button, .fab-stickers-btn, .fab-button, .widget-circle, .folder-tab, [role="button"], [role="tab"]')) {
+        return;
+      }
+      handleOutsideHabits(e);
+    };
+
+    const outsideEventOpts = { capture: true, passive: true };
+    document.addEventListener('click', handleOutsideHabits, outsideEventOpts);
+    document.addEventListener('focusin', handleOutsideFocus, outsideEventOpts);
+
+    if (this.btnAddHabit) {
+      this.btnAddHabit.addEventListener('click', (e) => {
+        e.stopPropagation();
+        triggerHaptic(15);
+        this.openHabitModal('create');
+      });
+    }
+
+    this.initHabitModalListeners();
+    this.initHabitStepperListeners();
+  }
+
+  // Initialize habit modal event listeners
+  initHabitModalListeners() {
+    const backdrop = document.getElementById('habitModalBackdrop');
+    const closeBtn = document.getElementById('habitModalCloseBtn');
+    const cancelBtn = document.getElementById('habitModalCancelBtn');
+    const form = document.getElementById('habitModalForm');
+    const statsTab = document.getElementById('habitTabBtnStats');
+    const settingsTab = document.getElementById('habitTabBtnSettings');
+    const btnBool = document.getElementById('habitTypeBtnBoolean');
+    const btnNum = document.getElementById('habitTypeBtnNumeric');
+    const deleteBtn = document.getElementById('btnDeleteHabitFromModal');
+
+    const handleClose = (e) => {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      triggerHaptic(15);
+      this.closeHabitModal();
+    };
+
+    closeBtn?.addEventListener('click', handleClose);
+    cancelBtn?.addEventListener('click', handleClose);
+
+    if (backdrop) {
+      backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) {
+          if (Date.now() - (this._habitModalOpenedAt || 0) < 350) return;
+          handleClose(e);
+        }
+      });
+    }
+
+    // Tabs
+    statsTab?.addEventListener('click', () => {
+      triggerHaptic(10);
+      this.switchHabitModalTab('stats');
+    });
+
+    settingsTab?.addEventListener('click', () => {
+      triggerHaptic(10);
+      this.switchHabitModalTab('settings');
+    });
+
+    // Type toggles
+    btnBool?.addEventListener('click', () => {
+      triggerHaptic(10);
+      this.setHabitFormType('boolean');
+    });
+
+    btnNum?.addEventListener('click', () => {
+      triggerHaptic(10);
+      this.setHabitFormType('numeric');
+    });
+
+    // Unit chips
+    document.querySelectorAll('#habitUnitChips .habit-unit-chip').forEach(chip => {
+      chip.addEventListener('click', (e) => {
+        e.preventDefault();
+        triggerHaptic(10);
+        document.querySelectorAll('#habitUnitChips .habit-unit-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        const customUnitInput = document.getElementById('habitUnitCustomInput');
+        if (customUnitInput) customUnitInput.value = '';
+      });
+    });
+
+    // Custom unit input clears chip active
+    const customUnitInput = document.getElementById('habitUnitCustomInput');
+    customUnitInput?.addEventListener('input', () => {
+      if (customUnitInput.value.trim()) {
+        document.querySelectorAll('#habitUnitChips .habit-unit-chip').forEach(c => c.classList.remove('active'));
+      }
+    });
+
+    // Schedule radio
+    document.querySelectorAll('input[name="habitScheduleRadio"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        triggerHaptic(10);
+        this.updateHabitScheduleUI(radio.value);
+      });
+    });
+
+    // Weekday buttons
+    document.querySelectorAll('#habitWeekdaysPicker .habit-dow-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        triggerHaptic(10);
+        btn.classList.toggle('active');
+      });
+    });
+
+    // Delete in edit modal
+    deleteBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      triggerHaptic(15);
+      if (this.currentEditingHabitId) {
+        this.deleteHabit(this.currentEditingHabitId);
+      }
+    });
+
+    // Form submit
+    form?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      this.saveHabitFromModal();
+    });
+  }
+
+  // Initialize Quick Stepper event listeners
+  initHabitStepperListeners() {
+    const backdrop = document.getElementById('habitStepperBackdrop');
+    const closeBtn = document.getElementById('habitStepperCloseBtn');
+    const doneBtn = document.getElementById('habitStepperDoneBtn');
+    const minusBtn = document.getElementById('habitStepMinusBtn');
+    const plusBtn = document.getElementById('habitStepPlusBtn');
+    const inputEl = document.getElementById('habitStepInput');
+    const quick1 = document.getElementById('habitQuickStep1Btn');
+    const quick2 = document.getElementById('habitQuickStep2Btn');
+    const quickComplete = document.getElementById('habitQuickCompleteBtn');
+    const quickReset = document.getElementById('habitQuickResetBtn');
+
+    const handleClose = (e) => {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      triggerHaptic(15);
+      this.closeHabitStepper();
+    };
+
+    closeBtn?.addEventListener('click', handleClose);
+    doneBtn?.addEventListener('click', handleClose);
+
+    if (backdrop) {
+      backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) {
+          if (Date.now() - (this._stepperOpenedAt || 0) < 300) return;
+          handleClose(e);
+        }
+      });
+    }
+
+    const getHabitCurrent = () => {
+      if (!this.currentStepperHabitId || !this.currentStepperDate) return 0;
+      const habit = (this.habits || []).find(h => h.id === this.currentStepperHabitId);
+      const hEntry = habit && habit.history && habit.history[this.currentStepperDate];
+      if (typeof hEntry === 'object') return hEntry.current || 0;
+      if (hEntry) return (habit && habit.target && habit.target.value) ? habit.target.value : 1;
+      return 0;
+    };
+
+    minusBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (!this.currentStepperHabitId) return;
+      const habit = (this.habits || []).find(h => h.id === this.currentStepperHabitId);
+      const step = this.getHabitAutoStep(habit);
+      const cur = getHabitCurrent();
+      this.setHabitStepperValue(Math.max(0, cur - step));
+    });
+
+    plusBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (!this.currentStepperHabitId) return;
+      const habit = (this.habits || []).find(h => h.id === this.currentStepperHabitId);
+      const step = this.getHabitAutoStep(habit);
+      const cur = getHabitCurrent();
+      this.setHabitStepperValue(cur + step);
+    });
+
+    inputEl?.addEventListener('change', () => {
+      const val = parseFloat(inputEl.value) || 0;
+      this.setHabitStepperValue(val);
+    });
+
+    quick1?.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (!this.currentStepperHabitId) return;
+      const habit = (this.habits || []).find(h => h.id === this.currentStepperHabitId);
+      const step = this.getHabitAutoStep(habit);
+      const cur = getHabitCurrent();
+      this.setHabitStepperValue(cur + step);
+    });
+
+    quick2?.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (!this.currentStepperHabitId) return;
+      const habit = (this.habits || []).find(h => h.id === this.currentStepperHabitId);
+      const step = this.getHabitAutoStep(habit);
+      const cur = getHabitCurrent();
+      this.setHabitStepperValue(cur + step * 2);
+    });
+
+    quickComplete?.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (!this.currentStepperHabitId) return;
+      const habit = (this.habits || []).find(h => h.id === this.currentStepperHabitId);
+      const tgt = (habit && habit.target && habit.target.value) ? habit.target.value : 1;
+      this.setHabitStepperValue(tgt);
+    });
+
+    quickReset?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.setHabitStepperValue(0);
+    });
   }
 
   // Smooth mouse, wheel and touch drag-to-scroll for tabs
@@ -3090,6 +5884,7 @@ class NotebookApp {
     let isDragging = false;
 
     const onPointerStart = (e) => {
+      if (e.target.closest('#weekDaysBar')) return;
       // Only left mouse button (e.button === 0) or pointer
       if (e.button !== undefined && e.button !== 0) return;
       isDown = true;
@@ -3541,6 +6336,7 @@ class NotebookApp {
 
   // Switch Tab
   switchTab(tabKey) {
+    this.collapseSubstrateDrawer();
     if (this.currentTab === tabKey) return;
     this.currentTab = tabKey;
     this.renderTabs();
@@ -3943,6 +6739,14 @@ class NotebookApp {
       }
     });
 
+    // 3b. Update aria-label attributes with [data-i18n-aria]
+    document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+      const key = el.getAttribute('data-i18n-aria');
+      if (dict[key]) {
+        el.setAttribute('aria-label', dict[key]);
+      }
+    });
+
     // 4. Update circular badge text
     const badgeText = document.getElementById('langBadgeText');
     if (badgeText) {
@@ -3984,6 +6788,12 @@ class NotebookApp {
     }
     this.updateDateWidget();
     this.render();
+    if (typeof this.renderWeekDays === 'function') {
+      this.renderWeekDays();
+    }
+    if (typeof this.renderHabits === 'function') {
+      this.renderHabits();
+    }
     if (this.calendarModalBackdrop && this.calendarModalBackdrop.classList.contains('open')) {
       this.renderCalendar();
     }
@@ -4096,11 +6906,21 @@ class NotebookApp {
     }
   }
 
-  // Play subtle audio pop on task completion
+  // Play subtle audio pop on task completion with cached AudioContext
   playCompletionSound() {
     if (!this.settings.soundEnabled) return;
     try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      if (!this._audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          this._audioCtx = new AudioContextClass();
+        }
+      }
+      if (!this._audioCtx) return;
+      if (this._audioCtx.state === 'suspended') {
+        this._audioCtx.resume();
+      }
+      const ctx = this._audioCtx;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sine';
@@ -4140,8 +6960,58 @@ class NotebookApp {
     }
   }
 
+  // Play gentle triumphant chime arpeggio when all tasks for the day are closed
+  playTriumphSound() {
+    if (!this.settings?.soundEnabled) return;
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 (major arpeggio)
+      notes.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const start = ctx.currentTime + idx * 0.08;
+        const dur = idx === notes.length - 1 ? 0.45 : 0.18;
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, start);
+        gain.gain.setValueAtTime(0, start);
+        gain.gain.linearRampToValueAtTime(0.18, start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + dur);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + dur);
+      });
+    } catch (e) { }
+  }
+
+  // Micro-triumph: Confetti salute, haptic pulse, fanfare chime and toast when all today's tasks are done
+  checkAllTasksCompletedTriumph() {
+    if (this.currentTab !== 'todo') return;
+    const todoTasks = (this.tasks['todo'] || []).filter(t => !t.isEmpty && (t.text && t.text.trim().length > 0));
+    if (todoTasks.length === 0) return;
+    const allDone = todoTasks.every(t => t.completed);
+    if (!allDone) return;
+
+    // Small delay (~280ms) so the checkbox animation and task gliding begin, then BOOM - confetti!
+    setTimeout(() => {
+      const currentTodo = (this.tasks['todo'] || []).filter(t => !t.isEmpty && (t.text && t.text.trim().length > 0));
+      if (currentTodo.length === 0 || !currentTodo.every(t => t.completed)) return;
+
+      if (typeof launchConfetti === 'function') {
+        launchConfetti();
+      }
+      triggerHaptic([40, 60, 40, 120]);
+      this.playTriumphSound();
+      const toastMsg = this.t('toast_all_tasks_completed') || 'Все дела на сегодня закрыты! Отличная работа ✨';
+      this.showToast(toastMsg, '✨');
+    }, 280);
+  }
+
   // Open Settings Modal
   openSettingsModal() {
+    this.collapseSubstrateDrawer(true);
     this.dismissActiveKeyboard();
     if (!this.settingsModalBackdrop) return;
 
@@ -4820,7 +7690,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.1.2',
+      appVersion: '0.1.5',
       email: this.cloudEmail,
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
@@ -4834,6 +7704,7 @@ class NotebookApp {
       history: this.history,
       settings: this.settings,
       streak: this.streakData,
+      habits: this.habits || [],
       pet: this.petSystem ? this.petSystem.getPetSnapshot() : (JSON.parse(localStorage.getItem('plan4u_pet_data') || '{}'))
     };
   }
@@ -5011,6 +7882,12 @@ class NotebookApp {
     this.saveSettings();
     this.saveStickers();
 
+    // 11b. Habits
+    if (Array.isArray(data.habits)) {
+      this.habits = data.habits;
+      this.saveHabits();
+    }
+
     // 12. Apply visual state & update UI components
     this.currentTab = this.tabs.length > 0 ? this.tabs[0].id : 'todo';
     this.rolloverPastUncompletedTasks();
@@ -5022,6 +7899,7 @@ class NotebookApp {
     this.updateTrophyWidgetAura();
     this.renderTabs();
     this.render();
+    this.renderHabits();
     this.updateWorkloadWidget();
     this.syncWithNativeWidget?.();
 
@@ -5055,7 +7933,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.1.2',
+      appVersion: '0.1.5',
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
       sections: this.tabSections || {},
@@ -5063,6 +7941,7 @@ class NotebookApp {
       tasks: this.tasks,
       dailyTasks: this.dailyTasks,
       dayHistory: this.dayHistory,
+      habits: this.habits || [],
       achievements: this.achievementsData,
       history: this.history,
       settings: this.settings,
@@ -5495,6 +8374,93 @@ class NotebookApp {
     this.syncWithNativeWidget?.();
   }
 
+  // Calculate habit completion status for an archived/current date in the calendar
+  getHabitsDayStatus(dateStr) {
+    const allHabits = (this.habits && Array.isArray(this.habits)) ? this.habits : [];
+    if (allHabits.length === 0) {
+      return { hasHabits: false, isCompleted: false, completedCount: 0, scheduledCount: 0 };
+    }
+
+    const todayStr = this.getTodayDateString();
+    if (dateStr > todayStr) {
+      return { hasHabits: false, isCompleted: false, completedCount: 0, scheduledCount: 0 };
+    }
+
+    // Determine earliest habit tracking date to avoid showing badges on ancient months
+    let earliestDateStr = null;
+    allHabits.forEach(h => {
+      if (h.created) {
+        const cd = new Date(h.created);
+        if (!isNaN(cd.getTime())) {
+          const cds = `${cd.getFullYear()}-${String(cd.getMonth() + 1).padStart(2, '0')}-${String(cd.getDate()).padStart(2, '0')}`;
+          if (!earliestDateStr || cds < earliestDateStr) earliestDateStr = cds;
+        }
+      }
+      if (h.history && typeof h.history === 'object') {
+        Object.keys(h.history).forEach(ds => {
+          if (/^\d{4}-\d{2}-\d{2}$/.test(ds)) {
+            if (!earliestDateStr || ds < earliestDateStr) earliestDateStr = ds;
+          }
+        });
+      }
+    });
+
+    if (earliestDateStr && dateStr < earliestDateStr) {
+      return { hasHabits: false, isCompleted: false, completedCount: 0, scheduledCount: 0 };
+    }
+
+    const [yVal, mVal, dVal] = dateStr.split('-').map(Number);
+    const dayDateObj = new Date(yVal, mVal - 1, dVal);
+    const dayDow = dayDateObj.getDay(); // 0 is Sun, 1 is Mon...
+
+    let scheduledCount = 0;
+    let completedCount = 0;
+
+    allHabits.forEach(h => {
+      const hEntry = h.history && h.history[dateStr];
+      let frac = 0;
+      let isDone = false;
+      if (h.type === 'numeric') {
+        const cur = typeof hEntry === 'object' ? (hEntry.current || 0) : (hEntry ? (h.target?.value || 1) : 0);
+        const tgt = (h.target && h.target.value) ? h.target.value : 1;
+        frac = Math.min(Math.max(cur / tgt, 0), 1.0);
+        isDone = frac >= 1.0;
+      } else {
+        isDone = typeof hEntry === 'object' ? !!hEntry.completed : !!hEntry;
+        frac = isDone ? 1.0 : 0.0;
+      }
+
+      if (h.schedule?.type === 'weekdays') {
+        const dows = h.schedule.daysOfWeek || [1, 2, 3, 4, 5];
+        const isScheduled = dows.includes(dayDow);
+        if (isScheduled) {
+          scheduledCount++;
+          if (isDone) completedCount++;
+        } else if (isDone) {
+          scheduledCount++;
+          completedCount++;
+        }
+      } else if (h.schedule?.type === 'periodic') {
+        if (isDone) {
+          scheduledCount++;
+          completedCount++;
+        }
+        // Floating periodic habit does not count as a missed mandatory habit on a day it was not performed
+      } else {
+        // Daily
+        scheduledCount++;
+        if (isDone) completedCount++;
+      }
+    });
+
+    if (scheduledCount === 0) {
+      return { hasHabits: false, isCompleted: false, completedCount, scheduledCount };
+    }
+
+    const isCompleted = completedCount >= scheduledCount;
+    return { hasHabits: true, isCompleted, completedCount, scheduledCount };
+  }
+
   // Render Calendar Month & Days Grid with full localization
   renderCalendar() {
     if (!this.calendarDaysGrid) return;
@@ -5532,6 +8498,19 @@ class NotebookApp {
       const cell = document.createElement('div');
       cell.className = 'calendar-day-cell other-month';
       cell.textContent = pDay;
+
+      const prevDate = new Date(currentYear, currentMonth - 1, pDay);
+      const pDateStr = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}-${String(pDay).padStart(2, '0')}`;
+      const pStatus = this.getHabitsDayStatus(pDateStr);
+      if (pStatus.hasHabits) {
+        const badge = document.createElement('span');
+        badge.className = `calendar-habit-badge ${pStatus.isCompleted ? 'completed' : 'missed'}`;
+        if (pStatus.isCompleted) {
+          badge.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+        }
+        cell.appendChild(badge);
+      }
+
       this.calendarDaysGrid.appendChild(cell);
     }
 
@@ -5553,6 +8532,24 @@ class NotebookApp {
         const dot = document.createElement('span');
         dot.className = 'day-dot';
         cell.appendChild(dot);
+      }
+
+      // Habit status badge (top-left circle: checkmark if completed, empty ring if missed)
+      const habitStatus = this.getHabitsDayStatus(dateStr);
+      if (habitStatus.hasHabits) {
+        const hBadge = document.createElement('span');
+        hBadge.className = `calendar-habit-badge ${habitStatus.isCompleted ? 'completed' : 'missed'}`;
+        if (habitStatus.isCompleted) {
+          hBadge.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+          hBadge.title = window.Plan4UI18n
+            ? Plan4UI18n.t('habit_cal_completed', { done: habitStatus.completedCount, total: habitStatus.scheduledCount }, lang)
+            : `Привычки: ${habitStatus.completedCount} из ${habitStatus.scheduledCount} выполнено ✓`;
+        } else {
+          hBadge.title = window.Plan4UI18n
+            ? Plan4UI18n.t('habit_cal_missed', { done: habitStatus.completedCount, total: habitStatus.scheduledCount }, lang)
+            : `Привычки: ${habitStatus.completedCount} из ${habitStatus.scheduledCount} выполнено`;
+        }
+        cell.appendChild(hBadge);
       }
 
       cell.onclick = () => {
@@ -5599,15 +8596,27 @@ class NotebookApp {
       const completedToday = selectedDayTasks.filter(t => t.completed).length;
       const historyList = this.dayHistory[this.tempSelectedDate] || [];
 
+      const selectedHabitStatus = this.getHabitsDayStatus(this.tempSelectedDate);
+      let habitInfoText = '';
+      if (selectedHabitStatus.hasHabits) {
+        const habitsWord = window.Plan4UI18n ? Plan4UI18n.t('habit_cal_info_label', {}, lang) : 'Привычки';
+        const habitDoneMark = selectedHabitStatus.isCompleted ? '✓' : '';
+        habitInfoText = ` • ${habitsWord}: ${selectedHabitStatus.completedCount}/${selectedHabitStatus.scheduledCount} ${habitDoneMark}`;
+      }
+
       if (this.calendarInfoStats) {
         if (selectedDayTasks.length > 0) {
           const tasksWord = lang === 'en' ? 'Tasks' : (lang === 'uk' ? 'Завдань на день' : 'Задач на день');
           const doneWord = lang === 'en' ? 'Completed' : (lang === 'uk' ? 'Виконано' : 'Выполнено');
           const histWord = lang === 'en' ? 'In history' : (lang === 'uk' ? 'В історії' : 'В истории');
-          this.calendarInfoStats.textContent = `${tasksWord}: ${selectedDayTasks.length} • ${doneWord}: ${completedToday} ${historyList.length > 0 ? `• ${histWord}: ${historyList.length}` : ''}`;
+          this.calendarInfoStats.textContent = `${tasksWord}: ${selectedDayTasks.length} • ${doneWord}: ${completedToday}${historyList.length > 0 ? ` • ${histWord}: ${historyList.length}` : ''}${habitInfoText}`;
         } else if (historyList.length > 0) {
           const histText = lang === 'en' ? `In history for this day: ${historyList.length} completed tasks` : (lang === 'uk' ? `В історії цього дня: ${historyList.length} виконаних справ` : `В истории этого дня: ${historyList.length} выполненных дел`);
-          this.calendarInfoStats.textContent = histText;
+          this.calendarInfoStats.textContent = `${histText}${habitInfoText}`;
+        } else if (habitInfoText) {
+          const habitsWord = window.Plan4UI18n ? Plan4UI18n.t('habit_cal_info_label', {}, lang) : 'Привычки';
+          const habitsOnlyText = `${habitsWord}: ${selectedHabitStatus.completedCount}/${selectedHabitStatus.scheduledCount} ${selectedHabitStatus.isCompleted ? '✓' : ''}`;
+          this.calendarInfoStats.textContent = habitsOnlyText;
         } else {
           const emptyText = isTempToday
             ? (lang === 'en' ? 'Click "Open this day" to plan tasks' : (lang === 'uk' ? 'Натисніть «Відкрити цей день», щоб планувати справи' : 'Нажмите «Открыть этот день», чтобы планировать задачи'))
@@ -5815,6 +8824,7 @@ class NotebookApp {
 
   // Open Achievements Modal
   openAchievementsModal() {
+    this.collapseSubstrateDrawer(true);
     this.dismissActiveKeyboard();
     if (!this.achievementsModalBackdrop) return;
 
@@ -6039,9 +9049,13 @@ class NotebookApp {
 
     if (task.completed) {
       this.playCompletionSound();
+      this.checkAllTasksCompletedTriumph();
       if (this.petSystem && !task.rewarded) {
         this.petSystem.onTaskCompleted(task);
         task.rewarded = true;
+      }
+      if ((task.isMaineQuest || task.isSecretQuest) && window.MaineQuests && typeof window.MaineQuests.onQuestCompleted === 'function') {
+        window.MaineQuests.onQuestCompleted(task, this.petSystem, this);
       }
       if (this.currentTab === 'watch') {
         task.completedDate = new Date().toLocaleDateString('ru-RU');
@@ -6066,6 +9080,8 @@ class NotebookApp {
           period: task.period || '',
           place: task.place || taskSection,
           watchType: task.watchType || '',
+          isMaineQuest: !!(task.isMaineQuest || task.isSecretQuest),
+          questId: task.questId || null,
           completedAt: new Date().toISOString()
         });
       } else {
@@ -6157,6 +9173,11 @@ class NotebookApp {
     if (e && e.stopPropagation) e.stopPropagation();
     const todayStr = this.getTodayDateString();
     if (this.currentTab === 'todo' && this.selectedDate < todayStr) {
+      return;
+    }
+    const currentTabTasks = this.tasks[this.currentTab] || [];
+    const targetTask = currentTabTasks.find(t => String(t.id) === String(taskId));
+    if (targetTask && (targetTask.isMaineQuest || targetTask.isSecretQuest)) {
       return;
     }
     if (this.tasks[this.currentTab]) {
@@ -6316,7 +9337,7 @@ class NotebookApp {
     const tabTasks = this.tasks[this.currentTab];
     if (!tabTasks) return;
     const task = tabTasks.find(t => t.id === taskId);
-    if (!task) return;
+    if (!task || task.isMaineQuest || task.isSecretQuest) return;
 
     this.editingTaskId = taskId;
     this.tempPhotoData = task.photo || null;
@@ -8016,11 +11037,18 @@ class NotebookApp {
     const isImportant = priorityRank === 1 || (task.priority && (task.priority.toLowerCase() === 'важный' || task.priority.toLowerCase() === 'очень важно' || task.priority.toLowerCase() === 'вопрос жизни и смерти'));
     const priorityClass = isImportant ? 'priority-important' : 'priority-calm';
     const taskColor = isImportant ? (task.color || 'black') : 'black';
-
-    const cleanTitle = cleanTaskText(task.text);
+    const isMaineQuest = !!(task.isMaineQuest || task.isSecretQuest);
+    let cleanTitle = cleanTaskText(task.text);
+    if (isMaineQuest && task.questId && window.MaineQuests && typeof window.MaineQuests.getQuestText === 'function') {
+      const localized = window.MaineQuests.getQuestText(task.questId, this.settings?.lang);
+      if (localized) cleanTitle = localized;
+    }
+    if (isMaineQuest) {
+      cleanTitle = cleanTitle.replace(/(\s*🐾)+\s*$/gu, '').trim();
+    }
 
     return `
-      <div class="task-row-wrapper ${isImportant ? 'is-important-wrapper' : ''} ${isPastArchived ? 'is-past-archived-wrapper no-swipe' : ''} ${isBuyCompleted ? 'is-single-delete' : ''}" data-id="${task.id}">
+      <div class="task-row-wrapper ${isImportant ? 'is-important-wrapper' : ''} ${isMaineQuest ? 'is-maine-quest-wrapper' : ''} ${isPastArchived ? 'is-past-archived-wrapper no-swipe' : ''} ${isBuyCompleted ? 'is-single-delete' : ''}" data-id="${task.id}">
         ${!isPastArchived ? (isBuyCompleted ? `
         <!-- Right side actions for completed purchase: ONLY Delete button -->
         <div class="task-swipe-actions-right swipe-delete-only">
@@ -8033,8 +11061,8 @@ class NotebookApp {
             </svg>
           </button>
         </div>` : `
-        <!-- Right side actions on swipe left (5 buttons: Move Up, Move Down, Defer, Edit, Delete) -->
-        <div class="task-swipe-actions-right">
+        <!-- Right side actions on swipe left (Up, Down, Defer for Maine quests; all 5 for normal tasks) -->
+        <div class="task-swipe-actions-right ${isMaineQuest ? 'swipe-maine-quest' : ''}">
           <button type="button" class="swipe-action-btn action-move-up" data-action="move-up" title="Переместить вверх" aria-label="Вверх">
             <svg class="swipe-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
               <line x1="12" y1="19" x2="12" y2="5"></line>
@@ -8055,6 +11083,7 @@ class NotebookApp {
               <line x1="3" y1="10" x2="21" y2="10"></line>
             </svg>
           </button>
+          ${!isMaineQuest ? `
           <button type="button" class="swipe-action-btn action-edit" data-action="edit" title="Редактировать" aria-label="Редактировать">
             <svg class="swipe-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -8068,7 +11097,7 @@ class NotebookApp {
               <line x1="10" y1="11" x2="10" y2="17"></line>
               <line x1="14" y1="11" x2="14" y2="17"></line>
             </svg>
-          </button>
+          </button>` : ''}
         </div>`) : ''}
 
         ${!isPastArchived ? `
@@ -8079,12 +11108,12 @@ class NotebookApp {
         </div>` : ''}
 
         <!-- Sliding foreground task row -->
-        <div class="task-row ${task.completed ? 'completed' : ''} ${isImportant ? 'task-row-important' : ''} ${isPastArchived ? 'is-past-archived' : ''}" data-id="${task.id}" data-color="${taskColor}">
+        <div class="task-row ${task.completed ? 'completed' : ''} ${isImportant ? 'task-row-important' : ''} ${isMaineQuest ? 'is-maine-quest' : ''} ${isPastArchived ? 'is-past-archived' : ''}" data-id="${task.id}" data-color="${taskColor}">
           <div class="task-checkbox-container">
             <div class="task-checkbox ${isPastArchived ? 'checkbox-archived' : ''}" role="checkbox" aria-checked="${task.completed}" title="${isPastArchived ? 'В архиве истории' : ''}"></div>
           </div>
           <div class="task-text ${priorityClass}" data-color="${taskColor}">
-            <span class="task-title-text ${isImportant ? 'task-text-bold' : ''}">${this.escapeHtml(cleanTitle)}</span>
+            <span class="task-title-text ${isImportant ? 'task-text-bold' : ''}">${this.escapeHtml(cleanTitle)}${isMaineQuest ? `<img src="assets/cat_step.png" class="maine-quest-cat-step" alt="🐾" />` : ''}</span>
             ${isPastArchived ? `<span class="archived-lock-badge" title="Завершено в истории">🔒</span>` : ''}
             ${task.time ? `<span class="task-time-badge">⏰ ${this.escapeHtml(task.time)}</span>` : ''}
             ${isWatchArchive && task.completedDate ? `<span class="archive-date-tag">✓ ${task.completedDate}</span>` : ''}
@@ -8151,9 +11180,10 @@ class NotebookApp {
       let isHorizontal = null;
       let rafId = null;
       const isSingleDelete = wrapper.classList.contains('is-single-delete');
-      const maxLeftSwipe = isSingleDelete ? -58 : -180;
-      const actionsBaseWidth = isSingleDelete ? 58 : 180;
-      const openThreshold = isSingleDelete ? -25 : -40;
+      const isMaineQuest = wrapper.classList.contains('is-maine-quest-wrapper');
+      const maxLeftSwipe = isSingleDelete ? -58 : (isMaineQuest ? -112 : -180);
+      const actionsBaseWidth = isSingleDelete ? 58 : (isMaineQuest ? 112 : 180);
+      const openThreshold = isSingleDelete ? -25 : (isMaineQuest ? -35 : -40);
       const maxRightSwipe = 90;
 
       const handleStart = (clientX, clientY, target) => {
@@ -8424,6 +11454,8 @@ class NotebookApp {
           ? `Виконано: ${completedCount} з ${totalCount} справ (${percent}%)`
           : `Выполнено: ${completedCount} из ${totalCount} дел (${percent}%)`);
     }
+
+    this.updateWeekDaysProgress();
   }
 
   // =========================================================================
@@ -8864,12 +11896,17 @@ class NotebookApp {
   initStickersSystem() {
     // 1. FAB Open Stickers Drawer
     if (this.fabStickersBtn) {
-      this.fabStickersBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+      const handleOpenStickers = (e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
         triggerHaptic(20);
+        this.collapseSubstrateDrawer(true);
         this.openStickersDrawer();
-      });
+      };
+
+      this.fabStickersBtn.addEventListener('click', handleOpenStickers);
     }
 
     // 2. Close Stickers Drawer
@@ -9228,6 +12265,7 @@ class NotebookApp {
   }
 
   openStickersDrawer() {
+    this.collapseSubstrateDrawer(true);
     const todayStr = this.getTodayDateString();
     const isPastDay = this.currentTab === 'todo' && this.selectedDate < todayStr;
     if (isPastDay) {
@@ -10016,23 +13054,26 @@ class MaineCoonPetSystem {
   // Hook triggered when any task is completed in the notebook
   onTaskCompleted(task) {
     const isPriority = task && (task.priority === 'важный' || task.priority === 'очень важно');
-    const xpGain = isPriority ? 30 : 10;
-    const fishGain = isPriority ? 0 : 1;
-    const goldenGain = isPriority ? 1 : 0;
+    const isMaineQuest = task && (task.isMaineQuest || task.isSecretQuest);
+    const xpGain = isMaineQuest ? 50 : (isPriority ? 30 : 10);
+    const fishGain = isMaineQuest ? 1 : (isPriority ? 0 : 1);
+    const goldenGain = (isMaineQuest || isPriority) ? 1 : 0;
 
     this.data.xp += xpGain;
     this.data.treats += fishGain;
     this.data.goldenTreats += goldenGain;
-    this.data.hunger = Math.min(100, this.data.hunger + 4);
-    this.data.happiness = Math.min(100, this.data.happiness + 5);
+    this.data.hunger = Math.min(100, this.data.hunger + (isMaineQuest ? 8 : 4));
+    this.data.happiness = Math.min(100, this.data.happiness + (isMaineQuest ? 15 : 5));
 
     // Spawn Flying Treat Animation
-    this.spawnFlyingTreat(isPriority ? '🥫' : '🟤');
+    this.spawnFlyingTreat((isPriority || isMaineQuest) ? '🥫' : '🟤');
 
     // Show Speech Bubble on Mini Companion (100% feline)
-    const quotes = isPriority
-      ? ['МУРРР! 🥫✨', 'Мяу-мяу! ⭐', 'Муррр! 🐾']
-      : ['Мяу! 🟤', 'Мурр! 🐾', 'Мяу-мяу! ✨'];
+    const quotes = isMaineQuest
+      ? ['МУРРР! 🥫🐾', 'Лапкой проверено! ✨', 'Мур-мур! Золото! 🥫', 'Мяу! Прелесть! 🐾💖']
+      : (isPriority
+        ? ['МУРРР! 🥫✨', 'Мяу-мяу! ⭐', 'Муррр! 🐾']
+        : ['Мяу! 🟤', 'Мурр! 🐾', 'Мяу-мяу! ✨']);
     const quote = quotes[Math.floor(Math.random() * quotes.length)];
     this.showMiniSpeech(quote);
 

@@ -101,15 +101,1729 @@ body.app-ready .app-viewport {
   justify-content: space-between;
   align-items: center;
   padding: 14px 14px 12px 14px;
-  background: linear-gradient(180deg, rgba(var(--primary-rgb, 216, 58, 136), 0.22) 0%, rgba(var(--primary-rgb, 216, 58, 136), 0.11) 100%), #f8f6f4;
-  backdrop-filter: blur(24px) saturate(200%);
-  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  background: linear-gradient(180deg, rgba(var(--primary-rgb, 216, 58, 136), 0.22) 0%, rgba(var(--primary-rgb, 216, 58, 136), 0.11) 100%), rgba(248, 246, 244, 0.95);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   border-bottom: 1.5px solid rgba(var(--primary-rgb, 216, 58, 136), 0.28);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 4px 14px rgba(var(--primary-rgb, 216, 58, 136), 0.12);
   position: relative;
   z-index: 10;
   transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
+
+/* ==========================================================================
+   SUBSTRATE CONTAINER (ПОДЛОЖКА ДЛЯ ДНЕЙ НЕДЕЛИ И ВКЛАДОК ЗАДАЧ)
+   ========================================================================== */
+.tabs-substrate-container {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  width: 100%;
+  position: relative;
+  z-index: 4;
+  background: linear-gradient(180deg, #ece7dd 0%, #dfd8cd 100%);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  box-sizing: border-box;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* ==========================================================================
+   WEEK DAYS BAR (7 CIRCLES CONSOLE - SINGLE TOGGLE BUTTON)
+   ========================================================================== */
+.week-days-bar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  padding: 8px 14px 6px 14px;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none;
+  width: 100%;
+  position: relative;
+  z-index: 5;
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  overflow: visible;
+  contain: layout style;
+}
+
+/* Slot for Add Habit button on the left (1/3 width when expanded) */
+.habit-add-slot {
+  width: 0%;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  transition: width 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.2s ease,
+              transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateX(-12px);
+  will-change: width, transform, opacity;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 6;
+  contain: layout style;
+}
+
+.tabs-substrate-container.is-expanded .habit-add-slot {
+  width: 33.33%;
+  flex: 0 0 33.33%;
+  max-width: 33.33%;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
+  overflow: visible !important;
+  box-sizing: border-box;
+  padding-right: 8px;
+}
+
+.btn-add-habit {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: clamp(28px, 7.5vw, 32px);
+  padding: 0 9px 0 8px;
+  max-width: 100%;
+  border-radius: 16px;
+  border: 1.5px solid rgba(255, 255, 255, 0.4) !important;
+  background: linear-gradient(135deg, var(--primary-magenta) 0%, var(--primary-magenta-dark) 100%) !important;
+  color: #ffffff !important;
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.15px;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(var(--primary-rgb, 216, 58, 136), 0.38), 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.18s ease,
+              border-color 0.18s ease;
+  white-space: nowrap;
+  user-select: none;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  transform-origin: left center;
+  position: relative;
+  z-index: 2;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.btn-add-habit:hover {
+  transform: scale(1.04) translateY(-1px) translateZ(0);
+  box-shadow: 0 5px 14px rgba(var(--primary-rgb, 216, 58, 136), 0.48), 0 2px 5px rgba(0, 0, 0, 0.14) !important;
+  border-color: rgba(255, 255, 255, 0.75) !important;
+  z-index: 10;
+}
+
+.btn-add-habit:active {
+  transform: scale(0.94) translateZ(0);
+}
+
+.btn-add-habit .plus-icon {
+  stroke: #ffffff !important;
+  stroke-width: 2.8;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.btn-add-habit:hover .plus-icon {
+  transform: rotate(90deg);
+}
+
+.btn-add-habit .btn-add-habit-text {
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+/* Track holding the 7 circles - animates to right 2/3 when expanded with identical 7-column grid */
+.week-days-track {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  justify-items: center;
+  align-items: center;
+  width: 100%;
+  transition: width 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+  cursor: pointer;
+  will-change: width;
+  contain: layout style;
+}
+
+.tabs-substrate-container.is-expanded .week-days-track {
+  width: 66.67%;
+  flex: 0 0 66.67%;
+  max-width: 66.67%;
+}
+
+/* ==========================================================================
+   SUBSTRATE TRAY (EXPANDABLE HABIT TRACKER AREA)
+   ========================================================================== */
+.substrate-tray {
+  height: 0px;
+  overflow: hidden;
+  transition: height 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease;
+  position: relative;
+  z-index: 2;
+  box-sizing: border-box;
+  opacity: 0;
+  visibility: hidden;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  contain: content;
+  will-change: height, opacity;
+}
+
+.tabs-substrate-container.is-expanded .substrate-tray {
+  height: var(--substrate-tray-height, auto);
+  max-height: min(72vh, 580px);
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Habits list container */
+.habits-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 4px 0 8px 0;
+  max-height: min(72vh, 580px);
+  overflow-y: auto;
+  scrollbar-width: none;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  contain: content;
+}
+
+.habits-list-container::-webkit-scrollbar {
+  display: none;
+}
+
+/* Inline New Habit Row */
+.habit-add-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 14px 5px 14px;
+  box-sizing: border-box;
+}
+
+.habit-input-field {
+  flex: 1;
+  height: 28px;
+  padding: 0 9px;
+  border-radius: 7px;
+  border: 1.5px solid var(--primary-magenta);
+  background: #ffffff;
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #1e2229;
+  outline: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.habit-btn-confirm,
+.habit-btn-cancel {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  transition: transform 0.15s ease;
+  padding: 0;
+}
+
+.habit-btn-confirm {
+  background: var(--primary-magenta);
+  color: var(--btn-accent-text, #ffffff);
+}
+
+.habit-btn-confirm:hover {
+  transform: scale(1.08);
+}
+
+.habit-btn-cancel {
+  background: rgba(90, 96, 109, 0.15);
+  color: #4b5260;
+}
+
+.habit-btn-cancel:hover {
+  transform: scale(1.08);
+  color: #e11d48;
+}
+
+/* Individual Habit Row */
+.habit-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 2px 14px;
+  box-sizing: border-box;
+  min-height: 32px;
+  border-radius: 6px;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transition: background 0.12s ease;
+}
+
+.habit-row:hover {
+  background: rgba(0, 0, 0, 0.035);
+}
+
+.habit-col-title {
+  width: 33.33%;
+  flex: 0 0 33.33%;
+  max-width: 33.33%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-right: 8px;
+  box-sizing: border-box;
+}
+
+.habit-title-text {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 700;
+  color: #2b303b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  letter-spacing: -0.1px;
+}
+
+.habit-title-text:hover {
+  color: var(--primary-magenta);
+}
+
+.habit-delete-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.habit-row:hover .habit-delete-btn {
+  opacity: 0.7;
+}
+
+.habit-delete-btn:hover {
+  opacity: 1 !important;
+  color: #ef4444;
+}
+
+/* Checkboxes Column (right 2/3) - matching 7-column grid */
+.habit-col-checks {
+  width: 66.67%;
+  flex: 0 0 66.67%;
+  max-width: 66.67%;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  justify-items: center;
+  align-items: center;
+  box-sizing: border-box;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+/* Checkbox squircle matching day circle column */
+.habit-check-btn {
+  width: clamp(26px, 7vw, 30px);
+  height: clamp(26px, 7vw, 30px);
+  border-radius: 7px;
+  border: 1.6px solid rgba(80, 85, 95, 0.38);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  outline: none;
+  user-select: none;
+  justify-self: center;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transition: background 0.12s ease, border-color 0.12s ease, transform 0.1s ease;
+  color: transparent;
+}
+
+.habit-check-btn:hover {
+  border-color: rgba(70, 75, 85, 0.85);
+  background: #ffffff;
+}
+
+.habit-check-btn:active {
+  transform: scale(0.92) translateZ(0);
+}
+
+/* Today column accent */
+.habit-check-btn.is-today:not(.checked) {
+  border-color: rgba(var(--primary-rgb, 216, 58, 136), 0.55);
+  background: rgba(var(--primary-rgb, 216, 58, 136), 0.09);
+}
+
+/* Checked state: Theme color fill + white checkmark */
+.habit-check-btn.checked {
+  background: var(--primary-magenta) !important;
+  border-color: var(--primary-magenta-dark, var(--primary-magenta)) !important;
+  color: var(--btn-accent-text, #ffffff) !important;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), 0 1px 3px rgba(var(--primary-rgb, 216, 58, 136), 0.35) !important;
+  transform: translateZ(0);
+}
+
+.habit-check-btn.checked:hover {
+  filter: brightness(1.06);
+}
+
+.habit-check-btn.checked:active {
+  transform: scale(0.92) translateZ(0);
+}
+
+.habit-check-btn .check-svg {
+  stroke: currentColor;
+  display: none;
+}
+
+.habit-check-btn.checked .check-svg {
+  display: block;
+}
+
+.habit-empty-hint {
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  color: #7b8290;
+  text-align: center;
+  padding: 20px 14px;
+  user-select: none;
+}
+
+/* ==========================================================================
+   ADVANCED HABIT TRACKER STYLES (MODAL, NUMERIC CELLS, STEPPER, STATS)
+   ========================================================================== */
+
+/* Habit Row Enhancements */
+.habit-title-box {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  cursor: pointer;
+  flex: 1;
+}
+
+.habit-sub-badge {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: #8b92a0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: -1px;
+}
+
+/* Numeric Habit Day Cell */
+.habit-check-btn.is-numeric {
+  position: relative;
+  overflow: hidden;
+  font-size: 8.5px;
+  font-weight: 700;
+  font-family: var(--font-ui);
+  color: #4b5260;
+  letter-spacing: -0.3px;
+}
+
+.habit-check-btn.is-numeric .habit-cell-num {
+  position: relative;
+  z-index: 2;
+  line-height: 1;
+  text-align: center;
+  max-width: 100%;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.habit-check-btn.is-numeric .habit-cell-fill-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(var(--primary-rgb, 216, 58, 136), 0.28);
+  transition: height 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.habit-check-btn.is-numeric.checked {
+  color: #ffffff !important;
+  background: var(--primary-magenta) !important;
+  font-size: 8px;
+  letter-spacing: -0.4px;
+}
+
+.habit-check-btn.is-numeric.checked .habit-cell-fill-bar {
+  height: 100% !important;
+  background: transparent;
+}
+
+.habit-check-btn.is-numeric.checked .habit-cell-check-svg {
+  display: block;
+  stroke: #ffffff;
+}
+
+.habit-check-btn.is-scheduled-off {
+  opacity: 0.38;
+  border-style: dashed;
+}
+
+.habit-check-btn.is-future {
+  opacity: 0.28;
+  cursor: not-allowed;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.03);
+  border-style: dashed;
+}
+
+/* Habit Modal & Tabs */
+.habit-modal-sheet {
+  max-width: 500px;
+  width: 100%;
+  margin: 0 auto;
+  max-height: min(90dvh, calc(100% - 24px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+  will-change: transform;
+}
+
+.habit-modal-sheet .modal-header,
+.habit-modal-sheet .habit-modal-tabs {
+  flex-shrink: 0;
+}
+
+#habitStatsPane,
+.habit-modal-sheet .modal-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  overscroll-behavior-y: contain;
+  box-sizing: border-box;
+  padding-right: 4px;
+  padding-bottom: max(24px, calc(16px + env(safe-area-inset-bottom, 0px)));
+}
+
+#habitStatsPane::-webkit-scrollbar,
+.habit-modal-sheet .modal-form::-webkit-scrollbar {
+  width: 4px;
+}
+
+#habitStatsPane::-webkit-scrollbar-thumb,
+.habit-modal-sheet .modal-form::-webkit-scrollbar-thumb {
+  background: #d8dbe2;
+  border-radius: 4px;
+}
+
+.habit-modal-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 4px;
+  border-radius: 10px;
+}
+
+.habit-tab-btn {
+  flex: 1;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: 7px;
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #5a6272;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.habit-tab-btn:hover:not(.active) {
+  background: rgba(0, 0, 0, 0.05);
+  color: #2b303b;
+}
+
+.habit-tab-btn.active {
+  background: var(--primary-magenta) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(var(--primary-rgb, 216, 58, 136), 0.35);
+}
+
+.habit-tab-btn.active span {
+  color: #ffffff !important;
+}
+
+/* Habit Stats Grid */
+.habit-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.habit-stat-card {
+  background: #ffffff;
+  border: 1.5px solid rgba(var(--primary-rgb, 216, 58, 136), 0.35);
+  border-radius: 14px;
+  padding: 11px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(var(--primary-rgb, 216, 58, 136), 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease, border-color 0.18s ease;
+  overflow: hidden;
+}
+
+.habit-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2.5px;
+  background: var(--primary-magenta, #d83a88);
+  opacity: 0.9;
+}
+
+.habit-stat-card:hover {
+  border-color: var(--primary-magenta, #d83a88);
+  box-shadow: 0 4px 14px rgba(var(--primary-rgb, 216, 58, 136), 0.22), 0 2px 6px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
+}
+
+.habit-stat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(var(--primary-rgb, 216, 58, 136), 0.1);
+  font-size: 15px;
+  margin-bottom: 2px;
+}
+
+.habit-stat-val {
+  font-size: 19px;
+  font-weight: 850;
+  color: var(--dark-text);
+  letter-spacing: -0.4px;
+  line-height: 1.15;
+}
+
+.habit-stat-lbl {
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.habit-stat-sub {
+  font-size: 10px;
+  font-weight: 600;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+/* Common Habit Stat Section */
+.habit-stat-section {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.habit-stat-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.habit-stat-section-title {
+  font-size: 12.5px;
+  font-weight: 750;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.habit-chart-title-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.habit-chart-title-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.habit-chart-period-select {
+  font-size: 12.5px;
+  font-weight: 750;
+  color: #334155;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 3px 8px;
+  cursor: pointer;
+  outline: none;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.habit-chart-period-select:hover {
+  border-color: var(--primary-magenta);
+}
+
+.habit-chart-period-select:focus {
+  border-color: var(--primary-magenta);
+  box-shadow: 0 0 0 2px rgba(var(--primary-rgb, 216, 58, 136), 0.15);
+}
+
+.habit-stat-target-badge {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--primary-magenta);
+  background: rgba(var(--primary-rgb, 216, 58, 136), 0.1);
+  padding: 2px 8px;
+  border-radius: 6px;
+  letter-spacing: -0.1px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* 1. Multi-Period History Bar Chart (12 columns) */
+.habit-chart-wrap {
+  position: relative;
+  width: 100%;
+  padding-top: 6px;
+}
+
+.habit-chart-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 114px;
+  gap: 4px;
+  padding-bottom: 24px;
+  position: relative;
+  border-bottom: 1.5px solid #e2e8f0;
+  box-sizing: border-box;
+}
+
+.habit-chart-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: calc(100% - 20px);
+  justify-content: flex-end;
+  position: relative;
+  min-width: 0;
+}
+
+.habit-chart-val {
+  font-size: 8.5px;
+  font-weight: 750;
+  color: #64748b;
+  margin-bottom: 4px;
+  line-height: 1;
+  white-space: nowrap;
+  min-height: 10px;
+  text-align: center;
+}
+
+.habit-chart-bar {
+  width: 100%;
+  max-width: 18px;
+  border-radius: 4px 4px 2px 2px;
+  background: rgba(var(--primary-rgb, 216, 58, 136), 0.28);
+  transition: height 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease;
+  min-height: 4px;
+}
+
+.habit-chart-bar.is-zero {
+  height: 2px !important;
+  background: #cbd5e1;
+  border-radius: 1px;
+  min-height: 2px;
+  opacity: 0.6;
+}
+
+.habit-chart-col.is-target-met .habit-chart-bar {
+  background: var(--primary-magenta);
+  box-shadow: 0 2px 8px rgba(var(--primary-rgb, 216, 58, 136), 0.35);
+}
+
+.habit-chart-col.is-target-met .habit-chart-val {
+  color: var(--primary-magenta);
+  font-weight: 850;
+}
+
+.habit-chart-col.is-year-start {
+  border-left: 1px dashed rgba(var(--primary-rgb, 216, 58, 136), 0.3);
+  padding-left: 1px;
+}
+
+.habit-chart-col.is-current-week .habit-chart-lbl {
+  color: var(--primary-magenta);
+  font-weight: 750;
+}
+
+.habit-chart-lbl {
+  position: absolute;
+  bottom: -22px;
+  font-size: 8.5px;
+  font-weight: 600;
+  color: #94a3b8;
+  white-space: nowrap;
+  letter-spacing: -0.3px;
+  text-align: center;
+}
+
+.habit-chart-lbl.is-year-start {
+  color: var(--primary-magenta);
+  font-weight: 750;
+}
+
+.habit-chart-sub-tag {
+  display: block;
+  font-size: 7px;
+  font-weight: 750;
+  color: var(--primary-magenta);
+  line-height: 1;
+  margin-top: 1px;
+}
+
+.habit-chart-target-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1.5px dashed rgba(var(--primary-rgb, 216, 58, 136), 0.45);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* 2. Heatmap & Weekday Activity Calendar Section */
+.habit-heatmap-section {
+  margin-bottom: 14px;
+}
+
+.habit-heatmap-dows {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+  margin-bottom: 6px;
+  text-align: center;
+}
+
+.habit-heat-dow {
+  font-size: 10.5px;
+  font-weight: 750;
+  color: #64748b;
+  padding: 3px 0;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.habit-heat-dow.is-best-day {
+  color: var(--primary-magenta);
+  font-weight: 850;
+  background: rgba(var(--primary-rgb, 216, 58, 136), 0.1);
+}
+
+.habit-heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.habit-heat-cell {
+  aspect-ratio: 1;
+  border-radius: 7px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.habit-heat-cell:hover {
+  transform: scale(1.15);
+  z-index: 3;
+}
+
+.habit-heat-date-num {
+  position: relative;
+  z-index: 1;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.habit-heat-cell.level-0 {
+  background: #f1f5f9;
+  color: #94a3b8;
+  font-weight: 600;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.habit-heat-cell.level-1 {
+  background: rgba(var(--primary-rgb, 216, 58, 136), 0.2);
+  color: var(--primary-magenta, #d83a88);
+  font-weight: 750;
+  border: 1px solid rgba(var(--primary-rgb, 216, 58, 136), 0.18);
+}
+
+.habit-heat-cell.level-2 {
+  background: rgba(var(--primary-rgb, 216, 58, 136), 0.5);
+  color: #ffffff;
+  font-weight: 750;
+  border: 1px solid rgba(var(--primary-rgb, 216, 58, 136), 0.35);
+}
+
+.habit-heat-cell.level-3 {
+  background: var(--primary-magenta, #d83a88) !important;
+  color: #ffffff !important;
+  font-weight: 850;
+  border: 1px solid var(--primary-magenta, #d83a88);
+  box-shadow: 0 2px 7px rgba(var(--primary-rgb, 216, 58, 136), 0.35);
+}
+
+/* Small white circular badge with theme-colored checkmark on 100% completed days */
+.habit-heat-check-badge {
+  position: absolute;
+  top: 1.5px;
+  right: 1.5px;
+  width: 9.5px;
+  height: 9.5px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: var(--primary-magenta, #d83a88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+  z-index: 2;
+  box-sizing: border-box;
+}
+
+.habit-heat-check-badge svg {
+  width: 6.5px;
+  height: 6.5px;
+  stroke: var(--primary-magenta, #d83a88);
+  display: block;
+}
+
+.habit-heat-cell.is-today {
+  outline: 2px solid var(--primary-magenta);
+  outline-offset: -1px;
+}
+
+.habit-heat-cell.is-future {
+  opacity: 0.35;
+  background: #f1f5f9;
+  border: 1px dashed #cbd5e1;
+  cursor: default;
+}
+.habit-heat-cell.is-future:hover {
+  transform: none;
+}
+
+.habit-weekdays-insight {
+  font-size: 11px;
+  font-weight: 650;
+  color: #475569;
+  background: rgba(var(--primary-rgb, 216, 58, 136), 0.08);
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.3;
+}
+
+/* Habit View Toggle Group (Calendar vs Frequency) */
+.habit-view-toggle-group {
+  display: flex;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 3px;
+  border-radius: 10px;
+  gap: 4px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.habit-view-toggle-btn {
+  flex: 1;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 10px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.habit-view-toggle-btn:hover:not(.active) {
+  color: var(--primary-magenta, #d83a88);
+  background: rgba(var(--primary-rgb, 216, 58, 136), 0.08);
+}
+
+.habit-view-toggle-btn.active {
+  background: var(--primary-magenta, #d83a88) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(var(--primary-rgb, 216, 58, 136), 0.35);
+  font-weight: 800;
+}
+
+.habit-view-pane {
+  animation: habitPaneFade 0.2s ease;
+}
+
+@keyframes habitPaneFade {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Frequency Matrix (Weekday x Month Bubble Grid) */
+.habit-freq-matrix-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 6px 2px 8px 2px;
+  margin-bottom: 8px;
+  box-sizing: border-box;
+}
+
+.habit-freq-matrix-wrap::-webkit-scrollbar {
+  height: 4px;
+}
+
+.habit-freq-matrix-wrap::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.habit-freq-table {
+  display: grid;
+  align-items: center;
+  gap: 4px 6px;
+  min-width: 100%;
+}
+
+.habit-freq-dow-label {
+  font-size: 10.5px;
+  font-weight: 750;
+  color: #64748b;
+  text-align: right;
+  padding-right: 6px;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.habit-freq-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  min-width: 28px;
+  position: relative;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+
+.habit-freq-cell:hover,
+.habit-freq-cell:active {
+  background: rgba(var(--primary-rgb, 216, 58, 136), 0.08);
+}
+
+.habit-freq-cell:hover .habit-freq-bubble {
+  transform: scale(1.22);
+  filter: drop-shadow(0 2px 8px rgba(var(--primary-rgb, 216, 58, 136), 0.45));
+}
+
+.habit-freq-bubble {
+  border-radius: 50%;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease, box-shadow 0.2s ease;
+  background: var(--primary-magenta, #d83a88);
+  box-shadow: 0 2px 6px rgba(var(--primary-rgb, 216, 58, 136), 0.28);
+  pointer-events: none;
+}
+
+.habit-freq-bubble.is-empty {
+  background: #94a3b8;
+  opacity: 0.16 !important;
+  box-shadow: none;
+}
+
+.habit-freq-month-label {
+  font-size: 9px;
+  font-weight: 750;
+  color: #94a3b8;
+  text-align: center;
+  padding-top: 6px;
+  letter-spacing: 0.2px;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.habit-freq-cell.is-selected {
+  outline: 2px solid var(--primary-magenta);
+  outline-offset: -1px;
+}
+
+/* Habit Type Segment */
+.habit-type-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.habit-type-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1.5px solid #cbd5e1;
+  background: #ffffff;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.18s ease;
+}
+
+.habit-type-btn.active {
+  border-color: var(--primary-magenta);
+  background: rgba(var(--primary-rgb, 216, 58, 136), 0.06);
+  box-shadow: 0 2px 8px rgba(var(--primary-rgb, 216, 58, 136), 0.18);
+}
+
+.habit-type-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.habit-type-btn.active .habit-type-badge {
+  background: var(--primary-magenta);
+  color: #ffffff;
+}
+
+.habit-type-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.habit-type-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.habit-type-sub {
+  font-size: 10px;
+  color: #64748b;
+}
+
+/* Numeric unit chips */
+.habit-unit-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.habit-unit-chip {
+  padding: 3px 9px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.habit-unit-chip.active {
+  border-color: var(--primary-magenta);
+  background: var(--primary-magenta);
+  color: #ffffff;
+}
+
+/* Schedule options */
+.habit-schedule-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #f8fafc;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.habit-sched-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+}
+
+.habit-sched-option input[type="radio"] {
+  accent-color: var(--primary-magenta);
+  cursor: pointer;
+}
+
+.habit-weekdays-picker {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 6px 8px;
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+.habit-dow-btn {
+  flex: 1;
+  height: 30px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.habit-dow-btn.active {
+  background: var(--primary-magenta);
+  border-color: var(--primary-magenta);
+  color: #ffffff;
+}
+
+.habit-periodic-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 6px 8px;
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+.habit-periodic-row input[type="number"] {
+  width: 55px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1.5px solid #cbd5e1;
+  padding: 0 6px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* Quick Stepper Popover */
+.habit-stepper-popover-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+  will-change: opacity;
+}
+
+.habit-stepper-popover-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.habit-stepper-sheet {
+  width: 100%;
+  max-width: 330px;
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.22);
+  padding: 18px;
+  border-top: 3.5px solid var(--primary-magenta);
+  transform: scale(0.92) translateY(12px) translateZ(0);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+  will-change: transform;
+  contain: content;
+}
+
+.habit-stepper-popover-backdrop.open .habit-stepper-sheet {
+  transform: scale(1) translateY(0);
+}
+
+.habit-stepper-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.habit-stepper-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--dark-text);
+  letter-spacing: -0.2px;
+}
+
+.habit-stepper-date {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.habit-stepper-close {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.06);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+}
+
+.habit-stepper-value-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+  margin: 10px 0 6px 0;
+}
+
+.habit-stepper-val-big {
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--primary-magenta);
+  letter-spacing: -0.8px;
+}
+
+.habit-stepper-slash {
+  font-size: 20px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.habit-stepper-val-target {
+  font-size: 20px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.habit-stepper-val-unit {
+  font-size: 14px;
+  font-weight: 700;
+  color: #64748b;
+  margin-left: 2px;
+}
+
+.habit-stepper-progress-track {
+  width: 100%;
+  height: 7px;
+  border-radius: 4px;
+  background: #e2e8f0;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.habit-stepper-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-magenta) 0%, #ec4899 100%);
+  border-radius: 4px;
+  transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.habit-stepper-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.habit-step-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1.5px solid #cbd5e1;
+  background: #f8fafc;
+  font-size: 22px;
+  font-weight: 700;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease;
+  user-select: none;
+}
+
+.habit-step-btn:hover {
+  background: #e2e8f0;
+  transform: scale(1.06);
+}
+
+.habit-step-btn:active {
+  transform: scale(0.92);
+}
+
+.habit-step-input {
+  width: 90px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1.5px solid var(--primary-magenta);
+  text-align: center;
+  font-family: var(--font-ui);
+  font-size: 20px;
+  font-weight: 800;
+  color: #1e293b;
+  outline: none;
+}
+
+.habit-stepper-quick-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.habit-quick-btn {
+  padding: 5px 11px;
+  border-radius: 14px;
+  border: 1px solid #cbd5e1;
+  background: #f1f5f9;
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+
+.habit-quick-btn:hover {
+  transform: translateY(-1px);
+  background: #e2e8f0;
+}
+
+.habit-quick-btn.is-complete {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+
+.habit-quick-btn.is-reset {
+  border-color: #f43f5e;
+  background: rgba(244, 63, 94, 0.08);
+  color: #e11d48;
+}
+
+.habit-stepper-done-btn {
+  width: 100%;
+  height: 38px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   WEEK DAY CIRCLES (DISPLAY INDICATORS INSIDE CONSOLE BUTTON)
+   ========================================================================== */
+.week-day-circle {
+  width: clamp(32px, 8.8vw, 36px);
+  height: clamp(32px, 8.8vw, 36px);
+  border-radius: 50%;
+  border: none !important;
+  background: #ffffff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.07), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  padding: 0;
+  margin: 0;
+  outline: none;
+  user-select: none;
+  justify-self: center;
+  position: relative;
+  overflow: visible;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: scale(1) translateZ(0);
+  transform-origin: center center;
+  will-change: transform;
+  contain: layout style;
+  transition: width 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              height 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.2s ease,
+              background 0.2s ease;
+}
+
+/* Exact match with habit-check-btn dimensions when drawer is expanded */
+.tabs-substrate-container.is-expanded .week-day-circle {
+  width: clamp(26px, 7vw, 30px);
+  height: clamp(26px, 7vw, 30px);
+  transform: none;
+}
+
+.week-days-track:hover .week-day-circle:not(.is-today) {
+  /* Kept stable to prevent shadow flickering on mouse movement */
+}
+
+.week-days-track:active .week-day-circle {
+  transform: scale(0.95) translateZ(0);
+}
+
+/* Circular Progress Ring around each week day */
+.week-day-progress-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.week-day-progress-bg {
+  fill: none;
+  stroke: rgba(90, 96, 109, 0.22);
+  stroke-width: 3.2;
+}
+
+.week-day-progress-fill {
+  fill: none;
+  stroke: var(--primary-magenta) !important;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  opacity: 0;
+  transition: stroke-dashoffset 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
+.week-day-progress-fill.is-completed-all {
+  stroke-width: 3.6;
+}
+
+.week-day-name {
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #3b404d;
+  line-height: 1;
+  text-transform: capitalize;
+  pointer-events: none;
+  letter-spacing: -0.2px;
+  position: relative;
+  z-index: 2;
+  transition: color 0.2s ease;
+}
+
+/* ==========================================================================
+   WEEK DAY VERIFIED BADGE (CHECKMARK BADGE FOR 100% COMPLETED HABIT DAYS)
+   ========================================================================== */
+.week-day-badge {
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--primary-magenta);
+  border: 1.5px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 4;
+  opacity: 0;
+  transform: scale(0);
+  transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  color: #ffffff;
+}
+
+.week-day-circle.has-verified-badge .week-day-badge {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.week-day-badge svg {
+  display: block;
+  stroke: #ffffff;
+  stroke-width: 1.8;
+}
+
+/* Compact scale when drawer is expanded */
+.tabs-substrate-container.is-expanded .week-day-badge {
+  top: -1px;
+  right: -1px;
+  width: 10px;
+  height: 10px;
+  border-width: 1.2px;
+}
+
+.tabs-substrate-container.is-expanded .week-day-badge svg {
+  width: 6px;
+  height: 6px;
+}
+
+/* Dark theme border separation */
+.app-frame.theme-dark .week-day-badge {
+  border-color: #1f232b;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.tabs-substrate-container.is-expanded .week-day-name {
+  font-size: 11px;
+}
+
+.week-day-circle.is-weekend .week-day-name {
+  color: #838a98;
+}
+
+/* Today circle: softly tinted with theme color at ~20% opacity, matching task section blocks */
+.week-day-circle.is-today {
+  background: rgba(var(--primary-rgb, 216, 58, 136), 0.18) !important;
+  box-shadow: 0 2px 7px rgba(var(--primary-rgb, 216, 58, 136), 0.22), inset 0 1px 1px rgba(255, 255, 255, 0.8) !important;
+  border: 1px solid rgba(var(--primary-rgb, 216, 58, 136), 0.28) !important;
+}
+
+.tabs-substrate-container.is-expanded .week-day-circle.is-today {
+  border-color: rgba(var(--primary-rgb, 216, 58, 136), 0.35) !important;
+}
+
+.week-days-track:hover .week-day-circle.is-today {
+  box-shadow: 0 4px 12px rgba(var(--primary-rgb, 216, 58, 136), 0.34) !important;
+}
+
+/* Clearly visible scale track groove around today's tinted circle */
+.week-day-circle.is-today .week-day-progress-bg {
+  stroke: rgba(90, 96, 109, 0.32) !important;
+  stroke-width: 3.2;
+}
+
+.week-day-circle.is-today .week-day-progress-fill {
+  stroke: var(--primary-magenta) !important;
+  stroke-width: 3.5;
+}
+
+.week-day-circle.is-today .week-day-name {
+  color: var(--section-header-text, var(--primary-magenta-dark, #70133c)) !important;
+  font-weight: 800;
+}
+
 
 .widget-circle {
   width: 52px;
@@ -279,11 +1993,11 @@ body.app-ready .app-viewport {
   display: flex;
   flex: 0 0 auto;
   flex-shrink: 0;
-  min-height: 52px;
+  min-height: 48px;
   background: transparent;
-  padding: 4px 6px 0 6px;
+  padding: 0 6px 0 6px;
   position: relative;
-  z-index: 4;
+  z-index: 2;
   align-items: flex-end;
   gap: 4px;
   touch-action: pan-x;
@@ -294,16 +2008,7 @@ body.app-ready .app-viewport {
 }
 
 .tabs-scroll-container::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(180deg, #ece7dd 0%, #dfd8cd 100%);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
-  z-index: 1;
+  display: none !important;
 }
 
 .folder-tabs-bar {
@@ -510,6 +2215,12 @@ body.app-ready .app-viewport {
   border-top: 1px solid rgba(0, 0, 0, 0.06);
   z-index: 10;
   background-attachment: local;
+  contain: paint;
+  will-change: transform;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 .margin-line,
@@ -939,6 +2650,33 @@ body.app-ready .app-viewport {
   cursor: default !important;
   transform: none !important;
   touch-action: auto !important;
+}
+
+/* Maine Coon Secret Quests ("Записки лапкой") - 3 action buttons (Move Up, Move Down, Defer) */
+.task-swipe-actions-right.swipe-maine-quest {
+  width: 112px;
+}
+
+.task-row-wrapper.is-maine-quest-wrapper.open .task-row {
+  transform: translate3d(-112px, 0, 0) !important;
+}
+
+/* Cat paw image from Cat_Step.jpg with 50% opacity */
+.maine-quest-cat-step {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin-left: 6px;
+  vertical-align: -2.5px;
+  opacity: 0.5;
+  pointer-events: none;
+  object-fit: contain;
+}
+
+.app-frame.theme-dark .maine-quest-cat-step,
+body.theme-dark .maine-quest-cat-step {
+  filter: invert(1) brightness(1.2);
+  opacity: 0.5;
 }
 
 /* Left side background (Complete indicator when swiping right) */
@@ -1630,8 +3368,11 @@ body.keyboard-open .past-day-return-wrapper,
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  white-space: nowrap;
+  max-width: 90vw;
+  text-align: center;
+  line-height: 1.35;
 }
 
 .app-toast.show {
@@ -1814,7 +3555,7 @@ body.keyboard-open .past-day-return-wrapper,
   padding: 0 !important;
   box-sizing: border-box !important;
   border-radius: 50% !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.35) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.4) !important;
   background: linear-gradient(135deg, var(--primary-magenta) 0%, var(--primary-magenta-dark) 100%) !important;
   box-shadow: 0 6px 20px rgba(var(--primary-rgb, 216, 58, 136), 0.45), 0 2px 8px rgba(0, 0, 0, 0.16) !important;
   display: flex !important;
@@ -1824,14 +3565,18 @@ body.keyboard-open .past-day-return-wrapper,
   outline: none !important;
   -webkit-appearance: none !important;
   appearance: none !important;
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, filter 0.15s ease;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.2s ease,
+              filter 0.15s ease,
+              border-color 0.2s ease;
   user-select: none !important;
 }
 
 .fab-button:hover {
   transform: scale(1.08) translateY(-2px);
-  filter: brightness(0.95);
+  filter: brightness(1.06);
   box-shadow: 0 8px 24px rgba(var(--primary-rgb, 216, 58, 136), 0.55), 0 3px 10px rgba(0, 0, 0, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.7) !important;
 }
 
 .fab-button:active {
@@ -1848,6 +3593,12 @@ body.keyboard-open .past-day-return-wrapper,
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
   pointer-events: none;
   display: block;
+  transition: transform 0.22s ease;
+  transform-origin: center center;
+}
+
+.fab-button:hover .fab-plus-svg {
+  transform: rotate(90deg);
 }
 
 /* ==========================================================================
@@ -1859,15 +3610,15 @@ body.keyboard-open .past-day-return-wrapper,
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(15, 17, 26, 0.52);
-  backdrop-filter: blur(4px);
+  background: rgba(15, 17, 26, 0.65);
   display: flex;
   align-items: flex-end;
   justify-content: center;
   z-index: 100;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.25s ease;
+  transition: opacity 0.24s ease;
+  will-change: opacity;
 }
 
 .modal-backdrop.open {
@@ -3305,6 +5056,391 @@ body.theme-dark {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
+.app-frame.theme-dark .tabs-substrate-container {
+  background: linear-gradient(180deg, #0f131a 0%, #0a0d13 100%);
+  border-top-color: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.app-frame.theme-dark .week-days-bar {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.app-frame.theme-dark .week-day-circle {
+  background: #1e2433;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.app-frame.theme-dark .week-day-circle:hover {
+  /* Kept stable to prevent shadow flickering */
+}
+
+.app-frame.theme-dark .week-day-progress-bg {
+  stroke: #2e3547;
+}
+
+.app-frame.theme-dark .week-day-progress-fill {
+  stroke: var(--primary-magenta);
+}
+
+.app-frame.theme-dark .week-day-circle .week-day-name {
+  color: #94a3b8;
+}
+
+.app-frame.theme-dark .week-day-circle.is-weekend .week-day-name {
+  color: #64748b;
+}
+
+.app-frame.theme-dark .week-day-circle.is-today {
+  background: rgba(var(--primary-rgb, 226, 232, 240), 0.20) !important;
+  box-shadow: 0 2px 10px rgba(255, 255, 255, 0.18) !important;
+}
+
+.app-frame.theme-dark .week-day-circle.is-today .week-day-progress-bg {
+  stroke: rgba(255, 255, 255, 0.25);
+}
+
+.app-frame.theme-dark .week-day-circle.is-today .week-day-name {
+  color: #ffffff !important;
+  font-weight: 800;
+}
+
+.app-frame.theme-dark .btn-add-habit {
+  background: linear-gradient(135deg, var(--primary-magenta) 0%, var(--primary-magenta-dark) 100%) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.35) !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45) !important;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.app-frame.theme-dark .btn-add-habit:hover {
+  border-color: rgba(255, 255, 255, 0.65) !important;
+  color: #ffffff !important;
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.6) !important;
+}
+
+.app-frame.theme-dark .btn-add-habit .plus-icon {
+  stroke: #ffffff !important;
+}
+
+.app-frame.theme-dark .btn-add-habit .btn-add-habit-text {
+  color: #ffffff !important;
+}
+
+.app-frame.theme-dark .habit-title-text {
+  color: #e2e8f0;
+}
+
+.app-frame.theme-dark .habit-check-btn {
+  background: #1b202c;
+  border-color: #3a4254;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.app-frame.theme-dark .habit-check-btn:hover {
+  border-color: #5b667e;
+  background: #232a3a;
+}
+
+.app-frame.theme-dark .habit-check-btn.is-today:not(.checked) {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.app-frame.theme-dark .habit-check-btn.checked {
+  background: #f1f5f9 !important;
+  border-color: #ffffff !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 6px rgba(255, 255, 255, 0.25) !important;
+  transform: translateZ(0);
+}
+
+.app-frame.theme-dark .habit-check-btn.checked:hover {
+  filter: brightness(1.08);
+}
+
+.app-frame.theme-dark .habit-input-field {
+  background: #1e2433;
+  border-color: #475569;
+  color: #f1f5f9;
+}
+
+.app-frame.theme-dark .habit-empty-hint {
+  color: #94a3b8;
+}
+
+/* Dark Theme for Advanced Habits */
+.app-frame.theme-dark .habit-sub-badge {
+  color: #94a3b8;
+}
+
+.app-frame.theme-dark .habit-check-btn.is-numeric {
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.06);
+  border-color: #475569;
+}
+
+.app-frame.theme-dark .habit-modal-tabs {
+  background: #11141c;
+}
+
+.app-frame.theme-dark .habit-tab-btn {
+  color: #94a3b8;
+}
+
+.app-frame.theme-dark .habit-tab-btn:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f1f5f9;
+}
+
+.app-frame.theme-dark .habit-tab-btn.active {
+  background: var(--primary-magenta, #d83a88) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 10px rgba(var(--primary-rgb, 216, 58, 136), 0.45) !important;
+}
+
+.app-frame.theme-dark .habit-tab-btn.active span {
+  color: #ffffff !important;
+}
+
+.app-frame.theme-dark .habit-stat-card,
+.app-frame.theme-dark .habit-stat-section,
+.app-frame.theme-dark .habit-heatmap-section {
+  background: #1e2330;
+  border-color: #333d4e;
+}
+
+.app-frame.theme-dark .habit-stat-section-title {
+  color: #f1f5f9;
+}
+
+.app-frame.theme-dark .habit-chart-period-select {
+  background: #151923;
+  border-color: #333d4e;
+  color: #f1f5f9;
+}
+
+.app-frame.theme-dark .habit-chart-bars {
+  border-bottom-color: #333d4e;
+}
+
+.app-frame.theme-dark .habit-chart-val {
+  color: #94a3b8;
+}
+
+.app-frame.theme-dark .habit-chart-bar {
+  background: rgba(244, 114, 182, 0.25);
+}
+
+.app-frame.theme-dark .habit-chart-col.is-target-met .habit-chart-bar {
+  background: var(--primary-magenta, #d83a88);
+}
+
+.app-frame.theme-dark .habit-chart-col.is-target-met .habit-chart-val {
+  color: #f472b6;
+}
+
+.app-frame.theme-dark .habit-chart-lbl {
+  color: #64748b;
+}
+
+.app-frame.theme-dark .habit-stat-sub {
+  color: #64748b;
+}
+
+.app-frame.theme-dark .habit-heat-dow {
+  color: #94a3b8;
+}
+
+.app-frame.theme-dark .habit-heat-dow.is-best-day {
+  color: var(--primary-magenta, #f472b6);
+  background: rgba(244, 114, 182, 0.15);
+}
+
+.app-frame.theme-dark .habit-heat-cell.is-future {
+  background: #151923;
+  border-color: #333d4e;
+}
+
+.app-frame.theme-dark .habit-weekdays-insight {
+  background: rgba(244, 114, 182, 0.12);
+  color: #f8fafc;
+}
+
+.app-frame.theme-dark .habit-stat-card {
+  background: linear-gradient(145deg, #181d28 0%, rgba(var(--primary-rgb, 216, 58, 136), 0.15) 100%);
+  border: 1.5px solid rgba(var(--primary-rgb, 216, 58, 136), 0.45);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), 0 0 12px rgba(var(--primary-rgb, 216, 58, 136), 0.14);
+}
+
+.app-frame.theme-dark .habit-stat-card:hover {
+  border-color: rgba(var(--primary-rgb, 216, 58, 136), 0.85);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 0 18px rgba(var(--primary-rgb, 216, 58, 136), 0.28);
+}
+
+.app-frame.theme-dark .habit-stat-icon {
+  background: rgba(var(--primary-rgb, 216, 58, 136), 0.2);
+}
+
+.app-frame.theme-dark .habit-view-toggle-group {
+  background: #141822;
+  border: 1px solid #262e3e;
+}
+
+.app-frame.theme-dark .habit-view-toggle-btn {
+  color: #94a3b8;
+}
+
+.app-frame.theme-dark .habit-view-toggle-btn:hover {
+  color: #f1f5f9;
+}
+
+.app-frame.theme-dark .habit-view-toggle-btn.active {
+  background: var(--primary-magenta, #d83a88) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 10px rgba(var(--primary-rgb, 216, 58, 136), 0.45);
+}
+
+.app-frame.theme-dark .habit-freq-dow-label {
+  color: #94a3b8;
+}
+
+.app-frame.theme-dark .habit-freq-bubble.is-empty {
+  background: #475569;
+  opacity: 0.18 !important;
+}
+
+.app-frame.theme-dark .habit-freq-month-label {
+  color: #64748b;
+}
+
+.app-frame.theme-dark .habit-freq-matrix-wrap::-webkit-scrollbar-thumb {
+  background: #333d4e;
+}
+
+.app-frame.theme-dark .habit-stat-val {
+  color: #f8fafc;
+}
+
+.app-frame.theme-dark .habit-stat-lbl,
+.app-frame.theme-dark .habit-heatmap-title {
+  color: #cbd5e1;
+}
+
+.app-frame.theme-dark .habit-heat-cell.level-0 {
+  background: #1a202c;
+  color: #64748b;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.app-frame.theme-dark .habit-heat-cell.level-1 {
+  background: rgba(var(--primary-rgb, 216, 58, 136), 0.22);
+  color: var(--primary-magenta, #d83a88);
+  border: 1px solid rgba(var(--primary-rgb, 216, 58, 136), 0.2);
+}
+
+.app-frame.theme-dark .habit-heat-cell.level-2 {
+  background: rgba(var(--primary-rgb, 216, 58, 136), 0.52);
+  color: #ffffff;
+  border: 1px solid rgba(var(--primary-rgb, 216, 58, 136), 0.35);
+}
+
+.app-frame.theme-dark .habit-heat-cell.level-3 {
+  background: var(--primary-magenta, #d83a88) !important;
+  color: #ffffff !important;
+  border: 1px solid var(--primary-magenta, #d83a88);
+  box-shadow: 0 2px 10px rgba(var(--primary-rgb, 216, 58, 136), 0.5);
+}
+
+.app-frame.theme-dark .habit-type-btn {
+  background: #1e2330;
+  border-color: #333d4e;
+}
+
+.app-frame.theme-dark .habit-type-name {
+  color: #f1f5f9;
+}
+
+.app-frame.theme-dark .habit-type-badge {
+  background: #2d3748;
+  color: #94a3b8;
+}
+
+.app-frame.theme-dark .habit-unit-chip {
+  background: #232938;
+  border-color: #384256;
+  color: #cbd5e1;
+}
+
+.app-frame.theme-dark .habit-schedule-selector,
+.app-frame.theme-dark .habit-weekdays-picker,
+.app-frame.theme-dark .habit-periodic-row {
+  background: #1e2330;
+  border-color: #333d4e;
+}
+
+.app-frame.theme-dark .habit-dow-btn {
+  background: #252c3d;
+  border-color: #384256;
+  color: #cbd5e1;
+}
+
+.app-frame.theme-dark .habit-sched-option {
+  color: #cbd5e1;
+}
+
+.app-frame.theme-dark .habit-stepper-sheet {
+  background: #171b24;
+  border: 1px solid #2e3547;
+  border-top: 3.5px solid var(--primary-magenta) !important;
+}
+
+.app-frame.theme-dark .habit-stepper-title {
+  color: #f1f5f9;
+}
+
+.app-frame.theme-dark .habit-step-btn {
+  background: #232938;
+  border-color: #384256;
+  color: #f1f5f9;
+}
+
+.app-frame.theme-dark .habit-step-input {
+  background: #1e2330;
+  border-color: var(--primary-magenta);
+  color: #f1f5f9;
+}
+
+.app-frame.theme-dark .habit-quick-btn {
+  background: #232938;
+  border-color: #384256;
+  color: #cbd5e1;
+}
+
+.app-frame.theme-dark .habit-stepper-progress-track {
+  background: #283042;
+}
+
+
+.app-frame.theme-dark .week-day-circle.is-selected:not(.is-today) {
+  border-color: #94a3b8 !important;
+  background: #252e3f !important;
+  box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.3) !important;
+}
+
+.app-frame.theme-dark .week-day-circle.is-selected:not(.is-today) .week-day-name {
+  color: #f1f5f9 !important;
+}
+
 .app-frame.theme-dark .widget-circle {
   background: #1e2433;
   border-color: #3b4256;
@@ -3530,6 +5666,11 @@ body.theme-dark {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.4) !important;
 }
 
+.app-frame.theme-dark .fab-button:hover {
+  border-color: rgba(255, 255, 255, 0.65) !important;
+  filter: brightness(1.1);
+}
+
 .app-frame.theme-dark .fab-button .fab-plus-svg {
   stroke: #ffffff !important;
 }
@@ -3673,6 +5814,59 @@ body.theme-dark {
 
 .calendar-day-cell.selected .day-dot {
   background: #ffffff;
+}
+
+/* Notebook Calendar Habit Badge (Top-left habit status) */
+.calendar-habit-badge {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
+  box-sizing: border-box;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.calendar-habit-badge.completed {
+  background: #10b981;
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.45);
+}
+
+.calendar-habit-badge.completed svg {
+  width: 6.5px;
+  height: 6.5px;
+  stroke: #ffffff;
+  stroke-width: 3.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  display: block;
+}
+
+.calendar-habit-badge.missed {
+  border: 1.4px solid #cbd5e1;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+/* Selected calendar day state overrides */
+.calendar-day-cell.selected .calendar-habit-badge.completed {
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.calendar-day-cell.selected .calendar-habit-badge.completed svg {
+  stroke: #059669;
+}
+
+.calendar-day-cell.selected .calendar-habit-badge.missed {
+  border-color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .calendar-date-info {
@@ -3850,6 +6044,11 @@ body.theme-dark {
   background: #1e2433;
   border-color: #333d4e;
   color: #f1f5f9;
+}
+
+.app-frame.theme-dark .calendar-habit-badge.missed {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 /* Trophy Widget Pulsing Aura */
@@ -4646,6 +6845,17 @@ all and (display-mode: fullscreen) {
   .top-widgets-bar {
     flex-shrink: 0;
     padding-top: max(14px, env(safe-area-inset-top, 0px));
+    padding-left: max(14px, env(safe-area-inset-left, 0px));
+    padding-right: max(14px, env(safe-area-inset-right, 0px));
+  }
+
+  .tabs-substrate-container {
+    flex-shrink: 0 !important;
+  }
+
+  .week-days-bar,
+  .habit-row {
+    flex-shrink: 0;
     padding-left: max(14px, env(safe-area-inset-left, 0px));
     padding-right: max(14px, env(safe-area-inset-right, 0px));
   }

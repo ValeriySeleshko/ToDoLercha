@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bad+Script&family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700;800;900&family=Marck+Script&family=Neucha&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&family=Roboto+Slab:wght@400;600;700;900&display=auto" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=0.1.5">
   <script>
     (function() {
       try {
@@ -36,6 +36,8 @@
   <div class="app-viewport">
     <main class="app-frame" id="appFrame">
       
+
+
       <!-- Toast notification -->
       <div class="app-toast" id="appToast" aria-live="polite"></div>
 
@@ -86,11 +88,96 @@
         </button>
       </header>
 
-      <!-- Folder Tabs Container with Horizontal Scroll -->
-      <div class="tabs-scroll-container">
-        <nav class="folder-tabs-bar" id="folderTabsBar" role="tablist" aria-label="Списки дел">
-          <!-- Dynamic Tabs and Add Tab button rendered by JS -->
-        </nav>
+      <!-- Substrate Area: Week Days & Folder Tabs -->
+      <div class="tabs-substrate-container" id="tabsSubstrateContainer">
+        <!-- Week Days Row: Add Habit Button (left 1/3) + Week Circles (right 2/3) -->
+        <div class="week-days-bar" id="weekDaysBar" role="region" aria-label="Трекер привычек">
+          <!-- Add Habit Button Slot (left 1/3) -->
+          <div class="habit-add-slot" id="habitAddSlot">
+            <button class="btn-add-habit" id="btnAddHabit" type="button" title="Добавить привычку в трекер" aria-label="Добавить привычку" data-i18n-title="habit_btn_add_title" data-i18n-aria="habit_btn_add_aria">
+              <svg class="plus-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              <span class="btn-add-habit-text" data-i18n="habit_btn_add">Привычка</span>
+            </button>
+          </div>
+
+          <!-- Week Days Track (clicks toggle substrate; animates to right 2/3) -->
+          <div class="week-days-track" id="weekDaysTrack" role="button" aria-expanded="false" title="Показать / скрыть трекер привычек" tabindex="0" data-i18n-title="habit_track_toggle_title">
+            <div class="week-day-circle" data-day-index="0">
+              <svg class="week-day-progress-ring" viewBox="0 0 36 36">
+                <circle class="week-day-progress-bg" cx="18" cy="18" r="15.9155" />
+                <circle class="week-day-progress-fill" cx="18" cy="18" r="15.9155" stroke-dasharray="100" stroke-dashoffset="100" />
+              </svg>
+              <span class="week-day-name">Пн</span>
+            </div>
+            <div class="week-day-circle" data-day-index="1">
+              <svg class="week-day-progress-ring" viewBox="0 0 36 36">
+                <circle class="week-day-progress-bg" cx="18" cy="18" r="15.9155" />
+                <circle class="week-day-progress-fill" cx="18" cy="18" r="15.9155" stroke-dasharray="100" stroke-dashoffset="100" />
+              </svg>
+              <span class="week-day-name">Вт</span>
+            </div>
+            <div class="week-day-circle is-today" data-day-index="2">
+              <svg class="week-day-progress-ring" viewBox="0 0 36 36">
+                <circle class="week-day-progress-bg" cx="18" cy="18" r="15.9155" />
+                <circle class="week-day-progress-fill" cx="18" cy="18" r="15.9155" stroke-dasharray="100" stroke-dashoffset="100" />
+              </svg>
+              <span class="week-day-name">Ср</span>
+            </div>
+            <div class="week-day-circle" data-day-index="3">
+              <svg class="week-day-progress-ring" viewBox="0 0 36 36">
+                <circle class="week-day-progress-bg" cx="18" cy="18" r="15.9155" />
+                <circle class="week-day-progress-fill" cx="18" cy="18" r="15.9155" stroke-dasharray="100" stroke-dashoffset="100" />
+              </svg>
+              <span class="week-day-name">Чт</span>
+            </div>
+            <div class="week-day-circle" data-day-index="4">
+              <svg class="week-day-progress-ring" viewBox="0 0 36 36">
+                <circle class="week-day-progress-bg" cx="18" cy="18" r="15.9155" />
+                <circle class="week-day-progress-fill" cx="18" cy="18" r="15.9155" stroke-dasharray="100" stroke-dashoffset="100" />
+              </svg>
+              <span class="week-day-name">Пт</span>
+            </div>
+            <div class="week-day-circle is-weekend" data-day-index="5">
+              <svg class="week-day-progress-ring" viewBox="0 0 36 36">
+                <circle class="week-day-progress-bg" cx="18" cy="18" r="15.9155" />
+                <circle class="week-day-progress-fill" cx="18" cy="18" r="15.9155" stroke-dasharray="100" stroke-dashoffset="100" />
+              </svg>
+              <span class="week-day-name">Сб</span>
+            </div>
+            <div class="week-day-circle is-weekend" data-day-index="6">
+              <svg class="week-day-progress-ring" viewBox="0 0 36 36">
+                <circle class="week-day-progress-bg" cx="18" cy="18" r="15.9155" />
+                <circle class="week-day-progress-fill" cx="18" cy="18" r="15.9155" stroke-dasharray="100" stroke-dashoffset="100" />
+              </svg>
+              <span class="week-day-name">Вс</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Substrate Tray with Habit Tracker Rows -->
+        <div class="substrate-tray" id="substrateTray" aria-hidden="true">
+          <!-- Inline New Habit Form -->
+          <div class="habit-add-row" id="habitAddRow" style="display: none;">
+            <input type="text" class="habit-input-field" id="habitInputField" placeholder="Новая привычка..." maxlength="25">
+            <button class="habit-btn-confirm" id="habitBtnConfirm" type="button" title="Сохранить">✓</button>
+            <button class="habit-btn-cancel" id="habitBtnCancel" type="button" title="Отмена">✕</button>
+          </div>
+
+          <!-- List of Habits & Day Checkboxes -->
+          <div class="habits-list-container" id="habitsListContainer">
+            <!-- Populated dynamically by renderHabits() -->
+          </div>
+        </div>
+
+        <!-- Folder Tabs Container with Horizontal Scroll -->
+        <div class="tabs-scroll-container">
+          <nav class="folder-tabs-bar" id="folderTabsBar" role="tablist" aria-label="Списки дел">
+            <!-- Dynamic Tabs and Add Tab button rendered by JS -->
+          </nav>
+        </div>
       </div>
 
       <!-- Lined Notebook Page Container -->
@@ -262,6 +349,270 @@
               <button type="submit" class="btn-submit" id="editTabSubmitBtn">Сохранить</button>
             </div>
           </form>
+        </div>
+      </div>
+
+      <!-- Habit Creation & Edit / Stats Modal -->
+      <div class="modal-backdrop" id="habitModalBackdrop" aria-hidden="true">
+        <div class="modal-sheet modal-sheet-scrollable habit-modal-sheet" role="dialog" aria-modal="true" aria-labelledby="habitModalTitle">
+          <div class="modal-header">
+            <h2 id="habitModalTitle">Новая привычка</h2>
+            <button type="button" class="modal-close-btn" id="habitModalCloseBtn" aria-label="Закрыть">&times;</button>
+          </div>
+
+          <!-- Edit Mode Tabs (Stats vs Settings) - visible only in edit mode -->
+          <div class="habit-modal-tabs" id="habitModalTabs" style="display: none;">
+            <button type="button" class="habit-tab-btn active" id="habitTabBtnStats">
+              <span>📊</span> <span data-i18n="habit_tab_stats">Статистика</span>
+            </button>
+            <button type="button" class="habit-tab-btn" id="habitTabBtnSettings">
+              <span>⚙️</span> <span data-i18n="habit_tab_settings">Настройки</span>
+            </button>
+          </div>
+
+          <!-- Stats Pane (Visible in edit mode on Stats tab) -->
+          <div class="habit-pane" id="habitStatsPane" style="display: none;">
+            <div class="habit-stats-grid">
+              <div class="habit-stat-card">
+                <span class="habit-stat-icon">🔥</span>
+                <div class="habit-stat-val" id="habitStatStreakVal">0 дн.</div>
+                <div class="habit-stat-lbl" data-i18n="habit_stat_streak">Текущая серия</div>
+                <div class="habit-stat-sub" id="habitStatStreakSub">—</div>
+              </div>
+              <div class="habit-stat-card">
+                <span class="habit-stat-icon">🏆</span>
+                <div class="habit-stat-val" id="habitStatRecordVal">0 дн.</div>
+                <div class="habit-stat-lbl" data-i18n="habit_stat_record">Рекорд серии</div>
+                <div class="habit-stat-sub" id="habitStatRecordSub">—</div>
+              </div>
+              <div class="habit-stat-card">
+                <span class="habit-stat-icon">📈</span>
+                <div class="habit-stat-val" id="habitStatRateVal">0%</div>
+                <div class="habit-stat-lbl" data-i18n="habit_stat_rate">Успешность (30 дн.)</div>
+                <div class="habit-stat-sub" id="habitStatRateSub" data-i18n="habit_stat_days_30">за 30 дней</div>
+              </div>
+              <div class="habit-stat-card">
+                <span class="habit-stat-icon" id="habitStatDynamicIcon">🎯</span>
+                <div class="habit-stat-val" id="habitStatDynamicVal">0</div>
+                <div class="habit-stat-lbl" id="habitStatDynamicLbl" data-i18n="habit_stat_this_week">На этой неделе</div>
+                <div class="habit-stat-sub" id="habitStatDynamicSub">—</div>
+              </div>
+            </div>
+
+            <!-- Section 1: History Bar Chart (Days / Weeks / Months / Years) -->
+            <div class="habit-stat-section" id="habitChartSection">
+              <div class="habit-stat-section-header">
+                <div class="habit-chart-title-group">
+                  <span class="habit-chart-title-icon">📊</span>
+                  <select class="habit-chart-period-select" id="habitChartPeriodSelect" aria-label="Период истории">
+                    <option value="days" data-i18n="habit_chart_period_days">По дням</option>
+                    <option value="weeks" selected data-i18n="habit_chart_period_weeks">По неделям</option>
+                    <option value="months" data-i18n="habit_chart_period_months">По месяцам</option>
+                    <option value="years" data-i18n="habit_chart_period_years">По годам</option>
+                  </select>
+                </div>
+                <span class="habit-stat-target-badge" id="habitStatTargetBadge">В среднем: —</span>
+              </div>
+              <div class="habit-chart-wrap">
+                <div class="habit-chart-bars" id="habitWeeklyBars">
+                  <!-- Rendered dynamically by JS (12 columns) -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Section 2: Heatmap & Weekday Activity Calendar (4 weeks) & Frequency Matrix -->
+            <div class="habit-stat-section habit-heatmap-section">
+              <div class="habit-stat-section-header">
+                <div class="habit-view-toggle-group" role="tablist" aria-label="Вид активности">
+                  <button type="button" class="habit-view-toggle-btn active" id="habitViewBtnHeatmap" role="tab" aria-selected="true" data-i18n="habit_stat_tab_calendar">📅 Календарь (4 нед.)</button>
+                  <button type="button" class="habit-view-toggle-btn" id="habitViewBtnFrequency" role="tab" aria-selected="false" data-i18n="habit_stat_tab_frequency">🫧 Частота по дням</button>
+                </div>
+              </div>
+
+              <!-- Pane 1: 4-week Calendar Heatmap -->
+              <div class="habit-view-pane" id="habitPaneHeatmap">
+                <div class="habit-heatmap-dows" id="habitHeatmapDows">
+                  <span class="habit-heat-dow" data-dow="1">Пн</span>
+                  <span class="habit-heat-dow" data-dow="2">Вт</span>
+                  <span class="habit-heat-dow" data-dow="3">Ср</span>
+                  <span class="habit-heat-dow" data-dow="4">Чт</span>
+                  <span class="habit-heat-dow" data-dow="5">Пт</span>
+                  <span class="habit-heat-dow" data-dow="6">Сб</span>
+                  <span class="habit-heat-dow" data-dow="0">Вс</span>
+                </div>
+                <div class="habit-heatmap-grid" id="habitHeatmapGrid">
+                  <!-- Rendered dynamically by JS -->
+                </div>
+              </div>
+
+              <!-- Pane 2: Frequency Bubble Matrix (Days of Week x Months) -->
+              <div class="habit-view-pane" id="habitPaneFrequency" style="display: none;">
+                <div class="habit-freq-matrix-container" id="habitFreqMatrixContainer">
+                  <!-- Rendered dynamically by JS -->
+                </div>
+              </div>
+
+              <div class="habit-weekdays-insight" id="habitWeekdaysInsight">
+                ⭐ Лучший день — Четверг (95%)
+              </div>
+            </div>
+          </div>
+
+          <!-- Settings & Creation Form -->
+          <form id="habitModalForm" class="modal-form habit-pane">
+            <input type="hidden" id="habitEditId" value="">
+
+            <!-- Title -->
+            <div class="form-group">
+              <label for="habitTitleInput" data-i18n="habit_title_label">Название привычки</label>
+              <input type="text" id="habitTitleInput" required autocomplete="off" placeholder="Например: Пить воду, Шаги..." data-i18n-placeholder="habit_title_placeholder" maxlength="35">
+            </div>
+
+            <!-- Type Selector: Boolean vs Numeric -->
+            <div class="form-group">
+              <label data-i18n="habit_type_label">Тип привычки</label>
+              <div class="habit-type-toggle">
+                <button type="button" class="habit-type-btn active" id="habitTypeBtnBoolean" data-type="boolean">
+                  <span class="habit-type-badge">✓</span>
+                  <div class="habit-type-info">
+                    <span class="habit-type-name" data-i18n="habit_type_boolean">Да / Нет</span>
+                    <span class="habit-type-sub" data-i18n="habit_type_boolean_desc">Выполнено или нет</span>
+                  </div>
+                </button>
+                <button type="button" class="habit-type-btn" id="habitTypeBtnNumeric" data-type="numeric">
+                  <span class="habit-type-badge">123</span>
+                  <div class="habit-type-info">
+                    <span class="habit-type-name" data-i18n="habit_type_numeric">Измеримая</span>
+                    <span class="habit-type-sub" data-i18n="habit_type_numeric_desc">Числовая цель</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <!-- Numeric Options (target, unit) - visible when numeric is selected -->
+            <div class="habit-numeric-options" id="habitNumericOptions" style="display: none;">
+              <div class="form-group">
+                <label for="habitTargetInput" data-i18n="habit_target_label">Цель в день</label>
+                <input type="number" id="habitTargetInput" min="0.1" step="any" placeholder="Например: 2.0 или 8000">
+              </div>
+
+              <div class="form-group">
+                <label data-i18n="habit_unit_label">Единица измерения</label>
+                <div class="habit-unit-chips" id="habitUnitChips">
+                  <button type="button" class="habit-unit-chip active" data-unit="шагов">шагов</button>
+                  <button type="button" class="habit-unit-chip" data-unit="мин">мин</button>
+                  <button type="button" class="habit-unit-chip" data-unit="км">км</button>
+                  <button type="button" class="habit-unit-chip" data-unit="л">л</button>
+                  <button type="button" class="habit-unit-chip" data-unit="стр">стр</button>
+                  <button type="button" class="habit-unit-chip" data-unit="раз">раз</button>
+                  <button type="button" class="habit-unit-chip" data-unit="ккал">ккал</button>
+                </div>
+                <input type="text" id="habitUnitCustomInput" placeholder="Или введите свою (например: чашек)" style="margin-top: 6px;" maxlength="15">
+              </div>
+            </div>
+
+            <!-- Schedule Options -->
+            <div class="form-group">
+              <label data-i18n="habit_schedule_label">Регулярность</label>
+              <div class="habit-schedule-selector">
+                <label class="habit-sched-option">
+                  <input type="radio" name="habitScheduleRadio" value="daily" checked>
+                  <span class="habit-sched-label" data-i18n="habit_sched_daily">Каждый день</span>
+                </label>
+                <label class="habit-sched-option">
+                  <input type="radio" name="habitScheduleRadio" value="weekdays">
+                  <span class="habit-sched-label" data-i18n="habit_sched_weekdays">По дням недели</span>
+                </label>
+                <label class="habit-sched-option">
+                  <input type="radio" name="habitScheduleRadio" value="periodic">
+                  <span class="habit-sched-label" data-i18n="habit_sched_periodic">Цель на период</span>
+                </label>
+              </div>
+
+              <!-- Weekdays picker (shown if weekdays selected) -->
+              <div class="habit-weekdays-picker" id="habitWeekdaysPicker" style="display: none;">
+                <button type="button" class="habit-dow-btn active" data-dow="1">Пн</button>
+                <button type="button" class="habit-dow-btn active" data-dow="2">Вт</button>
+                <button type="button" class="habit-dow-btn active" data-dow="3">Ср</button>
+                <button type="button" class="habit-dow-btn active" data-dow="4">Чт</button>
+                <button type="button" class="habit-dow-btn active" data-dow="5">Пт</button>
+                <button type="button" class="habit-dow-btn" data-dow="6">Сб</button>
+                <button type="button" class="habit-dow-btn" data-dow="0">Вс</button>
+              </div>
+
+              <!-- Periodic picker (shown if periodic selected) -->
+              <div class="habit-periodic-picker" id="habitPeriodicPicker" style="display: none;">
+                <div class="habit-periodic-row">
+                  <input type="number" id="habitPeriodicCountInput" min="1" max="60" value="3">
+                  <span style="font-size: 13px; font-weight: 600;">раз</span>
+                  <select id="habitPeriodicSelect" class="settings-select" style="flex: 1;">
+                    <option value="week" selected data-i18n="habit_period_week">в неделю</option>
+                    <option value="2weeks" data-i18n="habit_period_2weeks">за 2 недели</option>
+                    <option value="month" data-i18n="habit_period_month">в месяц</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Danger Zone (Delete in edit mode) -->
+            <div class="modal-danger-zone" id="habitDangerZone" style="display: none; margin-top: 10px;">
+              <button type="button" class="btn-danger-block" id="btnDeleteHabitFromModal">
+                🗑️ <span data-i18n="habit_btn_delete">Удалить привычку</span>
+              </button>
+            </div>
+
+            <!-- Actions -->
+            <div class="modal-actions" style="margin-top: 14px;">
+              <button type="button" class="btn-cancel" id="habitModalCancelBtn" data-i18n="btn_cancel">Отмена</button>
+              <button type="submit" class="btn-submit" id="habitModalSubmitBtn" data-i18n="habit_btn_save">Сохранить</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Quick Stepper Popover for Numeric Habits -->
+      <div class="habit-stepper-popover-backdrop" id="habitStepperBackdrop" aria-hidden="true">
+        <div class="habit-stepper-sheet" id="habitStepperSheet" role="dialog">
+          <div class="habit-stepper-header">
+            <div class="habit-stepper-title-box">
+              <div class="habit-stepper-title" id="habitStepperTitle">💧 Пить воду</div>
+              <div class="habit-stepper-date" id="habitStepperDate">Среда, 9 сен</div>
+            </div>
+            <button type="button" class="habit-stepper-close" id="habitStepperCloseBtn">&times;</button>
+          </div>
+
+          <div class="habit-stepper-body">
+            <div class="habit-stepper-value-row">
+              <span class="habit-stepper-val-big" id="habitStepperCurrentVal">1.5</span>
+              <span class="habit-stepper-slash">/</span>
+              <span class="habit-stepper-val-target" id="habitStepperTargetVal">2.0</span>
+              <span class="habit-stepper-val-unit" id="habitStepperUnit">л</span>
+            </div>
+
+            <!-- Progress bar -->
+            <div class="habit-stepper-progress-track">
+              <div class="habit-stepper-progress-fill" id="habitStepperProgressFill" style="width: 75%;"></div>
+            </div>
+
+            <!-- Stepper Controls [-] [input] [+] -->
+            <div class="habit-stepper-controls">
+              <button type="button" class="habit-step-btn" id="habitStepMinusBtn" title="Уменьшить">−</button>
+              <input type="number" step="any" class="habit-step-input" id="habitStepInput" value="0">
+              <button type="button" class="habit-step-btn" id="habitStepPlusBtn" title="Увеличить">+</button>
+            </div>
+
+            <!-- Quick Step Action Chips -->
+            <div class="habit-stepper-quick-actions" id="habitStepperQuickActions">
+              <button type="button" class="habit-quick-btn" id="habitQuickStep1Btn">+0.25</button>
+              <button type="button" class="habit-quick-btn" id="habitQuickStep2Btn">+0.5</button>
+              <button type="button" class="habit-quick-btn is-complete" id="habitQuickCompleteBtn">✓ Цель</button>
+              <button type="button" class="habit-quick-btn is-reset" id="habitQuickResetBtn">✕ 0</button>
+            </div>
+          </div>
+
+          <div class="habit-stepper-footer">
+            <button type="button" class="btn-submit habit-stepper-done-btn" id="habitStepperDoneBtn" data-i18n="habit_stepper_close">Готово</button>
+          </div>
         </div>
       </div>
 
@@ -597,7 +948,7 @@
           </div>
 
           <div style="text-align: center; font-size: 11px; color: #94a3b8; margin-top: 12px; font-weight: 600; letter-spacing: 0.3px;" data-i18n="app_version_footer">
-            Plan4U • Версия 0.1.2
+            Plan4U • Версия 0.1.3
           </div>
 
           <div class="modal-actions" style="margin-top: 10px;">
@@ -961,12 +1312,17 @@
     </main>
   </div>
 
-  <script src="i18n.js?v=0.1.2"></script>
-  <script src="app.js?v=0.1.2"></script>
+  <script src="i18n.js?v=0.1.5"></script>
+  <script src="maine_quests_data.js?v=0.1.5"></script>
+  <script src="maine_quests.js?v=0.1.5"></script>
+  <script src="initial_habits.js?v=0.1.5"></script>
+  <script src="app.js?v=0.1.5"></script>
   <script>
     if ('serviceWorker' in navigator && !window.Capacitor) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(err => {
+        navigator.serviceWorker.register('./sw.js?v=0.1.5').then(reg => {
+          reg.update();
+        }).catch(err => {
           console.log('SW registration skipped:', err);
         });
       });

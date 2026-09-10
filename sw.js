@@ -1,9 +1,12 @@
-const CACHE_NAME = 'todo-notebook-v0.1.2';
+const CACHE_NAME = 'todo-notebook-v0.1.5';
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './i18n.js',
+  './maine_quests_data.js',
+  './maine_quests.js',
+  './initial_habits.js',
   './app.js',
   './manifest.json',
   './icon.svg',
