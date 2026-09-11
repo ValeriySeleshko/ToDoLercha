@@ -2815,10 +2815,6 @@ class NotebookApp {
       titleSpan.className = 'habit-title-text';
       titleSpan.textContent = habit.title;
 
-      // Subtitle badge showing target or schedule
-      const subBadge = document.createElement('span');
-      subBadge.className = 'habit-sub-badge';
-
       let periodicCompletions = 0;
       let periodicTarget = 3;
       if (habit.schedule?.type === 'periodic') {
@@ -2858,39 +2854,7 @@ class NotebookApp {
         }
       }
 
-      if (habit.type === 'numeric') {
-        const valStr = habit.target?.value || '';
-        const unitStr = habit.target?.unit || '';
-        if (habit.schedule?.type === 'weekdays') {
-          const shortWd = window.Plan4UI18n ? Plan4UI18n.t('habit_sub_weekdays_short', {}, this.currentLang) : 'по дням';
-          subBadge.textContent = `${valStr} ${unitStr} • ${shortWd}`;
-        } else if (habit.schedule?.type === 'periodic') {
-          const targetMet = periodicCompletions >= periodicTarget;
-          const periodicText = targetMet
-            ? (window.Plan4UI18n ? Plan4UI18n.t('habit_sub_periodic_met', { done: periodicCompletions, target: periodicTarget }, this.currentLang) : `${periodicCompletions} из ${periodicTarget} • выполнено 🎯`)
-            : (window.Plan4UI18n ? Plan4UI18n.t('habit_sub_periodic_progress', { done: periodicCompletions, target: periodicTarget }, this.currentLang) : `${periodicCompletions} из ${periodicTarget} на этой неделе`);
-          subBadge.textContent = `${valStr} ${unitStr} • ${periodicText}`;
-        } else {
-          const dailyStr = window.Plan4UI18n ? Plan4UI18n.t('habit_sub_daily', {}, this.currentLang) : 'в день';
-          subBadge.textContent = `${valStr} ${unitStr} ${dailyStr}`;
-        }
-      } else {
-        if (habit.schedule?.type === 'weekdays') {
-          subBadge.textContent = window.Plan4UI18n ? Plan4UI18n.t('habit_sub_weekdays', {}, this.currentLang) : 'По дням недели';
-        } else if (habit.schedule?.type === 'periodic') {
-          const targetMet = periodicCompletions >= periodicTarget;
-          subBadge.textContent = targetMet
-            ? (window.Plan4UI18n ? Plan4UI18n.t('habit_sub_periodic_met', { done: periodicCompletions, target: periodicTarget }, this.currentLang) : `${periodicCompletions} из ${periodicTarget} • выполнено 🎯`)
-            : (window.Plan4UI18n ? Plan4UI18n.t('habit_sub_periodic_progress', { done: periodicCompletions, target: periodicTarget }, this.currentLang) : `${periodicCompletions} из ${periodicTarget} на этой неделе`);
-        } else {
-          subBadge.textContent = '';
-        }
-      }
-
       titleBox.appendChild(titleSpan);
-      if (subBadge.textContent) {
-        titleBox.appendChild(subBadge);
-      }
 
       // Tap on title opens modal in edit / stats mode
       titleBox.addEventListener('click', (e) => {
@@ -3051,43 +3015,6 @@ class NotebookApp {
         buttonEl.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
       } else {
         buttonEl.innerHTML = '';
-      }
-    }
-
-    // Update periodic subtitle badge if this habit is periodic
-    if (habit.schedule?.type === 'periodic' && this.habitsListContainer) {
-      const row = this.habitsListContainer.querySelector(`[data-habit-id="${habit.id}"]`);
-      const subBadge = row?.querySelector('.habit-sub-badge');
-      if (subBadge) {
-        let periodicCompletions = 0;
-        const periodicTarget = habit.schedule.targetCount || 3;
-        const period = habit.schedule.period || 'week';
-        if (period === 'month') {
-          const [ty, tm] = todayStr.split('-').map(Number);
-          const daysInMonth = new Date(ty, tm, 0).getDate();
-          for (let d = 1; d <= daysInMonth; d++) {
-            const cds = `${ty}-${String(tm).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-            const cEntry = habit.history[cds];
-            if (typeof cEntry === 'object' ? !!cEntry.completed : !!cEntry) periodicCompletions++;
-          }
-        } else {
-          const [ty, tm, td] = todayStr.split('-').map(Number);
-          const todayDateObj = new Date(ty, tm - 1, td);
-          const monOffset = (todayDateObj.getDay() + 6) % 7;
-          const mondayDate = new Date(todayDateObj);
-          mondayDate.setDate(todayDateObj.getDate() - monOffset);
-          for (let i = 0; i < 7; i++) {
-            const cd = new Date(mondayDate);
-            cd.setDate(mondayDate.getDate() + i);
-            const cds = `${cd.getFullYear()}-${String(cd.getMonth() + 1).padStart(2, '0')}-${String(cd.getDate()).padStart(2, '0')}`;
-            const cEntry = habit.history[cds];
-            if (typeof cEntry === 'object' ? !!cEntry.completed : !!cEntry) periodicCompletions++;
-          }
-        }
-        const targetMet = periodicCompletions >= periodicTarget;
-        subBadge.textContent = targetMet
-          ? (window.Plan4UI18n ? Plan4UI18n.t('habit_sub_periodic_met', { done: periodicCompletions, target: periodicTarget }, this.currentLang) : `${periodicCompletions} из ${periodicTarget} • выполнено 🎯`)
-          : (window.Plan4UI18n ? Plan4UI18n.t('habit_sub_periodic_progress', { done: periodicCompletions, target: periodicTarget }, this.currentLang) : `${periodicCompletions} из ${periodicTarget} на этой неделе`);
       }
     }
 
@@ -7889,7 +7816,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.1.6',
+      appVersion: '0.1.7',
       email: this.cloudEmail,
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
@@ -8132,7 +8059,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.1.6',
+      appVersion: '0.1.7',
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
       sections: this.tabSections || {},

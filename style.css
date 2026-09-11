@@ -557,13 +557,7 @@ body.app-ready .app-viewport {
 }
 
 .habit-sub-badge {
-  font-size: clamp(9px, calc(var(--task-font-size, 14px) * 0.72), 11px);
-  font-weight: 600;
-  color: #8b92a0;
-  white-space: normal;
-  line-height: 1.15;
-  margin-top: 2px;
-  overflow-wrap: break-word;
+  display: none !important;
 }
 
 /* Numeric Habit Day Cell */
@@ -5344,7 +5338,7 @@ body.theme-dark {
 
 /* Dark Theme for Advanced Habits */
 .app-frame.theme-dark .habit-sub-badge {
-  color: #94a3b8;
+  display: none !important;
 }
 
 .app-frame.theme-dark .habit-check-btn.is-numeric {
