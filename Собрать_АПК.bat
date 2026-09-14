@@ -1,21 +1,23 @@
 @echo off
 chcp 65001 >nul
-title Сборка APK Plan4U для Жены (с полной историей)
+title Сборка APK Plan4U
 echo ====================================================================
-echo      СБОРКА АПК PLAN4U: ДЛЯ ЖЕНЫ (С ИСТОРИЕЙ ЗА 149 ДНЕЙ)
+echo                   СБОРКА АПК PLAN4U
 echo ====================================================================
 echo.
-echo 1. Установка пресета жены...
-copy /Y "presets\habits_wife.js" "initial_habits.js" >nul
-copy /Y "presets\habits_wife.js" "www\initial_habits.js" >nul
+echo 1. Синхронизация файлов в папку www...
 copy /Y "index.html" "www\index.html" >nul
 copy /Y "style.css" "www\style.css" >nul
 copy /Y "app.js" "www\app.js" >nul
 copy /Y "i18n.js" "www\i18n.js" >nul
+copy /Y "initial_habits.js" "www\initial_habits.js" >nul
 copy /Y "cycle_tracker.js" "www\cycle_tracker.js" >nul
-echo [OK] Пресет жены активен.
+copy /Y "maine_quests.js" "www\maine_quests.js" >nul
+copy /Y "maine_quests_data.js" "www\maine_quests_data.js" >nul
+copy /Y "sw.js" "www\sw.js" >nul
+echo [OK] Файлы www синхронизированы.
 echo.
-echo 2. Синхронизация веб-ресурсов в Android проект (Capacitor)...
+echo 2. Синхронизация с Android проектом (Capacitor)...
 call npx cap sync android
 echo.
 echo 3. Компиляция APK через Gradle...
@@ -27,14 +29,9 @@ cd /d "%~dp0"
 echo.
 if exist "android\app\build\outputs\apk\debug\app-debug.apk" (
     copy /Y "android\app\build\outputs\apk\debug\app-debug.apk" "Plan4U.apk" >nul
-    copy /Y "android\app\build\outputs\apk\debug\app-debug.apk" "Plan4U_Lercha.apk" >nul
-    if exist "%USERPROFILE%\Desktop\Habits" (
-        copy /Y "android\app\build\outputs\apk\debug\app-debug.apk" "%USERPROFILE%\Desktop\Habits\Plan4U.apk" >nul
-    )
     echo ====================================================================
-    echo  [УСПЕХ] АПК ДЛЯ ЖЕНЫ УСПЕШНО СОБРАН:
-    echo  Файл: Plan4U.apk (в папке ToDoLercha на рабочем столе)
-    echo  При первом запуске на телефоне откроются все 7 привычек и вся история!
+    echo  [УСПЕХ] АПК УСПЕШНО СОБРАН:
+    echo  Файл: Plan4U.apk (в папке ToDoLercha)
     echo ====================================================================
 ) else (
     echo [ОШИБКА] Не удалось найти собранный app-debug.apk
