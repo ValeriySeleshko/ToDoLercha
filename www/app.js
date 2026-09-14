@@ -3323,8 +3323,7 @@ class NotebookApp {
   // Load habits from LocalStorage & Plan4UStorage with normalization
   loadHabits() {
     let habitsList = [];
-    const activePresetId = window.INITIAL_HABITS_ID || 'clean_v1';
-    const lastPresetLoaded = localStorage.getItem('plan4u_habits_preset_id');
+    const activePresetId = window.INITIAL_HABITS_ID || 'public_v1';
 
     try {
       const saved = localStorage.getItem('plan4u_habits') || localStorage.getItem('plan4u_habits.json');
@@ -3339,44 +3338,34 @@ class NotebookApp {
     // Check if habits list contains old mock placeholders from early prototypes
     const isOldDefault = habitsList.some(h => h.id === 'h_read' || h.id === 'h_meditate');
 
-    // Auto-recovery: if active preset is wife_v1 and habits were accidentally overwritten by
-    // the 2 default starter habits ('h_water' and 'h_sport') due to an APK update mismatch bug,
-    // restore the wife's full preset.
-    const isAccidentalCleanDefault = (
-      activePresetId === 'wife_v1' &&
-      habitsList.length === 2 &&
-      habitsList.every(h => h.id === 'h_water' || h.id === 'h_sport')
-    );
-
-    // Initial habits apply ONLY on fresh install, ancient mock data, or accidental clean bug recovery.
-    // Existing user habits are NEVER wiped or overwritten on APK updates!
-    if (window.INITIAL_HABITS && Array.isArray(window.INITIAL_HABITS) && window.INITIAL_HABITS.length > 0) {
-      if (!habitsList.length || isOldDefault || isAccidentalCleanDefault) {
+    // Initial starter habits apply ONLY on brand-new clean installs or ancient prototypes.
+    // Existing user habits (including updates on device) are NEVER wiped, reset, or overwritten!
+    if (!habitsList || habitsList.length === 0 || isOldDefault) {
+      if (window.INITIAL_HABITS && Array.isArray(window.INITIAL_HABITS) && window.INITIAL_HABITS.length > 0) {
         habitsList = JSON.parse(JSON.stringify(window.INITIAL_HABITS));
-        localStorage.setItem('plan4u_habits', JSON.stringify(habitsList));
-        localStorage.setItem('plan4u_habits_preset_id', activePresetId);
+      } else {
+        // Clean public 2 habits baseline: Water & Steps
+        habitsList = [
+          {
+            id: 'h_water',
+            title: '💧 Пить 2л воды',
+            type: 'numeric',
+            target: { value: 2, unit: 'л', step: 0.2 },
+            schedule: { type: 'daily' },
+            history: {}
+          },
+          {
+            id: 'h_steps',
+            title: '🚶 10 000 шагов',
+            type: 'numeric',
+            target: { value: 10000, unit: 'шагов', step: 1000 },
+            schedule: { type: 'daily' },
+            history: {}
+          }
+        ];
       }
-    } else if (!habitsList || habitsList.length === 0 || isOldDefault) {
-      // Clean 2 habits baseline for store/personal use
-      habitsList = [
-        {
-          id: 'h_water',
-          title: '💧 Пить 2л воды',
-          type: 'numeric',
-          target: { value: 2, unit: 'л', step: 0.2 },
-          schedule: { type: 'daily' },
-          history: {}
-        },
-        {
-          id: 'h_sport',
-          title: '🏃 Зарядка',
-          type: 'boolean',
-          schedule: { type: 'daily' },
-          history: {}
-        }
-      ];
       localStorage.setItem('plan4u_habits', JSON.stringify(habitsList));
-      localStorage.setItem('plan4u_habits_preset_id', 'clean_v1');
+      localStorage.setItem('plan4u_habits_preset_id', activePresetId);
     }
 
     // Normalize each habit to support new schema while keeping backwards compatibility
@@ -9419,7 +9408,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.3.5',
+      appVersion: '0.3.6',
       email: this.cloudEmail,
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
@@ -9678,7 +9667,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.3.5',
+      appVersion: '0.3.6',
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
       sections: this.tabSections || {},

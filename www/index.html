@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bad+Script&family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700;800;900&family=Marck+Script&family=Neucha&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&family=Roboto+Slab:wght@400;600;700;900&display=auto" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=0.5.0">
+  <link rel="stylesheet" href="style.css?v=0.5.1">
   <script>
     (function() {
       try {
@@ -1103,7 +1103,7 @@
           </div>
 
           <div style="text-align: center; font-size: 11px; color: #94a3b8; margin-top: 12px; font-weight: 600; letter-spacing: 0.3px;" data-i18n="app_version_footer">
-            Plan4U • Версия 0.3.5
+            Plan4U • Версия 0.3.6
           </div>
           <div style="margin-top: 8px; text-align: center;">
             <button type="button" id="btnForceCacheReset" style="background: none; border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 8px; font-size: 11px; color: #64748b; padding: 5px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">🔄 Сбросить кэш и обновить</button>
@@ -1678,12 +1678,12 @@
     </main>
   </div>
 
-  <script src="i18n.js?v=0.5.0"></script>
-  <script src="maine_quests_data.js?v=0.5.0"></script>
-  <script src="maine_quests.js?v=0.5.0"></script>
-  <script src="initial_habits.js?v=0.5.0"></script>
-  <script src="cycle_tracker.js?v=0.5.0"></script>
-  <script src="app.js?v=0.5.0"></script>
+  <script src="i18n.js?v=0.5.1"></script>
+  <script src="maine_quests_data.js?v=0.5.1"></script>
+  <script src="maine_quests.js?v=0.5.1"></script>
+  <script src="initial_habits.js?v=0.5.1"></script>
+  <script src="cycle_tracker.js?v=0.5.1"></script>
+  <script src="app.js?v=0.5.1"></script>
   <script>
     if ('serviceWorker' in navigator) {
       if (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || window.Capacitor) {
@@ -1702,7 +1702,7 @@
           }
         });
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js?v=0.5.0').then(reg => {
+          navigator.serviceWorker.register('./sw.js?v=0.5.1').then(reg => {
             reg.update();
           }).catch(err => {
             console.log('SW registration skipped:', err);
