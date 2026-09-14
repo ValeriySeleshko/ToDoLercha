@@ -12,6 +12,7 @@ copy /Y "index.html" "www\index.html" >nul
 copy /Y "style.css" "www\style.css" >nul
 copy /Y "app.js" "www\app.js" >nul
 copy /Y "i18n.js" "www\i18n.js" >nul
+copy /Y "cycle_tracker.js" "www\cycle_tracker.js" >nul
 echo [OK] Пресет жены активен.
 echo.
 echo 2. Синхронизация веб-ресурсов в Android проект (Capacitor)...

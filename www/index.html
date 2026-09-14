@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bad+Script&family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700;800;900&family=Marck+Script&family=Neucha&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&family=Roboto+Slab:wght@400;600;700;900&display=auto" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=0.1.7">
+  <link rel="stylesheet" href="style.css?v=0.4.8">
   <script>
     (function() {
       try {
@@ -79,6 +79,12 @@
           </svg>
         </button>
 
+        <!-- Widget: Cycle Tracker (Optional / Women's health) -->
+        <button class="widget-circle widget-cycle" id="widgetCycle" title="Женский календарь" aria-label="Женский календарь" style="display: none;">
+          <span class="widget-cycle-icon">🍒</span>
+          <span class="widget-cycle-day" id="widgetCycleDay">--</span>
+        </button>
+
         <!-- Widget 5: Settings Gear -->
         <button class="widget-circle" id="widgetSettings" title="Настройки" aria-label="Настройки">
           <svg class="gear-icon" viewBox="0 0 24 24" fill="none" stroke="#4a4e57" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -95,7 +101,7 @@
           <!-- Add Habit Button Slot (left 1/3) -->
           <div class="habit-add-slot" id="habitAddSlot">
             <button class="btn-add-habit" id="btnAddHabit" type="button" title="Добавить привычку в трекер" aria-label="Добавить привычку" data-i18n-title="habit_btn_add_title" data-i18n-aria="habit_btn_add_aria">
-              <svg class="plus-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round">
+              <svg class="plus-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--primary-magenta)" stroke-width="5.2" stroke-linecap="round">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
               </svg>
@@ -197,12 +203,21 @@
         </div>
       </section>
 
-      <!-- Floating Return to Today Button (Appears only on past archive days) -->
+      <!-- Floating Return to Today & Day Navigation Bar (Archive Past Days & Future Days) -->
       <div class="past-day-return-wrapper" id="pastDayReturnWrapper" style="display: none;">
-        <button class="past-day-return-btn" id="pastDayReturnBtn" type="button" aria-label="Вернуться в Сегодня">
-          <span class="past-day-return-icon">📅</span>
-          <span class="past-day-return-text" id="pastDayReturnText">Вернуться в Сегодня</span>
-        </button>
+        <div class="past-day-return-label" id="pastDayReturnLabel"></div>
+        <div class="past-day-return-row">
+          <button class="past-day-nav-btn past-day-nav-prev" id="pastDayNavPrev" type="button" title="День назад" aria-label="День назад">
+            ◀
+          </button>
+          <button class="past-day-return-btn" id="pastDayReturnBtn" type="button" aria-label="Вернуться в Сегодня">
+            <span class="past-day-return-icon">📅</span>
+            <span class="past-day-return-text" id="pastDayReturnText">Вернуться в Сегодня</span>
+          </button>
+          <button class="past-day-nav-btn past-day-nav-next" id="pastDayNavNext" type="button" title="День вперёд" aria-label="День вперёд">
+            ▶
+          </button>
+        </div>
       </div>
 
       <!-- Floating Stickers Button (Round, Centered Bottom on same line with + and Cat) -->
@@ -587,6 +602,51 @@
               </div>
             </div>
 
+            <!-- Habit Reminder (Напоминание ⏰) -->
+            <div class="form-group habit-reminder-group">
+              <div class="habit-reminder-header">
+                <label for="habitReminderToggle" class="habit-reminder-toggle-label">
+                  <span class="habit-reminder-icon">⏰</span>
+                  <span data-i18n="habit_reminder_label">Напоминание</span>
+                </label>
+                <label class="switch-toggle" style="margin-bottom: 0;">
+                  <input type="checkbox" id="habitReminderToggle">
+                  <span class="slider-round"></span>
+                </label>
+              </div>
+              <div class="habit-reminder-time-box" id="habitReminderTimeBox" style="display: none;">
+                <input type="hidden" id="habitReminderTimeInput" value="09:00">
+                <div class="habit-time-picker-minimal">
+                  <div class="habit-picker-depth-wrap">
+
+                    <!-- Hours Square Pod -->
+                    <div class="habit-picker-square-pod">
+                      <div class="habit-picker-slot-highlight"></div>
+                      <div class="habit-picker-slot-fade-top"></div>
+                      <div class="habit-picker-slot-fade-bottom"></div>
+                      <div class="habit-picker-col" id="habitHoursCol">
+                        <div class="habit-picker-list" id="habitHoursList"></div>
+                      </div>
+                    </div>
+
+                    <!-- Separator -->
+                    <div class="habit-picker-separator">:</div>
+
+                    <!-- Minutes Square Pod -->
+                    <div class="habit-picker-square-pod">
+                      <div class="habit-picker-slot-highlight"></div>
+                      <div class="habit-picker-slot-fade-top"></div>
+                      <div class="habit-picker-slot-fade-bottom"></div>
+                      <div class="habit-picker-col" id="habitMinutesCol">
+                        <div class="habit-picker-list" id="habitMinutesList"></div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Danger Zone (Delete in edit mode) -->
             <div class="modal-danger-zone" id="habitDangerZone" style="display: none; margin-top: 10px;">
               <button type="button" class="btn-danger-block" id="btnDeleteHabitFromModal">
@@ -758,7 +818,7 @@
 
           <div class="settings-content">
             <!-- 1. Язык приложения (Circular Badge & Dropdown Submenu) -->
-            <div class="settings-section">
+            <div class="settings-section settings-section-lang" id="settingsLangSection">
               <div class="setting-row-flex">
                 <div>
                   <div class="settings-section-title" style="margin-bottom: 2px;">🌐 <span data-i18n="settings_language">Язык приложения</span></div>
@@ -943,6 +1003,68 @@
               </button>
             </div>
 
+            <!-- 5.5. Женский календарь и биоритмы -->
+            <div class="settings-section" id="cycleSettingsSection">
+              <div class="settings-section-title">🍒 <span data-i18n="cycle_settings_title">Женский календарь</span></div>
+              
+              <!-- Главный тумблер -->
+              <div class="setting-toggle-row">
+                <div class="setting-toggle-info">
+                  <div class="setting-toggle-label" data-i18n="cycle_toggle_enable">Включить женский календарь</div>
+                  <div class="setting-toggle-desc" data-i18n="cycle_toggle_enable_desc">Учет фаз цикла, энергии и бережное планирование дел</div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="toggleCycleTracker">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <!-- Блок поднастроек (активен когда включен) -->
+              <div id="cycleSubSettings" style="display: none; margin-top: 12px; flex-direction: column; gap: 10px;">
+                <div class="setting-toggle-row">
+                  <div class="setting-toggle-info">
+                    <div class="setting-toggle-label" data-i18n="cycle_toggle_irregular">Цикл нерегулярный (умный режим)</div>
+                    <div class="setting-toggle-desc" data-i18n="cycle_toggle_irregular_desc">Окно вероятности вместо жесткой даты и защита от ложных задержек</div>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="toggleCycleIrregular" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 4px;">
+                  <div class="pattern-size-header">
+                    <label for="cyclePeriodLengthRange" data-i18n="cycle_period_length_label">Длительность менструации</label>
+                    <span class="pattern-size-val" id="cyclePeriodLengthVal">5 дн.</span>
+                  </div>
+                  <input type="range" id="cyclePeriodLengthRange" min="3" max="8" step="1" value="5" class="range-slider">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 4px;">
+                  <div class="pattern-size-header">
+                    <label for="cycleDefaultLengthRange" data-i18n="cycle_default_length_label">Длительность цикла</label>
+                    <span class="pattern-size-val" id="cycleDefaultLengthVal">28 дн.</span>
+                  </div>
+                  <input type="range" id="cycleDefaultLengthRange" min="20" max="45" step="1" value="28" class="range-slider">
+                </div>
+
+                <div class="setting-toggle-row">
+                  <div class="setting-toggle-info">
+                    <div class="setting-toggle-label" data-i18n="cycle_toggle_widget">Виджет в шапке блокнота</div>
+                    <div class="setting-toggle-desc" data-i18n="cycle_toggle_widget_desc">Показывать день цикла и статус рядом с датой</div>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="toggleCycleWidget" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+
+                <button type="button" class="btn-primary-block" id="btnOpenCycleFromSettings" style="margin-top: 6px; background: linear-gradient(135deg, #ec4899, #db2777); color: #fff; font-weight: 700; border: none; border-radius: 10px; padding: 10px 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; box-shadow: 0 3px 10px rgba(219, 39, 119, 0.25);">
+                  <span data-i18n="cycle_open_btn">🍒 Открыть календарь цикла</span>
+                </button>
+              </div>
+            </div>
+
             <!-- 6. Google Диск и резервное копирование -->
             <div class="settings-section">
               <div class="settings-section-title">☁️ <span data-i18n="settings_backup">Google Диск и бэкап</span></div>
@@ -981,7 +1103,7 @@
           </div>
 
           <div style="text-align: center; font-size: 11px; color: #94a3b8; margin-top: 12px; font-weight: 600; letter-spacing: 0.3px;" data-i18n="app_version_footer">
-            Plan4U • Версия 0.1.3
+            Plan4U • Версия 0.2.0
           </div>
 
           <div class="modal-actions" style="margin-top: 10px;">
@@ -1033,6 +1155,17 @@
               </div>
             </div>
 
+            <!-- Cycle Info Strip inside Calendar (when enabled) -->
+            <div class="calendar-cycle-strip" id="calendarCycleStrip" style="display: none;">
+              <div class="calendar-cycle-strip-left">
+                <span class="cycle-strip-pill" id="calendarCyclePill">🍒 День 14</span>
+                <span class="cycle-strip-desc" id="calendarCycleDesc">Фолликулярная фаза</span>
+              </div>
+              <button type="button" class="btn-calendar-cycle-shortcut" id="btnCalendarCycleShortcut" title="Управление циклом">
+                <span>🍒</span>
+              </button>
+            </div>
+
             <!-- Quick Action Buttons -->
             <div class="calendar-actions-row">
               <button type="button" class="btn-calendar-today" id="calendarTodayBtn">
@@ -1042,6 +1175,203 @@
                 ✓ Открыть этот день
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cycle Tracker Modal -->
+      <div class="modal-backdrop" id="cycleModalBackdrop" aria-hidden="true">
+        <div class="modal-sheet modal-sheet-scrollable cycle-modal-sheet" role="dialog" aria-modal="true" aria-labelledby="cycleModalTitle">
+          <div class="modal-header cycle-modal-header">
+            <div class="cycle-header-title">
+              <h2>🍒 <span id="cycleModalTitle" data-i18n="cycle_modal_title">Календарь цикла и здоровья</span></h2>
+            </div>
+            <button class="modal-close-btn" id="cycleCloseBtn" aria-label="Закрыть">&times;</button>
+          </div>
+
+          <div class="cycle-modal-content">
+            <!-- Current Status Card -->
+            <div class="cycle-status-card" id="cycleStatusCard">
+              <div class="cycle-status-top">
+                <div class="cycle-day-badge" id="cycleDayBadge">День 1</div>
+                <div class="cycle-phase-pill" id="cyclePhasePill">🍒 Менструальная фаза</div>
+              </div>
+
+              <!-- Visual Cycle Orbit Wheel with Cherry Pin -->
+              <div class="cycle-orbit-box" id="cycleOrbitBox">
+                <div class="cycle-orbit-wheel" id="cycleOrbitWheel">
+                  <svg class="cycle-orbit-svg" viewBox="0 0 120 120" width="116" height="116" aria-hidden="true">
+                    <!-- Background Track -->
+                    <circle cx="60" cy="60" r="46" class="cycle-orbit-bg" />
+                    <!-- 4 Phase Arcs rotated -90deg so Day 1 starts at 12 o'clock -->
+                    <g transform="rotate(-90 60 60)" id="cycleOrbitArcsGroup">
+                      <circle cx="60" cy="60" r="46" class="cycle-orbit-arc arc-menstrual" id="orbitArcMenstrual" />
+                      <circle cx="60" cy="60" r="46" class="cycle-orbit-arc arc-follicular" id="orbitArcFollicular" />
+                      <circle cx="60" cy="60" r="46" class="cycle-orbit-arc arc-ovulation" id="orbitArcOvulation" />
+                      <circle cx="60" cy="60" r="46" class="cycle-orbit-arc arc-luteal" id="orbitArcLuteal" />
+                    </g>
+                  </svg>
+
+                  <!-- Center Orbit Day Counter -->
+                  <div class="cycle-orbit-center" id="cycleOrbitCenter">
+                    <div class="cycle-orbit-day-num" id="cycleOrbitDayNum">1</div>
+                    <div class="cycle-orbit-day-label" id="cycleOrbitDayLabel">день</div>
+                    <div class="cycle-orbit-total-label" id="cycleOrbitTotalLabel">из 28</div>
+                  </div>
+
+                  <!-- Pointer Arm with Cherry -->
+                  <div class="cycle-orbit-pointer-arm" id="cycleOrbitPointerArm">
+                    <div class="cycle-orbit-cherry-pin" id="cycleOrbitCherryPin" title="Сегодня">🍒</div>
+                  </div>
+                </div>
+
+                <!-- Mini 4-Phase Legend -->
+                <div class="cycle-orbit-legend" id="cycleOrbitLegend">
+                  <span class="orbit-legend-item legend-menstrual">
+                    <span class="orbit-legend-dot"></span>
+                    <span class="orbit-legend-text" id="legendTextMenstrual">Отдых</span>
+                  </span>
+                  <span class="orbit-legend-item legend-follicular">
+                    <span class="orbit-legend-dot"></span>
+                    <span class="orbit-legend-text" id="legendTextFollicular">Подъём</span>
+                  </span>
+                  <span class="orbit-legend-item legend-ovulation">
+                    <span class="orbit-legend-dot"></span>
+                    <span class="orbit-legend-text" id="legendTextOvulation">Пик</span>
+                  </span>
+                  <span class="orbit-legend-item legend-luteal">
+                    <span class="orbit-legend-dot"></span>
+                    <span class="orbit-legend-text" id="legendTextLuteal">Уют</span>
+                  </span>
+                </div>
+              </div>
+
+              <!-- Productivity & Bio Advice -->
+              <div class="cycle-advice-box" id="cycleAdviceBox">
+                <div class="cycle-advice-header">
+                  <span class="cycle-energy-tag" id="cycleEnergyTag">🔋 Энергия растёт</span>
+                </div>
+                <div class="cycle-advice-text" id="cycleAdviceText">
+                  Совет по планированию дел на сегодня...
+                </div>
+              </div>
+
+              <!-- Prediction Window Info -->
+              <div class="cycle-prediction-box" id="cyclePredictionBox">
+                <div class="cycle-prediction-label" id="cyclePredictionLabel">Ожидаемое начало:</div>
+                <div class="cycle-prediction-value" id="cyclePredictionValue">--</div>
+                <div class="cycle-prediction-sub" id="cyclePredictionSub">Окно вероятности рассчитано по вашей истории</div>
+              </div>
+            </div>
+
+            <!-- Fast Action Buttons -->
+            <div class="cycle-actions-grid">
+              <button type="button" class="cycle-action-btn btn-cycle-start" id="btnCycleStartToday">
+                <span class="cycle-action-icon">🩸</span>
+                <span class="cycle-action-text" data-i18n="cycle_btn_start_today">Сегодня начались</span>
+              </button>
+              <button type="button" class="cycle-action-btn btn-cycle-ovulation" id="btnCycleOvulationToday">
+                <span class="cycle-action-icon">✨</span>
+                <span class="cycle-action-text" data-i18n="cycle_btn_ovulation_today">Замечена овуляция</span>
+              </button>
+              <button type="button" class="cycle-action-btn btn-cycle-manual" id="btnCycleAddManual">
+                <span class="cycle-action-icon">➕</span>
+                <span class="cycle-action-text" data-i18n="cycle_btn_add_manual">+ Добавить запись</span>
+              </button>
+            </div>
+
+            <!-- Cycle History Section -->
+            <div class="cycle-history-section">
+              <div class="cycle-history-header">
+                <h3 data-i18n="cycle_history_title">История циклов</h3>
+                <span class="cycle-history-count" id="cycleHistoryCount">0 записей</span>
+              </div>
+              <div class="cycle-history-list" id="cycleHistoryList">
+                <!-- Dynamically populated list of past cycles -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add/Edit Cycle Record Modal -->
+      <div class="modal-backdrop confirmation-backdrop" id="cycleAddModalBackdrop" aria-hidden="true">
+        <div class="modal-sheet cycle-add-sheet" role="dialog" aria-modal="true">
+          <div class="modal-header cycle-add-header">
+            <div class="cycle-add-header-title">
+              <span class="cycle-add-header-icon">🍒</span>
+              <h3 id="cycleAddModalTitle" data-i18n="cycle_add_modal_title">Запись цикла</h3>
+            </div>
+            <button class="modal-close-btn" id="cycleAddCloseBtn" aria-label="Закрыть">&times;</button>
+          </div>
+          
+          <div class="cycle-add-form">
+            <!-- 1. Dates Period Card -->
+            <div class="cycle-form-card cycle-dates-card">
+              <div class="cycle-card-header">
+                <div class="cycle-card-label">
+                  <span class="cycle-card-icon">🩸</span>
+                  <span data-i18n="cycle_form_period_title">Период менструации</span>
+                </div>
+                <span class="cycle-duration-pill" id="cycleFormDurationBadge">✨ 5 дн.</span>
+              </div>
+              <div class="cycle-dates-row">
+                <div class="cycle-date-col">
+                  <label for="cycleInputStartDate" class="cycle-field-label">
+                    <span class="field-icon">📅</span>
+                    <span data-i18n="cycle_field_start_date">Дата начала</span>
+                  </label>
+                  <input type="date" id="cycleInputStartDate" class="cycle-date-input">
+                </div>
+                <div class="cycle-dates-divider">➔</div>
+                <div class="cycle-date-col">
+                  <label for="cycleInputEndDate" class="cycle-field-label">
+                    <span class="field-icon">🏁</span>
+                    <span data-i18n="cycle_field_end_date">Дата окончания</span>
+                  </label>
+                  <input type="date" id="cycleInputEndDate" class="cycle-date-input">
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Outlier / Anomaly Toggle Card -->
+            <div class="cycle-form-card cycle-outlier-card">
+              <div class="cycle-outlier-info">
+                <div class="cycle-outlier-title-row">
+                  <span class="cycle-outlier-icon">🌿</span>
+                  <span class="cycle-outlier-title" data-i18n="cycle_field_outlier_title">Сбой или стресс</span>
+                </div>
+                <div class="cycle-outlier-desc" data-i18n="cycle_field_outlier_desc">Исключить из расчёта будущих прогнозов</div>
+              </div>
+              <label class="toggle-switch cycle-outlier-toggle" for="cycleInputIsOutlier">
+                <input type="checkbox" id="cycleInputIsOutlier">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <!-- 3. Notes Card -->
+            <div class="cycle-form-card cycle-notes-card">
+              <label for="cycleInputNotes" class="cycle-field-label">
+                <span class="field-icon">📝</span>
+                <span data-i18n="cycle_field_notes_label">Заметки о самочувствии</span>
+              </label>
+              <input type="text" id="cycleInputNotes" class="cycle-notes-input" placeholder="Например: простуда, перелёт, самочувствие...">
+            </div>
+
+            <!-- 4. Main Actions -->
+            <div class="cycle-add-actions">
+              <button type="button" class="cycle-btn-modal-cancel" id="cycleAddCancelBtn" data-i18n="cycle_btn_cancel">Отмена</button>
+              <button type="button" class="cycle-btn-modal-save" id="cycleAddSaveBtn">
+                <span class="btn-save-icon">✨</span>
+                <span data-i18n="cycle_btn_save">Сохранить</span>
+              </button>
+            </div>
+
+            <!-- 5. Delete Button (Edit Mode Only) -->
+            <button type="button" class="btn-cycle-modal-delete" id="cycleAddDeleteBtn" style="display: none;">
+              <span>🗑️</span>
+              <span data-i18n="cycle_btn_delete">Удалить эту запись</span>
+            </button>
           </div>
         </div>
       </div>
@@ -1345,25 +1675,30 @@
     </main>
   </div>
 
-  <script src="i18n.js?v=0.1.7"></script>
-  <script src="maine_quests_data.js?v=0.1.7"></script>
-  <script src="maine_quests.js?v=0.1.7"></script>
-  <script src="initial_habits.js?v=0.1.7"></script>
-  <script src="app.js?v=0.1.7"></script>
+  <script src="i18n.js?v=0.2.0"></script>
+  <script src="maine_quests_data.js?v=0.2.0"></script>
+  <script src="maine_quests.js?v=0.2.0"></script>
+  <script src="initial_habits.js?v=0.2.0"></script>
+  <script src="cycle_tracker.js?v=0.2.0"></script>
+  <script src="app.js?v=0.4.8"></script>
   <script>
-    if ('serviceWorker' in navigator && !window.Capacitor) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=0.1.7').then(reg => {
-          reg.update();
-        }).catch(err => {
-          console.log('SW registration skipped:', err);
+    if ('serviceWorker' in navigator) {
+      if (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || window.Capacitor) {
+        navigator.serviceWorker.getRegistrations().then(regs => {
+          regs.forEach(reg => reg.unregister());
+        }).catch(() => {});
+        if (window.caches) {
+          caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).catch(() => {});
+        }
+      } else {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js?v=0.4.8').then(reg => {
+            reg.update();
+          }).catch(err => {
+            console.log('SW registration skipped:', err);
+          });
         });
-      });
-    } else if (window.Capacitor && 'serviceWorker' in navigator) {
-      // In native Android app, unregister legacy Service Workers so assets are always fresh
-      navigator.serviceWorker.getRegistrations().then(regs => {
-        regs.forEach(reg => reg.unregister());
-      }).catch(() => {});
+      }
     }
   </script>
 </body>

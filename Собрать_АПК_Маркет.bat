@@ -12,6 +12,7 @@ copy /Y "index.html" "www\index.html" >nul
 copy /Y "style.css" "www\style.css" >nul
 copy /Y "app.js" "www\app.js" >nul
 copy /Y "i18n.js" "www\i18n.js" >nul
+copy /Y "cycle_tracker.js" "www\cycle_tracker.js" >nul
 echo [OK] Чистый пресет активен.
 echo.
 echo 2. Синхронизация веб-ресурсов в Android проект (Capacitor)...
@@ -33,5 +34,10 @@ if exist "android\app\build\outputs\apk\debug\app-debug.apk" (
 ) else (
     echo [ОШИБКА] Не удалось найти собранный app-debug.apk
 )
+echo.
+echo 4. Возврат рабочей директории на пресет жены...
+copy /Y "presets\habits_wife.js" "initial_habits.js" >nul
+copy /Y "presets\habits_wife.js" "www\initial_habits.js" >nul
+echo [OK] Пресет жены восстановлен в рабочей директории.
 echo.
 pause

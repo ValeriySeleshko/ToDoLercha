@@ -38,9 +38,15 @@ function triggerHaptic(pattern = 20) {
   } catch (e) { }
 }
 
-// Lightweight Vanilla Canvas Confetti & Stars Salute (~45 lines, zero dependencies)
+// Spectacular City Day Multi-Volley Pyrotechnic Salute (~10 choreographed bursts of varying power, height, and beauty)
 function launchConfetti() {
   try {
+    // Clear any existing active firework timeouts
+    if (window._confettiTimeouts && Array.isArray(window._confettiTimeouts)) {
+      window._confettiTimeouts.forEach(t => clearTimeout(t));
+    }
+    window._confettiTimeouts = [];
+
     let canvas = document.getElementById('confettiCanvas');
     if (!canvas) {
       canvas = document.createElement('canvas');
@@ -52,86 +58,234 @@ function launchConfetti() {
     if (!ctx) return;
 
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const w = window.innerWidth;
-    const h = window.innerHeight;
+    let w = window.innerWidth;
+    let h = window.innerHeight;
     canvas.width = w * dpr;
     canvas.height = h * dpr;
     ctx.scale(dpr, dpr);
 
-    const colors = ['#FF4D80', '#FFB703', '#06D6A0', '#118AB2', '#8338EC', '#FF6B6B', '#FFD166', '#48CAE4', '#F72585'];
     const particles = [];
-    const count = 75;
+    const flashes = [];
+    let isRunning = true;
 
-    for (let i = 0; i < count; i++) {
-      const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.15;
-      const speed = Math.random() * 11 + 13;
-      particles.push({
-        x: w * (0.35 + Math.random() * 0.3),
-        y: h + 10,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        gravity: 0.42,
-        drag: 0.985,
-        size: Math.random() * 7 + 6,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        rotation: Math.random() * Math.PI * 2,
-        rotationSpeed: (Math.random() - 0.5) * 0.25,
-        flip: Math.random() * Math.PI * 2,
-        flipSpeed: Math.random() * 0.2 + 0.1,
-        isStar: Math.random() < 0.35,
-        opacity: 1,
-        decay: Math.random() * 0.008 + 0.008
+    // Rich Festive Color Palettes for varied pyrotechnic flowers
+    const PALETTES = {
+      rubyMagenta: ['#FF007F', '#FF4D80', '#F72585', '#B5179E', '#FFB703', '#FFFFFF'],
+      cyanEmerald: ['#00F5D4', '#06D6A0', '#00BBF9', '#48CAE4', '#90E0EF', '#FFFFFF'],
+      goldImperial: ['#FFD700', '#FFC300', '#FFAA00', '#FFE600', '#FFF3B0', '#FFFFFF', '#FFB703'],
+      sunsetFlame: ['#FF3366', '#FF6B6B', '#FF9E00', '#FFD000', '#FF5400', '#FFFFFF'],
+      violetElectric: ['#7209B7', '#8338EC', '#3A0CA3', '#4CC9F0', '#F72585', '#E0AAFF'],
+      grandFestival: ['#FF0055', '#00F5D4', '#FFD700', '#8338EC', '#06D6A0', '#FF9E00', '#4CC9F0', '#FFFFFF', '#FF3366']
+    };
+
+    // Helper: spawn one firework explosion burst
+    function createBurst(cx, cy, count, palette, options = {}) {
+      const spread = options.spread || 1;
+      const baseSpeed = options.speed || 10;
+      const isGoldenWillow = !!options.goldenWillow;
+
+      // Radiant epicenter flash
+      flashes.push({
+        x: cx,
+        y: cy,
+        radius: 12,
+        maxRadius: 70 * spread,
+        alpha: 0.92,
+        color: palette[0] || '#FFF'
       });
+
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = (Math.random() * 0.85 + 0.15) * baseSpeed * spread;
+        const typeRoll = Math.random();
+        let type = 'rect';
+        if (typeRoll < 0.28) type = 'star';
+        else if (typeRoll < 0.54) type = 'spark';
+        else if (typeRoll < 0.76) type = 'ribbon';
+
+        if (isGoldenWillow && Math.random() < 0.65) {
+          type = 'spark';
+        }
+
+        particles.push({
+          x: cx,
+          y: cy,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed * 0.86,
+          gravity: isGoldenWillow ? 0.13 : (type === 'spark' ? 0.22 : 0.16),
+          drag: isGoldenWillow ? 0.980 : (type === 'spark' ? 0.974 : 0.967),
+          size: type === 'ribbon' ? (Math.random() * 9 + 8) : (type === 'spark' ? (Math.random() * 3 + 2.5) : (Math.random() * 6.5 + 5)),
+          color: palette[Math.floor(Math.random() * palette.length)],
+          rotation: Math.random() * Math.PI * 2,
+          rotationSpeed: (Math.random() - 0.5) * 0.18,
+          flip: Math.random() * Math.PI * 2,
+          flipSpeed: Math.random() * 0.16 + 0.08,
+          sway: Math.random() * Math.PI * 2,
+          swaySpeed: Math.random() * 0.06 + 0.03,
+          swayAmount: Math.random() * 0.4 + 0.2,
+          type: type,
+          opacity: 1,
+          decay: isGoldenWillow ? (Math.random() * 0.0032 + 0.0025) : (Math.random() * 0.0045 + 0.0035),
+          twinkleOffset: Math.random() * 10
+        });
+      }
     }
+
+    // 5 to 10 Choreographed Volleys ("Как на день города" - разная высота, мощность и красота)
+    const volleys = [
+      // 1. Открытие - Средняя высота слева (Ruby Magenta)
+      { delay: 0, x: 0.28, y: 0.38, count: 65, palette: PALETTES.rubyMagenta, speed: 9.5 },
+      // 2. Высокий выстрел справа (Cyan Emerald)
+      { delay: 380, x: 0.74, y: 0.24, count: 75, palette: PALETTES.cyanEmerald, speed: 10.5 },
+      // 3. Золотой пион по центру (Imperial Gold)
+      { delay: 820, x: 0.50, y: 0.42, count: 60, palette: PALETTES.goldImperial, speed: 8.5 },
+      // 4. Высокий фиолетовый салют слева (Electric Violet)
+      { delay: 1320, x: 0.18, y: 0.28, count: 70, palette: PALETTES.violetElectric, speed: 10 },
+      // 5. Яркий залп на закатном пламени справа вверху (Sunset Flame)
+      { delay: 1850, x: 0.82, y: 0.20, count: 75, palette: PALETTES.sunsetFlame, speed: 11 },
+      // 6. Парный синхронный залп по флангам (Emerald + Magenta)
+      { delay: 2450, x: 0.26, y: 0.32, count: 60, palette: PALETTES.cyanEmerald, speed: 9.5 },
+      { delay: 2450, x: 0.74, y: 0.32, count: 60, palette: PALETTES.rubyMagenta, speed: 9.5 },
+      // 7. «Золотая Ива» из самого зенита - медленно струящийся золотой дождь
+      { delay: 3100, x: 0.50, y: 0.16, count: 90, palette: PALETTES.goldImperial, speed: 11.5, goldenWillow: true },
+      // 8. Быстрый дуплет перед кульминацией
+      { delay: 3700, x: 0.36, y: 0.26, count: 65, palette: PALETTES.sunsetFlame, speed: 10 },
+      { delay: 3700, x: 0.64, y: 0.26, count: 65, palette: PALETTES.violetElectric, speed: 10 },
+      // 9. ГРАНД-ФИНАЛ ДНЯ ГОРОДА! Мощный тройной взрыв на всё небо
+      { delay: 4250, x: 0.50, y: 0.22, count: 130, palette: PALETTES.grandFestival, speed: 13.5, spread: 1.25 },
+      { delay: 4250, x: 0.20, y: 0.34, count: 65, palette: PALETTES.goldImperial, speed: 10 },
+      { delay: 4250, x: 0.80, y: 0.34, count: 65, palette: PALETTES.cyanEmerald, speed: 10 }
+    ];
+
+    volleys.forEach(v => {
+      const timer = setTimeout(() => {
+        if (!isRunning) return;
+        w = window.innerWidth;
+        h = window.innerHeight;
+        createBurst(w * v.x, h * v.y, v.count, v.palette, {
+          speed: v.speed,
+          spread: v.spread || 1,
+          goldenWillow: v.goldenWillow
+        });
+      }, v.delay);
+      window._confettiTimeouts.push(timer);
+    });
 
     if (window._confettiAnimId) cancelAnimationFrame(window._confettiAnimId);
 
-    function render() {
-      ctx.clearRect(0, 0, w, h);
-      let alive = 0;
+    let frame = 0;
+    const startTime = Date.now();
 
-      for (let i = 0; i < particles.length; i++) {
+    function render() {
+      const curW = window.innerWidth;
+      const curH = window.innerHeight;
+      if (canvas.width !== curW * dpr || canvas.height !== curH * dpr) {
+        canvas.width = curW * dpr;
+        canvas.height = curH * dpr;
+        ctx.scale(dpr, dpr);
+      }
+      w = curW;
+      h = curH;
+
+      ctx.clearRect(0, 0, w, h);
+      frame++;
+
+      // Рендер вспышек детонации в эпицентрах
+      for (let f = flashes.length - 1; f >= 0; f--) {
+        const fl = flashes[f];
+        fl.radius += (fl.maxRadius - fl.radius) * 0.28;
+        fl.alpha -= 0.085;
+        if (fl.alpha <= 0) {
+          flashes.splice(f, 1);
+          continue;
+        }
+        ctx.save();
+        const grad = ctx.createRadialGradient(fl.x, fl.y, 0, fl.x, fl.y, fl.radius);
+        grad.addColorStop(0, 'rgba(255,255,255,' + (fl.alpha * 0.85) + ')');
+        grad.addColorStop(0.35, fl.color);
+        grad.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(fl.x, fl.y, fl.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      let alive = 0;
+      const pLen = particles.length;
+
+      for (let i = 0; i < pLen; i++) {
         const p = particles[i];
-        if (p.opacity <= 0 || p.y > h + 40) continue;
+        if (p.opacity <= 0 || p.y > h + 50) continue;
         alive++;
 
-        p.x += p.vx;
+        p.x += p.vx + Math.sin(p.sway) * p.swayAmount;
         p.y += p.vy;
         p.vy += p.gravity;
         p.vx *= p.drag;
         p.vy *= p.drag;
+        p.sway += p.swaySpeed;
         p.rotation += p.rotationSpeed;
         p.flip += p.flipSpeed;
-        if (p.vy > 0) p.opacity = Math.max(0, p.opacity - p.decay);
+        p.opacity = Math.max(0, p.opacity - p.decay);
 
         ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate(p.rotation);
-        ctx.scale(1, Math.cos(p.flip));
         ctx.globalAlpha = p.opacity;
-        ctx.fillStyle = p.color;
 
-        if (p.isStar) {
+        if (p.type === 'star') {
+          // Сияющая мерцающая звезда
+          const twinkle = 1 + 0.25 * Math.sin(frame * 0.15 + p.twinkleOffset);
+          const r1 = p.size * twinkle;
+          const r2 = r1 * 0.42;
+          ctx.fillStyle = p.color;
+          ctx.shadowColor = p.color;
+          ctx.shadowBlur = 6;
           ctx.beginPath();
           for (let s = 0; s < 5; s++) {
             const a1 = (s * 4 * Math.PI) / 5 - Math.PI / 2;
             const a2 = a1 + (2 * Math.PI) / 10;
-            const r1 = p.size;
-            const r2 = p.size * 0.45;
             ctx[s === 0 ? 'moveTo' : 'lineTo'](Math.cos(a1) * r1, Math.sin(a1) * r1);
             ctx.lineTo(Math.cos(a2) * r2, Math.sin(a2) * r2);
           }
           ctx.closePath();
           ctx.fill();
+        } else if (p.type === 'spark') {
+          // Искрящийся пиротехнический уголёк с ореолом
+          ctx.shadowColor = p.color;
+          ctx.shadowBlur = 8;
+          ctx.fillStyle = '#FFFFFF';
+          ctx.beginPath();
+          ctx.arc(0, 0, p.size * 0.65, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(0, 0, p.size, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (p.type === 'ribbon') {
+          // Праздничная витая лента-серпантин
+          ctx.scale(Math.sin(p.flip), 1);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size * 0.6, -p.size * 0.2, p.size * 1.2, p.size * 0.4);
         } else {
+          // Порхающее 3D-конфетти
+          ctx.scale(1, Math.cos(p.flip));
+          ctx.fillStyle = p.color;
           ctx.fillRect(-p.size / 2, -p.size / 3, p.size, p.size * 0.65);
         }
+
         ctx.restore();
       }
 
-      if (alive > 0) {
+      // Пока идут залпы (в пределах 5300мс) ИЛИ пока в воздухе есть частицы
+      const elapsed = Date.now() - startTime;
+      const volleysPending = elapsed < 5300;
+
+      if (alive > 0 || volleysPending || flashes.length > 0) {
         window._confettiAnimId = requestAnimationFrame(render);
       } else {
+        isRunning = false;
         ctx.clearRect(0, 0, w, h);
         if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas);
       }
@@ -1535,6 +1689,17 @@ class NotebookApp {
     this.tabs = this.loadTabs();
     this.currentTab = this.tabs.length > 0 ? this.tabs[0].id : 'todo';
     this.tasks = this.loadTasks();
+    if (this.tasks && this.tasks.todo) {
+      this.tasks.todo = this.tasks.todo.filter(t => !t.text || (!t.text.includes('createElement') && !t.text.includes('error=')));
+    }
+    if (this.dailyTasks) {
+      Object.keys(this.dailyTasks).forEach(d => {
+        if (Array.isArray(this.dailyTasks[d])) {
+          this.dailyTasks[d] = this.dailyTasks[d].filter(t => !t.text || (!t.text.includes('createElement') && !t.text.includes('error=')));
+        }
+      });
+    }
+    this.saveTasks();
     this.rolloverPastUncompletedTasks();
     this.history = this.loadHistory();
     this.stickers = this.loadStickers();
@@ -1559,10 +1724,15 @@ class NotebookApp {
     this.initStickersSystem();
     this.renderTabs();
     this.render();
+    this.renderHabits();
+    this.updateSubstrateTrayHeight(true);
+    this.updateWeekDaysProgress();
     this.updateWorkloadWidget();
+    this.updateCycleWidget();
     this.syncWithNativeWidget();
     this.initDayChangeListener();
     this.scheduleSmartDailyNotifications();
+    this.scheduleAllHabitReminders();
 
     // Initialize Maine Coon Companion (Tamagotchi)
     this.petSystem = new MaineCoonPetSystem(this);
@@ -1676,6 +1846,7 @@ class NotebookApp {
           this.saveHabits();
           this.renderHabits();
           this.updateWeekDaysProgress();
+          this.scheduleAllHabitReminders();
         }
 
         if (hasRestored) {
@@ -1933,24 +2104,47 @@ class NotebookApp {
     this.saveHistory();
   }
 
-  // Track daily visit streaks (requires opening app at least once every 24h)
+  // Helper for ISO week key (e.g. "2026-W37")
+  getISOWeekKey(dateOrStr) {
+    const d = typeof dateOrStr === 'string' ? new Date(dateOrStr + 'T00:00:00') : new Date(dateOrStr);
+    const target = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    const dayNr = target.getUTCDay() || 7;
+    target.setUTCDate(target.getUTCDate() + 4 - dayNr);
+    const yearStart = new Date(Date.UTC(target.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((target - yearStart) / 86400000) + 1) / 7);
+    return `${target.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+  }
+
+  // Track daily visit streaks with 1 Freeze Day ("Выходной ☕") per week
   initStreakTracker() {
     const today = new Date();
-    const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    const todayStr = this.getTodayDateString();
 
-    let streakData = { count: 1, lastVisitDate: todayStr, bestStreak: 1 };
+    let streakData = {
+      count: 15,
+      lastVisitDate: todayStr,
+      bestStreak: 15,
+      lastFreezeDate: null,
+      lastFreezeWeek: null
+    };
+
     try {
       const saved = localStorage.getItem('todo_notebook_daily_streak');
       if (saved) {
-        streakData = JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') {
+          streakData = { ...streakData, ...parsed };
+        }
       }
     } catch (e) {
       console.warn('Could not read streak data:', e);
     }
 
+    let justProtectedByFreeze = false;
+
     if (!streakData.lastVisitDate) {
       streakData.lastVisitDate = todayStr;
-      streakData.count = streakData.count || 1;
+      streakData.count = streakData.count !== undefined ? streakData.count : 15;
       streakData.bestStreak = streakData.bestStreak || streakData.count;
     } else if (streakData.lastVisitDate !== todayStr) {
       // Calculate day difference
@@ -1964,8 +2158,30 @@ class NotebookApp {
         streakData.count = (streakData.count || 0) + 1;
         streakData.lastVisitDate = todayStr;
         streakData.bestStreak = Math.max(streakData.bestStreak || 0, streakData.count);
-      } else if (diffDays > 1) {
-        // Missed at least 1 day -> streak reset to 1
+      } else if (diffDays === 2) {
+        // Missed exactly 1 day (e.g. missed Sunday!)
+        const missedDate = new Date(lastDate.getTime() + 86400000);
+        const missedDateStr = `${missedDate.getFullYear()}-${String(missedDate.getMonth() + 1).padStart(2, '0')}-${String(missedDate.getDate()).padStart(2, '0')}`;
+        const missedWeekKey = this.getISOWeekKey(missedDate);
+
+        // Check if 1 freeze day is available for that week
+        const canFreeze = streakData.lastFreezeWeek !== missedWeekKey;
+
+        if (canFreeze) {
+          // 1 Freeze Day per week ("Выходной ☕") saves the streak!
+          streakData.lastFreezeDate = missedDateStr;
+          streakData.lastFreezeWeek = missedWeekKey;
+          streakData.count = (streakData.count || 1) + 1;
+          streakData.bestStreak = Math.max(streakData.bestStreak || 0, streakData.count);
+          streakData.lastVisitDate = todayStr;
+          justProtectedByFreeze = true;
+        } else {
+          // Already used freeze this week -> streak reset to 1
+          streakData.count = 1;
+          streakData.lastVisitDate = todayStr;
+        }
+      } else if (diffDays > 2) {
+        // Missed 2 or more consecutive days -> streak reset to 1
         streakData.count = 1;
         streakData.lastVisitDate = todayStr;
       }
@@ -1977,6 +2193,14 @@ class NotebookApp {
 
     this.streakData = streakData;
     this.updateStreakWidget();
+
+    // If freeze saved the streak today, show welcoming reassuring toast
+    if (justProtectedByFreeze) {
+      setTimeout(() => {
+        const daysWord = this.getDaysWord(this.streakData.count);
+        this.showToast(`☕ Выходной: день заморозки спас вашу серию в ${this.streakData.count} ${daysWord}! Стрик сохранён ✨`, '☕');
+      }, 900);
+    }
   }
 
   updateStreakWidget() {
@@ -1985,8 +2209,19 @@ class NotebookApp {
       streakNumEl.textContent = this.streakData.count;
     }
     if (this.widgetStreak && this.streakData) {
+      const today = new Date();
+      const currentWeekKey = this.getISOWeekKey(today);
+      const isFreezeUsedThisWeek = (this.streakData.lastFreezeWeek === currentWeekKey);
       const daysWord = this.getDaysWord(this.streakData.count);
-      this.widgetStreak.title = `Беспрерывная серия: ${this.streakData.count} ${daysWord} (Рекорд: ${this.streakData.bestStreak}). Заходите каждый день, чтобы серия продолжалась!`;
+
+      // Show small coffee cup badge on flame widget if freeze was used this week
+      this.widgetStreak.classList.toggle('has-freeze-badge', !!isFreezeUsedThisWeek);
+
+      if (isFreezeUsedThisWeek) {
+        this.widgetStreak.title = `Беспрерывная серия: ${this.streakData.count} ${daysWord} (Выходной ☕ сохранил серию). Рекорд: ${this.streakData.bestStreak}.`;
+      } else {
+        this.widgetStreak.title = `Беспрерывная серия: ${this.streakData.count} ${daysWord} (Доступна заморозка: Выходной ☕). Рекорд: ${this.streakData.bestStreak}.`;
+      }
     }
   }
 
@@ -2463,7 +2698,25 @@ class NotebookApp {
       const dayDow = dayDateObj.getDay(); // 0 is Sun, 1 is Mon...
 
       allHabits.forEach(h => {
+        let hStartStr = null;
+        if (h.created) {
+          const cd = new Date(h.created);
+          if (!isNaN(cd.getTime())) {
+            hStartStr = `${cd.getFullYear()}-${String(cd.getMonth() + 1).padStart(2, '0')}-${String(cd.getDate()).padStart(2, '0')}`;
+          }
+        }
+        if (h.history && typeof h.history === 'object') {
+          const hDates = Object.keys(h.history).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k)).sort();
+          if (hDates.length > 0 && (!hStartStr || hDates[0] < hStartStr)) {
+            hStartStr = hDates[0];
+          }
+        }
+
         const hEntry = h.history && h.history[dateStr];
+        if (hStartStr && dateStr < hStartStr && !hEntry) {
+          return; // Habit did not exist yet on dateStr
+        }
+
         let frac = 0;
         if (h.type === 'numeric') {
           const cur = typeof hEntry === 'object' ? (hEntry.current || 0) : (hEntry ? (h.target?.value || 1) : 0);
@@ -2566,6 +2819,187 @@ class NotebookApp {
     });
   }
 
+  // Cartoon spring transition for the 7 week day circles between closed and open states
+  // (110% overshoot -> 90% undershoot -> 105% rebound -> 100% settle)
+  animateWeekCirclesFLIP(stateChangeCallback) {
+    const circles = Array.from(document.querySelectorAll('.week-days-track .week-day-circle'));
+    if (!circles.length) {
+      if (stateChangeCallback) stateChangeCallback();
+      return;
+    }
+
+    // 1. Capture current visual positions (First)
+    const firstRects = circles.map(c => c.getBoundingClientRect());
+
+    // Cancel any active spring animation on circles
+    circles.forEach(c => {
+      if (c._springAnim) {
+        try { c._springAnim.cancel(); } catch (e) { }
+        c._springAnim = null;
+      }
+      c.classList.remove('is-animating');
+      c.style.transform = '';
+    });
+
+    // 2. Perform DOM state change (toggle .is-expanded, trigger tray spring, etc.)
+    if (stateChangeCallback) {
+      stateChangeCallback();
+    }
+
+    const container = document.getElementById('tabsSubstrateContainer');
+    const isExpanded = container && container.classList.contains('is-expanded');
+
+    // If collapsing: ensure slot inline styles are completely cleared so layout occupies 100% width
+    if (!isExpanded) {
+      const slot = document.getElementById('habitAddSlot');
+      if (slot) {
+        slot.style.removeProperty('width');
+        slot.style.removeProperty('flex');
+        slot.style.removeProperty('max-width');
+        slot.style.removeProperty('padding-right');
+      }
+    }
+
+    // 3. Capture new target positions (Last)
+    const lastRects = circles.map(c => c.getBoundingClientRect());
+
+    if (isExpanded && lastRects.length >= 2) {
+      const targetWidth = this.updateAddHabitButtonWidth(lastRects[0], lastRects[1]);
+      this.playAddHabitButtonEntranceAnimation(targetWidth);
+    }
+
+    // 4. Invert & Play with 4-phase Cartoon Spring Animation
+    let hasMoved = false;
+    const animDuration = 650; // ms
+
+    circles.forEach((c, i) => {
+      const dx = firstRects[i].left - lastRects[i].left;
+      const dy = firstRects[i].top - lastRects[i].top;
+      if (Math.abs(dx) > 0.4 || Math.abs(dy) > 0.4) {
+        hasMoved = true;
+        // Keyframes: 0% -> 110% overshoot -> 90% undershoot -> 105% rebound -> 100% settle
+        // Visual pos = Target + dx * (1 - progress)
+        // progress 0: dx
+        // progress 1.10: -0.10 * dx
+        // progress 0.90: +0.10 * dx
+        // progress 1.045: -0.045 * dx
+        // progress 1.00: 0
+        const keyframes = [
+          { offset: 0.00, transform: `translate3d(${dx}px, ${dy}px, 0)` },
+          { offset: 0.38, transform: `translate3d(${-0.10 * dx}px, ${-0.10 * dy}px, 0)` },
+          { offset: 0.62, transform: `translate3d(${0.10 * dx}px, ${0.10 * dy}px, 0)` },
+          { offset: 0.82, transform: `translate3d(${-0.045 * dx}px, ${-0.045 * dy}px, 0)` },
+          { offset: 1.00, transform: 'translate3d(0, 0, 0)' }
+        ];
+
+        c._springAnim = c.animate(keyframes, {
+          duration: animDuration,
+          easing: 'cubic-bezier(0.2, 0.8, 0.25, 1)',
+          fill: 'forwards'
+        });
+
+        c._springAnim.onfinish = () => {
+          c.style.transform = '';
+          try { c._springAnim.cancel(); } catch (e) { }
+          c._springAnim = null;
+        };
+      } else {
+        c.style.transform = '';
+      }
+    });
+
+    // Fallback safety timeout
+    clearTimeout(this._circlesFlipTimer);
+    this._circlesFlipTimer = setTimeout(() => {
+      circles.forEach(c => {
+        if (!c._springAnim) {
+          c.style.transform = '';
+        }
+      });
+      const cont = document.getElementById('tabsSubstrateContainer');
+      if (cont && cont.classList.contains('is-expanded')) {
+        this.updateAddHabitButtonWidth();
+      } else if (cont) {
+        const slot = document.getElementById('habitAddSlot');
+        if (slot) {
+          slot.style.removeProperty('width');
+          slot.style.removeProperty('flex');
+          slot.style.removeProperty('max-width');
+          slot.style.removeProperty('padding-right');
+        }
+      }
+    }, animDuration + 50);
+  }
+
+  // Cartoon spring animation for the habit drawer (#substrateTray)
+  // (110% overshoot -> 90% undershoot -> 105% rebound -> 100% settle)
+  animateSubstrateTraySpring(targetState, targetHeight) {
+    const tray = document.getElementById('substrateTray');
+    if (!tray) return;
+
+    if (tray._springAnim) {
+      try { tray._springAnim.cancel(); } catch (e) { }
+      tray._springAnim = null;
+    }
+
+    const H = Math.max(targetHeight || 0, 52);
+    const animDuration = 650; // ms, matching circles spring
+
+    if (targetState) {
+      // Opening: 0px -> 110% overshoot -> 90% undershoot -> 105% rebound -> 100% settle
+      const keyframes = [
+        { offset: 0.00, height: '0px', opacity: 0.3 },
+        { offset: 0.38, height: `${Math.round(H * 1.10)}px`, opacity: 1 },
+        { offset: 0.62, height: `${Math.round(H * 0.90)}px`, opacity: 1 },
+        { offset: 0.82, height: `${Math.round(H * 1.045)}px`, opacity: 1 },
+        { offset: 1.00, height: `${H}px`, opacity: 1 }
+      ];
+
+      tray.style.pointerEvents = 'auto';
+      tray.setAttribute('aria-hidden', 'false');
+
+      tray._springAnim = tray.animate(keyframes, {
+        duration: animDuration,
+        easing: 'cubic-bezier(0.2, 0.8, 0.25, 1)',
+        fill: 'forwards'
+      });
+
+      tray._springAnim.onfinish = () => {
+        tray.style.height = '';
+        tray.style.opacity = '';
+        try { tray._springAnim.cancel(); } catch (e) { }
+        tray._springAnim = null;
+      };
+    } else {
+      // Closing: currentH -> 0px -> 10% bounce -> 0px -> 3% micro-bounce -> 0px
+      const currentH = tray.offsetHeight || H;
+      const keyframes = [
+        { offset: 0.00, height: `${currentH}px`, opacity: 1 },
+        { offset: 0.38, height: '0px', opacity: 0.3 },
+        { offset: 0.62, height: `${Math.max(0, Math.round(currentH * 0.10))}px`, opacity: 0.6 },
+        { offset: 0.82, height: '0px', opacity: 0.1 },
+        { offset: 0.92, height: `${Math.max(0, Math.round(currentH * 0.03))}px`, opacity: 0.2 },
+        { offset: 1.00, height: '0px', opacity: 0 }
+      ];
+
+      tray.style.pointerEvents = 'none';
+      tray.setAttribute('aria-hidden', 'true');
+
+      tray._springAnim = tray.animate(keyframes, {
+        duration: animDuration,
+        easing: 'cubic-bezier(0.2, 0.8, 0.25, 1)',
+        fill: 'forwards'
+      });
+
+      tray._springAnim.onfinish = () => {
+        tray.style.height = '';
+        tray.style.opacity = '';
+        try { tray._springAnim.cancel(); } catch (e) { }
+        tray._springAnim = null;
+      };
+    }
+  }
+
   // Toggle substrate drawer: slide tabs and tasks down to reveal habit tracker
   toggleSubstrateDrawer(forceState, isSilent = false) {
     const container = document.getElementById('tabsSubstrateContainer');
@@ -2578,33 +3012,45 @@ class NotebookApp {
       triggerHaptic(20);
     }
 
+    let targetHeight = 0;
+    const tray = document.getElementById('substrateTray');
+
     if (targetState) {
       this._substrateDrawerOpenedAt = Date.now();
-      // Render habits and update height only if dirty or empty to ensure instantaneous 60fps opening
       const habitsList = document.getElementById('habitsListContainer');
       const hasContent = habitsList && habitsList.children.length > 0;
       if (this._habitsDirty || !hasContent) {
         this.renderHabits();
-        this.updateSubstrateTrayHeight();
       }
+      targetHeight = this.updateSubstrateTrayHeight(true);
     } else {
       this._substrateDrawerOpenedAt = 0;
       this.closeAddHabitInput();
+      if (tray) {
+        targetHeight = tray.offsetHeight || parseFloat(container.style.getPropertyValue('--substrate-tray-height')) || 120;
+      }
     }
 
-    const isExpanded = container.classList.toggle('is-expanded', targetState);
+    this.animateWeekCirclesFLIP(() => {
+      const isExpanded = container.classList.toggle('is-expanded', targetState);
 
-    if (this.weekDaysBar) {
-      this.weekDaysBar.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
-      this.weekDaysBar.classList.toggle('is-expanded', isExpanded);
-    }
-    if (this.weekDaysTrack) {
-      this.weekDaysTrack.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
-    }
-    const tray = document.getElementById('substrateTray');
-    if (tray) {
-      tray.setAttribute('aria-hidden', isExpanded ? 'false' : 'true');
-    }
+      if (this.weekDaysBar) {
+        this.weekDaysBar.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+        this.weekDaysBar.classList.toggle('is-expanded', isExpanded);
+      }
+      if (this.weekDaysTrack) {
+        this.weekDaysTrack.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+      }
+      if (tray) {
+        tray.setAttribute('aria-hidden', isExpanded ? 'false' : 'true');
+      }
+
+      if (!isExpanded) {
+        this.resetAddHabitButtonAnimation();
+      }
+
+      this.animateSubstrateTraySpring(targetState, targetHeight);
+    });
   }
 
   // Helper to cleanly collapse substrate drawer back to original state
@@ -2613,10 +3059,10 @@ class NotebookApp {
   }
 
   // Update substrate tray height adaptively based on habits count & content
-  updateSubstrateTrayHeight() {
+  updateSubstrateTrayHeight(skipMeasurement = false) {
     const container = document.getElementById('tabsSubstrateContainer');
     const tray = document.getElementById('substrateTray');
-    if (!container || !tray) return;
+    if (!container || !tray) return 0;
 
     const habitCount = (this.habits && Array.isArray(this.habits)) ? this.habits.length : 0;
     const addRow = document.getElementById('habitAddRow');
@@ -2628,7 +3074,7 @@ class NotebookApp {
       targetHeight = 56 + addRowHeight;
     } else {
       let measuredHeight = 0;
-      if (this.habitsListContainer && this.habitsListContainer.children.length > 0) {
+      if (!skipMeasurement && this.habitsListContainer && this.habitsListContainer.children.length > 0) {
         measuredHeight = this.habitsListContainer.scrollHeight + addRowHeight + 6;
       }
       const currentFontSize = this.settings?.fontSize || 14;
@@ -2642,6 +3088,232 @@ class NotebookApp {
 
     container.style.setProperty('--substrate-tray-height', `${finalHeight}px`);
     tray.style.setProperty('--substrate-tray-height', `${finalHeight}px`);
+    return finalHeight;
+  }
+
+  // Adaptively adjust the width and height of #btnAddHabit so that:
+  // 1. Its height equals the height of the week-day circle
+  // 2. On the left it starts where it is now (aligned with left margin)
+  // 3. On the right its distance to the first circle is EXACTLY the same as between the circles
+  updateAddHabitButtonWidth(targetC0Rect, targetC1Rect) {
+    const btn = document.getElementById('btnAddHabit');
+    const slot = document.getElementById('habitAddSlot');
+    const track = document.getElementById('weekDaysTrack');
+    const container = document.getElementById('tabsSubstrateContainer');
+    if (!btn || !slot || !track) return 0;
+    if (container && !container.classList.contains('is-expanded')) {
+      slot.style.removeProperty('width');
+      slot.style.removeProperty('flex');
+      slot.style.removeProperty('max-width');
+      slot.style.removeProperty('padding-right');
+      return 0;
+    }
+
+    const circles = Array.from(track.querySelectorAll('.week-day-circle'));
+    if (circles.length < 2) return 0;
+
+    const c0 = targetC0Rect || circles[0].getBoundingClientRect();
+    const c1 = targetC1Rect || circles[1].getBoundingClientRect();
+    const circleGap = Math.max(0, c1.left - c0.right);
+    const slotRect = slot.getBoundingClientRect();
+
+    if (c0.left > slotRect.left) {
+      // Distance from btn right edge to c0 left edge is circleGap + 2px:
+      // btn.right = c0.left - (circleGap + 2)
+      const targetWidth = Math.max(50, Math.round((c0.left - (circleGap + 2)) - slotRect.left));
+      slot.style.setProperty('width', `${targetWidth}px`, 'important');
+      slot.style.setProperty('flex', `0 0 ${targetWidth}px`, 'important');
+      slot.style.setProperty('max-width', `${targetWidth}px`, 'important');
+      slot.style.setProperty('padding-right', '0px', 'important');
+      const circleHeight = Math.round(c0.height || 31);
+      btn.style.setProperty('height', `${circleHeight}px`, 'important');
+      btn.style.setProperty('box-shadow', 'none', 'important');
+      return targetWidth;
+    }
+    return 0;
+  }
+
+  // Cinematic 4-stage entrance animation requested by user:
+  // 1) Shows circle with "+" inside on the left
+  // 2) Circle smoothly expands horizontally to target width
+  // 3) "+" rotates 90 degrees concurrently
+  // 4) Text "Привычка" types letter-by-letter
+  playAddHabitButtonEntranceAnimation(targetWidth) {
+    const btn = document.getElementById('btnAddHabit');
+    if (!btn) return;
+    const textSpan = btn.querySelector('.btn-add-habit-text');
+    const plusIcon = btn.querySelector('.plus-icon');
+    if (!textSpan || !plusIcon) return;
+
+    // Clear any previous active animation timers
+    if (this._addHabitAnimTimers && Array.isArray(this._addHabitAnimTimers)) {
+      this._addHabitAnimTimers.forEach(t => {
+        clearTimeout(t);
+        clearInterval(t);
+      });
+    }
+    this._addHabitAnimTimers = [];
+
+    const fullText = (this.t && typeof this.t === 'function')
+      ? (this.t('habit_btn_add') || 'Привычка')
+      : (textSpan.getAttribute('data-full-text') || textSpan.textContent || 'Привычка');
+    textSpan.setAttribute('data-full-text', fullText);
+
+    // Measure full text width so we can pre-calculate final left padding
+    // Measure exact text width when full
+    textSpan.textContent = fullText;
+    textSpan.style.removeProperty('width');
+    textSpan.style.removeProperty('min-width');
+    textSpan.style.removeProperty('max-width');
+    const fullTextWidth = Math.ceil(textSpan.getBoundingClientRect().width || 56);
+
+    const circleHeight = 31;
+    const finalWidth = targetWidth || 114;
+
+    // Stage 1: Initial State - Circle of 31px on the left with '+' inside
+    // Button is centered, text width is 0 so '+' is dead-center
+    textSpan.textContent = '';
+    textSpan.style.setProperty('display', 'inline-block', 'important');
+    textSpan.style.setProperty('text-align', 'left', 'important');
+    textSpan.style.setProperty('overflow', 'hidden', 'important');
+    textSpan.style.setProperty('transition', 'none', 'important');
+    textSpan.style.setProperty('width', '0px', 'important');
+    textSpan.style.setProperty('min-width', '0px', 'important');
+    textSpan.style.setProperty('max-width', '0px', 'important');
+
+    btn.style.setProperty('transition', 'none', 'important');
+    btn.style.setProperty('width', `${circleHeight}px`, 'important');
+    btn.style.setProperty('min-width', `${circleHeight}px`, 'important');
+    btn.style.setProperty('max-width', `${circleHeight}px`, 'important');
+    btn.style.setProperty('padding', '0px', 'important');
+    btn.style.setProperty('padding-left', '0px', 'important'); // Позиция "+" по левому краю в начальном кружке
+    btn.style.setProperty('gap', '0px', 'important');
+    btn.style.setProperty('justify-content', 'flex-start', 'important');
+    btn.style.setProperty('opacity', '0', 'important');
+
+    plusIcon.style.setProperty('transition', 'none', 'important');
+    plusIcon.style.setProperty('transform', 'rotate(0deg)', 'important');
+
+    void btn.offsetWidth; // Force layout reflow
+
+    // t=20ms: Circle appears smoothly
+    const t1 = setTimeout(() => {
+      btn.style.setProperty('transition', 'opacity 0.16s ease', 'important');
+      btn.style.setProperty('opacity', '1', 'important');
+    }, 20);
+    this._addHabitAnimTimers.push(t1);
+
+    // Stage 2 & 3 (t=140ms): Circle stretches (0.72s) AND '+' rotates 180deg with identical 0.72s duration
+    // Simultaneously textSpan smoothly expands to fullTextWidth so it is permanently in its exact final centered position
+    const t2 = setTimeout(() => {
+      btn.style.setProperty('transition', 'width 0.72s cubic-bezier(0.16, 1, 0.3, 1), max-width 0.72s cubic-bezier(0.16, 1, 0.3, 1), padding 0.72s cubic-bezier(0.16, 1, 0.3, 1)', 'important');
+      btn.style.setProperty('width', `${finalWidth}px`, 'important');
+      btn.style.setProperty('max-width', `${finalWidth}px`, 'important');
+      btn.style.setProperty('padding', '0 10px', 'important');
+      btn.style.setProperty('gap', '5px', 'important');
+
+      textSpan.style.setProperty('transition', 'width 0.72s cubic-bezier(0.16, 1, 0.3, 1), min-width 0.72s cubic-bezier(0.16, 1, 0.3, 1), max-width 0.72s cubic-bezier(0.16, 1, 0.3, 1)', 'important');
+      textSpan.style.setProperty('width', `${fullTextWidth}px`, 'important');
+      textSpan.style.setProperty('min-width', `${fullTextWidth}px`, 'important');
+      textSpan.style.setProperty('max-width', `${fullTextWidth}px`, 'important');
+
+      plusIcon.style.setProperty('transition', 'transform 0.72s cubic-bezier(0.16, 1, 0.3, 1)', 'important');
+      plusIcon.style.setProperty('transform', 'rotate(180deg)', 'important');
+    }, 140);
+    this._addHabitAnimTimers.push(t2);
+
+    // Stage 4 (t=260ms): Typewriter effect strictly letter-by-letter from left to right
+    const t3 = setTimeout(() => {
+      let charIndex = 0;
+      const stepMs = Math.max(30, Math.min(60, Math.round(420 / fullText.length)));
+      const typeInterval = setInterval(() => {
+        const container = document.getElementById('tabsSubstrateContainer');
+        if (!container || !container.classList.contains('is-expanded')) {
+          clearInterval(typeInterval);
+          return;
+        }
+
+        charIndex++;
+        textSpan.textContent = fullText.slice(0, charIndex);
+        if (charIndex >= fullText.length) {
+          textSpan.textContent = fullText;
+          clearInterval(typeInterval);
+        }
+      }, stepMs);
+      this._addHabitAnimTimers.push(typeInterval);
+    }, 260);
+    this._addHabitAnimTimers.push(t3);
+
+    // After animation settles (t=900ms), clean up transition only - ZERO position jump
+    const t4 = setTimeout(() => {
+      btn.style.removeProperty('transition');
+      textSpan.style.removeProperty('transition');
+      // Keep plusIcon at rotate(180deg) clockwise; remove inline transition so CSS handles hover
+      plusIcon.style.removeProperty('transition');
+    }, 900);
+    this._addHabitAnimTimers.push(t4);
+  }
+
+  // Reset button animation when collapsing
+  resetAddHabitButtonAnimation() {
+    if (this._addHabitAnimTimers && Array.isArray(this._addHabitAnimTimers)) {
+      this._addHabitAnimTimers.forEach(t => {
+        clearTimeout(t);
+        clearInterval(t);
+      });
+    }
+    this._addHabitAnimTimers = [];
+
+    const btn = document.getElementById('btnAddHabit');
+    const slot = document.getElementById('habitAddSlot');
+
+    // Immediately remove inline sizing from slot so flex layout expands weekDaysTrack
+    if (slot) {
+      slot.style.removeProperty('width');
+      slot.style.removeProperty('flex');
+      slot.style.removeProperty('max-width');
+      slot.style.removeProperty('padding-right');
+    }
+
+    if (btn) {
+      btn.style.setProperty('transition', 'opacity 0.15s ease', 'important');
+      btn.style.setProperty('opacity', '0', 'important');
+      btn.style.removeProperty('width');
+      btn.style.removeProperty('min-width');
+      btn.style.removeProperty('max-width');
+      btn.style.removeProperty('padding');
+      btn.style.removeProperty('padding-left');
+      btn.style.removeProperty('padding-right');
+      btn.style.removeProperty('justify-content');
+      btn.style.removeProperty('gap');
+      const plusIcon = btn.querySelector('.plus-icon');
+      if (plusIcon) {
+        plusIcon.style.setProperty('transition', 'none', 'important');
+        plusIcon.style.setProperty('transform', 'rotate(0deg)', 'important');
+        plusIcon.style.removeProperty('transform');
+        plusIcon.style.removeProperty('transition');
+      }
+      const textSpan = btn.querySelector('.btn-add-habit-text');
+      if (textSpan) {
+        const fullText = textSpan.getAttribute('data-full-text') || 'Привычка';
+        textSpan.textContent = fullText;
+        textSpan.style.removeProperty('width');
+        textSpan.style.removeProperty('min-width');
+        textSpan.style.removeProperty('max-width');
+        textSpan.style.removeProperty('display');
+        textSpan.style.removeProperty('text-align');
+        textSpan.style.removeProperty('overflow');
+        textSpan.style.removeProperty('transition');
+      }
+      const resetTimer = setTimeout(() => {
+        const container = document.getElementById('tabsSubstrateContainer');
+        if (!container || !container.classList.contains('is-expanded')) {
+          btn.style.removeProperty('opacity');
+          btn.style.removeProperty('transition');
+        }
+      }, 160);
+      this._addHabitAnimTimers.push(resetTimer);
+    }
   }
 
   // ==========================================================================
@@ -2651,7 +3323,7 @@ class NotebookApp {
   // Load habits from LocalStorage & Plan4UStorage with normalization
   loadHabits() {
     let habitsList = [];
-    const activePresetId = window.INITIAL_HABITS_ID || 'wife_v1';
+    const activePresetId = window.INITIAL_HABITS_ID || 'clean_v1';
     const lastPresetLoaded = localStorage.getItem('plan4u_habits_preset_id');
 
     try {
@@ -2664,10 +3336,22 @@ class NotebookApp {
       console.warn('Could not load habits:', e);
     }
 
-    // If active preset is defined, apply it if empty, if containing old default habits, or if preset switched
+    // Check if habits list contains old mock placeholders from early prototypes
     const isOldDefault = habitsList.some(h => h.id === 'h_read' || h.id === 'h_meditate');
+
+    // Auto-recovery: if active preset is wife_v1 and habits were accidentally overwritten by
+    // the 2 default starter habits ('h_water' and 'h_sport') due to an APK update mismatch bug,
+    // restore the wife's full preset.
+    const isAccidentalCleanDefault = (
+      activePresetId === 'wife_v1' &&
+      habitsList.length === 2 &&
+      habitsList.every(h => h.id === 'h_water' || h.id === 'h_sport')
+    );
+
+    // Initial habits apply ONLY on fresh install, ancient mock data, or accidental clean bug recovery.
+    // Existing user habits are NEVER wiped or overwritten on APK updates!
     if (window.INITIAL_HABITS && Array.isArray(window.INITIAL_HABITS) && window.INITIAL_HABITS.length > 0) {
-      if (!habitsList.length || isOldDefault || lastPresetLoaded !== activePresetId) {
+      if (!habitsList.length || isOldDefault || isAccidentalCleanDefault) {
         habitsList = JSON.parse(JSON.stringify(window.INITIAL_HABITS));
         localStorage.setItem('plan4u_habits', JSON.stringify(habitsList));
         localStorage.setItem('plan4u_habits_preset_id', activePresetId);
@@ -2715,6 +3399,12 @@ class NotebookApp {
       if (h.schedule.type === 'periodic' && !h.schedule.targetCount) {
         h.schedule.targetCount = 3;
         h.schedule.period = 'week';
+      }
+      if (h.reminderEnabled === undefined) {
+        h.reminderEnabled = false;
+      }
+      if (!h.reminderTime) {
+        h.reminderTime = '09:00';
       }
     });
 
@@ -2798,10 +3488,11 @@ class NotebookApp {
 
     const fragment = document.createDocumentFragment();
 
-    this.habits.forEach(habit => {
+    this.habits.forEach((habit, habitIdx) => {
       const row = document.createElement('div');
       row.className = 'habit-row';
       row.dataset.habitId = habit.id;
+      row.style.animationDelay = `${Math.min(habitIdx * 0.035, 0.28)}s`;
 
       // Col 1: Habit title box (left 1/3)
       const colTitle = document.createElement('div');
@@ -2855,6 +3546,14 @@ class NotebookApp {
       }
 
       titleBox.appendChild(titleSpan);
+
+      if (habit.reminderEnabled && habit.reminderTime) {
+        const remBadge = document.createElement('span');
+        remBadge.className = 'habit-reminder-badge';
+        remBadge.textContent = `⏰ ${habit.reminderTime}`;
+        remBadge.title = `Напоминание: ${habit.reminderTime}`;
+        titleBox.appendChild(remBadge);
+      }
 
       // Tap on title opens modal in edit / stats mode
       titleBox.addEventListener('click', (e) => {
@@ -2939,8 +3638,14 @@ class NotebookApp {
             `;
           }
 
+          let lastStepperTimestamp = 0;
           checkBtn.addEventListener('click', (e) => {
             e.stopPropagation();
+            e.preventDefault();
+            const now = Date.now();
+            if (now - lastStepperTimestamp < 350) return;
+            lastStepperTimestamp = now;
+
             if (dateStr > this.getTodayDateString()) return;
             triggerHaptic(15);
             this.openHabitStepper(habit.id, dateStr, checkBtn);
@@ -2962,8 +3667,14 @@ class NotebookApp {
             checkBtn.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
           }
 
+          let lastToggleTimestamp = 0;
           checkBtn.addEventListener('click', (e) => {
             e.stopPropagation();
+            e.preventDefault();
+            const now = Date.now();
+            if (now - lastToggleTimestamp < 350) return;
+            lastToggleTimestamp = now;
+
             if (dateStr > this.getTodayDateString()) return;
             this.toggleHabitDay(habit.id, dateStr, checkBtn);
           });
@@ -2998,28 +3709,39 @@ class NotebookApp {
 
     if (willBeChecked) {
       habit.history[dateStr] = { completed: true, timestamp: Date.now() };
-      triggerHaptic(20);
-      this.playCompletionSound();
-      const stats = this.calculateHabitStats(habit);
-      this.checkHabitPetMilestone(habit, stats.currentStreak);
+      try {
+        triggerHaptic(20);
+        this.playCompletionSound();
+        const stats = this.calculateHabitStats(habit);
+        this.checkHabitPetMilestone(habit, stats.currentStreak);
+      } catch (err) {
+        console.warn('Non-critical habit reward effect failed:', err);
+      }
     } else {
       delete habit.history[dateStr];
-      triggerHaptic(10);
+      try {
+        triggerHaptic(10);
+      } catch (e) { }
     }
 
     // Surgical in-place DOM update instead of destroying and rebuilding all habits!
-    if (buttonEl) {
-      buttonEl.classList.toggle('checked', willBeChecked);
-      buttonEl.title = willBeChecked ? `${dateStr}: Выполнено` : dateStr;
+    const targetBtn = buttonEl || document.querySelector(`.habit-check-btn[data-habit-id="${habitId}"][data-date="${dateStr}"]`);
+    if (targetBtn) {
+      targetBtn.classList.toggle('checked', willBeChecked);
+      targetBtn.title = willBeChecked ? `${dateStr}: Выполнено` : dateStr;
       if (willBeChecked) {
-        buttonEl.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+        targetBtn.classList.add('just-checked');
+        setTimeout(() => targetBtn.classList.remove('just-checked'), 400);
+        targetBtn.innerHTML = '<svg class="check-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
       } else {
-        buttonEl.innerHTML = '';
+        targetBtn.innerHTML = '';
       }
     }
 
     this.saveHabits();
-    this.updateWeekDaysProgress();
+    try {
+      this.updateWeekDaysProgress();
+    } catch (e) { }
   }
 
   // Open the Habit Modal in 'create' or 'edit' mode
@@ -3110,7 +3832,144 @@ class NotebookApp {
       tabStatsBtn?.classList.remove('active');
       if (formPane) formPane.style.display = 'flex';
       if (statsPane) statsPane.style.display = 'none';
+      requestAnimationFrame(() => {
+        const currentTime = document.getElementById('habitReminderTimeInput')?.value || '09:00';
+        this.setHabitWheelTime(currentTime);
+      });
     }
+  }
+
+  // Initialize and populate minimalist time wheel picker (hours 00..23 and minutes 00..59)
+  initHabitTimeWheelPicker() {
+    const hoursList = document.getElementById('habitHoursList');
+    const minutesList = document.getElementById('habitMinutesList');
+    const hoursCol = document.getElementById('habitHoursCol');
+    const minutesCol = document.getElementById('habitMinutesCol');
+    const timeInput = document.getElementById('habitReminderTimeInput');
+
+    if (!hoursList || !minutesList || !hoursCol || !minutesCol) return;
+
+    // 1. Populate hours (00..23)
+    if (!hoursList.children.length) {
+      for (let h = 0; h < 24; h++) {
+        const val = String(h).padStart(2, '0');
+        const item = document.createElement('div');
+        item.className = 'habit-picker-item';
+        item.dataset.val = val;
+        item.textContent = val;
+        item.addEventListener('click', () => {
+          hoursCol.scrollTo({ top: h * 44, behavior: 'smooth' });
+          triggerHaptic(10);
+        });
+        hoursList.appendChild(item);
+      }
+    }
+
+    // 2. Populate minutes (00..59)
+    if (!minutesList.children.length) {
+      for (let m = 0; m < 60; m++) {
+        const val = String(m).padStart(2, '0');
+        const item = document.createElement('div');
+        item.className = 'habit-picker-item';
+        item.dataset.val = val;
+        item.textContent = val;
+        item.addEventListener('click', () => {
+          minutesCol.scrollTo({ top: m * 44, behavior: 'smooth' });
+          triggerHaptic(10);
+        });
+        minutesList.appendChild(item);
+      }
+    }
+
+    // Helper to update current time input
+    const updateTimeValue = () => {
+      const hIdx = Math.max(0, Math.min(23, Math.round(hoursCol.scrollTop / 44)));
+      const mIdx = Math.max(0, Math.min(59, Math.round(minutesCol.scrollTop / 44)));
+      const hStr = String(hIdx).padStart(2, '0');
+      const mStr = String(mIdx).padStart(2, '0');
+      if (timeInput) {
+        timeInput.value = `${hStr}:${mStr}`;
+      }
+    };
+
+    // Scroll listeners with snap highlighting and tactile haptic ticks
+    if (!hoursCol._wheelBound) {
+      hoursCol._wheelBound = true;
+      let lastHourIdx = -1;
+      let hourScrollTimeout = null;
+      hoursCol.addEventListener('scroll', () => {
+        const idx = Math.max(0, Math.min(23, Math.round(hoursCol.scrollTop / 44)));
+        if (idx !== lastHourIdx) {
+          lastHourIdx = idx;
+          triggerHaptic(5);
+          Array.from(hoursList.children).forEach((el, i) => {
+            el.classList.toggle('active', i === idx);
+          });
+          updateTimeValue();
+        }
+        clearTimeout(hourScrollTimeout);
+        hourScrollTimeout = setTimeout(updateTimeValue, 100);
+      }, { passive: true });
+    }
+
+    if (!minutesCol._wheelBound) {
+      minutesCol._wheelBound = true;
+      let lastMinIdx = -1;
+      let minScrollTimeout = null;
+      minutesCol.addEventListener('scroll', () => {
+        const idx = Math.max(0, Math.min(59, Math.round(minutesCol.scrollTop / 44)));
+        if (idx !== lastMinIdx) {
+          lastMinIdx = idx;
+          triggerHaptic(5);
+          Array.from(minutesList.children).forEach((el, i) => {
+            el.classList.toggle('active', i === idx);
+          });
+          updateTimeValue();
+        }
+        clearTimeout(minScrollTimeout);
+        minScrollTimeout = setTimeout(updateTimeValue, 100);
+      }, { passive: true });
+    }
+  }
+
+  // Set the visual state of the habit time wheel picker
+  setHabitWheelTime(timeStr) {
+    this.initHabitTimeWheelPicker();
+    const hoursList = document.getElementById('habitHoursList');
+    const minutesList = document.getElementById('habitMinutesList');
+    const hoursCol = document.getElementById('habitHoursCol');
+    const minutesCol = document.getElementById('habitMinutesCol');
+    const timeInput = document.getElementById('habitReminderTimeInput');
+
+    if (!hoursCol || !minutesCol) return;
+
+    const [hRaw, mRaw] = String(timeStr || '09:00').split(':');
+    const h = Math.max(0, Math.min(23, parseInt(hRaw, 10) || 0));
+    const m = Math.max(0, Math.min(59, parseInt(mRaw, 10) || 0));
+
+    if (timeInput) {
+      timeInput.value = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+
+    if (hoursList) {
+      Array.from(hoursList.children).forEach((el, i) => {
+        el.classList.toggle('active', i === h);
+      });
+    }
+    if (minutesList) {
+      Array.from(minutesList.children).forEach((el, i) => {
+        el.classList.toggle('active', i === m);
+      });
+    }
+
+    const applyScroll = () => {
+      hoursCol.scrollTop = h * 44;
+      minutesCol.scrollTop = m * 44;
+    };
+
+    applyScroll();
+    requestAnimationFrame(applyScroll);
+    setTimeout(applyScroll, 40);
   }
 
   // Populate habit form with existing habit data
@@ -3165,6 +4024,16 @@ class NotebookApp {
       if (periodicCountInput) periodicCountInput.value = habit.schedule?.targetCount || 3;
       if (periodicSelect) periodicSelect.value = habit.schedule?.period || 'week';
     }
+
+    // Habit reminder
+    const reminderToggle = document.getElementById('habitReminderToggle');
+    const reminderTimeBox = document.getElementById('habitReminderTimeBox');
+    const reminderOn = !!habit.reminderEnabled;
+    const reminderTime = habit.reminderTime || '09:00';
+
+    if (reminderToggle) reminderToggle.checked = reminderOn;
+    if (reminderTimeBox) reminderTimeBox.style.display = reminderOn ? 'block' : 'none';
+    this.setHabitWheelTime(reminderTime);
   }
 
   // Reset habit form for creating a new habit
@@ -3206,6 +4075,13 @@ class NotebookApp {
 
     if (periodicCountInput) periodicCountInput.value = '3';
     if (periodicSelect) periodicSelect.value = 'week';
+
+    // Default reminder: disabled, 09:00
+    const reminderToggle = document.getElementById('habitReminderToggle');
+    const reminderTimeBox = document.getElementById('habitReminderTimeBox');
+    if (reminderToggle) reminderToggle.checked = false;
+    if (reminderTimeBox) reminderTimeBox.style.display = 'none';
+    this.setHabitWheelTime('09:00');
   }
 
   // Set active habit type in form UI
@@ -3288,7 +4164,14 @@ class NotebookApp {
       scheduleObj.period = selectPeriod ? selectPeriod.value : 'week';
     }
 
+    // Reminder
+    const reminderToggle = document.getElementById('habitReminderToggle');
+    const reminderTimeInput = document.getElementById('habitReminderTimeInput');
+    const reminderEnabled = !!reminderToggle?.checked;
+    const reminderTime = reminderTimeInput ? (reminderTimeInput.value || '09:00') : '09:00';
+
     const editId = idInput ? idInput.value : '';
+    let savedHabit = null;
     if (editId) {
       // Update existing
       const habit = (this.habits || []).find(h => h.id === editId);
@@ -3297,6 +4180,9 @@ class NotebookApp {
         habit.type = type;
         if (targetObj) habit.target = targetObj;
         habit.schedule = scheduleObj;
+        habit.reminderEnabled = reminderEnabled;
+        habit.reminderTime = reminderTime;
+        savedHabit = habit;
       }
     } else {
       // Create new habit
@@ -3306,11 +4192,22 @@ class NotebookApp {
         type: type,
         target: targetObj,
         schedule: scheduleObj,
+        reminderEnabled: reminderEnabled,
+        reminderTime: reminderTime,
         created: Date.now(),
         history: {}
       };
       if (!this.habits) this.habits = [];
       this.habits.push(newHabit);
+      savedHabit = newHabit;
+    }
+
+    if (savedHabit) {
+      if (savedHabit.reminderEnabled) {
+        this.scheduleHabitNotification(savedHabit);
+      } else {
+        this.cancelHabitNotification(savedHabit.id);
+      }
     }
 
     this.saveHabits();
@@ -3337,6 +4234,7 @@ class NotebookApp {
         icon: '🗑️',
         confirmText: 'Удалить',
         onConfirm: () => {
+          this.cancelHabitNotification(habitId);
           this.habits = (this.habits || []).filter(h => h.id !== habitId);
           this.saveHabits();
           this.renderHabits();
@@ -3346,6 +4244,7 @@ class NotebookApp {
         }
       });
     } else {
+      this.cancelHabitNotification(habitId);
       this.habits = (this.habits || []).filter(h => h.id !== habitId);
       this.saveHabits();
       this.renderHabits();
@@ -3378,7 +4277,8 @@ class NotebookApp {
     if (streakValEl) streakValEl.textContent = `${stats.currentStreak} ${unitSuffix}`;
     if (streakSubEl) {
       if (stats.currentStreak > 0 && stats.currentStreakRange) {
-        streakSubEl.textContent = this.formatStreakDateRange(stats.currentStreakRange.start, stats.currentStreakRange.end);
+        const rangeText = this.formatStreakDateRange(stats.currentStreakRange.start, stats.currentStreakRange.end);
+        streakSubEl.textContent = stats.usedFreeze ? `${rangeText} • Выходной ☕` : rangeText;
       } else {
         streakSubEl.textContent = '—';
       }
@@ -3427,7 +4327,7 @@ class NotebookApp {
     if (!activePeriod) {
       try {
         activePeriod = localStorage.getItem('plan4u_habit_chart_period');
-      } catch(e) {}
+      } catch (e) { }
     }
     if (!activePeriod) {
       activePeriod = 'weeks';
@@ -3645,7 +4545,7 @@ class NotebookApp {
     let savedMode = 'heatmap';
     try {
       savedMode = localStorage.getItem('plan4u_habit_view_mode') || 'heatmap';
-    } catch(e) {}
+    } catch (e) { }
 
     const applyViewMode = (mode) => {
       if (mode === 'frequency') {
@@ -3676,7 +4576,7 @@ class NotebookApp {
         applyViewMode('heatmap');
         try {
           localStorage.setItem('plan4u_habit_view_mode', 'heatmap');
-        } catch(e) {}
+        } catch (e) { }
 
         const insight = document.getElementById('habitWeekdaysInsight');
         if (insight && this.currentHabitStats?.bestDow) {
@@ -3691,7 +4591,7 @@ class NotebookApp {
         applyViewMode('frequency');
         try {
           localStorage.setItem('plan4u_habit_view_mode', 'frequency');
-        } catch(e) {}
+        } catch (e) { }
 
         const insight = document.getElementById('habitWeekdaysInsight');
         if (insight && this.currentHabitStats?.bestDow) {
@@ -3844,6 +4744,20 @@ class NotebookApp {
     let success30Count = 0;
     let scheduled30Count = 0;
 
+    let earliestDate = habit.created ? new Date(habit.created) : new Date(today);
+    if (isNaN(earliestDate.getTime())) earliestDate = new Date(today);
+    if (habit.history && typeof habit.history === 'object') {
+      const historyDates = Object.keys(habit.history).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k)).sort();
+      if (historyDates.length > 0) {
+        const [y, m, d] = historyDates[0].split('-').map(Number);
+        const firstHistDate = new Date(y, m - 1, d);
+        if (!isNaN(firstHistDate.getTime()) && firstHistDate < earliestDate) {
+          earliestDate = firstHistDate;
+        }
+      }
+    }
+    const earliestDateStr = `${earliestDate.getFullYear()}-${String(earliestDate.getMonth() + 1).padStart(2, '0')}-${String(earliestDate.getDate()).padStart(2, '0')}`;
+
     const isDayCompleted = (dateStr) => {
       const hEntry = history[dateStr];
       if (!hEntry) return false;
@@ -3867,6 +4781,9 @@ class NotebookApp {
       const d = new Date(today);
       d.setDate(today.getDate() - i);
       const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+      // Only count days from or after habit creation / first record
+      if (dateStr < earliestDateStr) continue;
 
       const scheduled = isDayScheduled(d);
       if (scheduled) scheduled30Count++;
@@ -3984,6 +4901,7 @@ class NotebookApp {
     let bestStreak = 0;
     let currentStreakRange = null;
     let bestStreakRange = null;
+    let usedFreeze = false;
 
     if (habit.schedule?.type === 'periodic') {
       const targetCount = habit.schedule.targetCount || 3;
@@ -4039,6 +4957,8 @@ class NotebookApp {
       let tempStreak = 0;
       let tempStart = null;
       let tempEnd = null;
+      const habitFrozenWeeks = new Set();
+      usedFreeze = false;
 
       for (let i = 0; i < 365; i++) {
         const d = new Date(today);
@@ -4066,6 +4986,13 @@ class NotebookApp {
             // Today not done yet: don't break streak if yesterday was done
             continue;
           }
+          // 1 «Выходной ☕» (день заморозки) в неделю на случай пропуска
+          const weekKey = this.getISOWeekKey ? this.getISOWeekKey(d) : '';
+          if (weekKey && streakRunning && !habitFrozenWeeks.has(weekKey)) {
+            habitFrozenWeeks.add(weekKey);
+            usedFreeze = true;
+            continue;
+          }
           streakRunning = false;
           tempStreak = 0;
           tempStart = null;
@@ -4082,20 +5009,6 @@ class NotebookApp {
     const targetVal = (habit.target && habit.target.value) ? habit.target.value : 1;
     const unit = habit.target?.unit || '';
     const dayUnit = window.Plan4UI18n ? Plan4UI18n.t('habit_days_unit', {}, this.currentLang) : 'дн.';
-
-    let earliestDate = habit.created ? new Date(habit.created) : new Date(today);
-    if (isNaN(earliestDate.getTime())) earliestDate = new Date(today);
-    if (habit.history && typeof habit.history === 'object') {
-      const historyDates = Object.keys(habit.history).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k)).sort();
-      if (historyDates.length > 0) {
-        const [y, m, d] = historyDates[0].split('-').map(Number);
-        const firstHistDate = new Date(y, m - 1, d);
-        if (!isNaN(firstHistDate.getTime()) && firstHistDate < earliestDate) {
-          earliestDate = firstHistDate;
-        }
-      }
-    }
-    const earliestDateStr = `${earliestDate.getFullYear()}-${String(earliestDate.getMonth() + 1).padStart(2, '0')}-${String(earliestDate.getDate()).padStart(2, '0')}`;
 
     const formatAvg = (val) => {
       if (val >= 10) return String(Math.round(val));
@@ -4215,8 +5128,8 @@ class NotebookApp {
     const weekAvgStr = habit.type === 'numeric'
       ? (unit ? `${formatAvg(weekAvg)} ${unit}${perWeek}` : `${formatAvg(weekAvg)}${perWeek}`)
       : (habit.schedule?.type === 'periodic'
-          ? `${formatAvg(weekAvg)}${perWeek}`
-          : `${formatAvg(weekAvg)} ${dayUnit}${perWeek}`);
+        ? `${formatAvg(weekAvg)}${perWeek}`
+        : `${formatAvg(weekAvg)} ${dayUnit}${perWeek}`);
 
     // C. 12 MONTHS (Option A: clean 3 letters + year tag for January)
     const monthBars = [];
@@ -4369,6 +5282,8 @@ class NotebookApp {
       const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       const dow = d.getDay();
 
+      if (ds < earliestDateStr) continue;
+
       if (isDayScheduled(d)) {
         dowStats[dow].total++;
         if (isDayCompleted(ds)) {
@@ -4439,7 +5354,7 @@ class NotebookApp {
           if (!isDayScheduled(d)) continue;
 
           const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-          if (ds > todayDateString) continue;
+          if (ds > todayDateString || ds < earliestDateStr) continue;
 
           scheduled++;
           if (isDayCompleted(ds)) {
@@ -4478,6 +5393,7 @@ class NotebookApp {
       bestStreak: Math.max(bestStreak, currentStreak),
       currentStreakRange,
       bestStreakRange,
+      usedFreeze,
       totalCount,
       totalSum: Number(totalSum.toFixed(1)),
       rate,
@@ -4600,12 +5516,18 @@ class NotebookApp {
     }
 
     if (!wasCompleted && isNowCompleted) {
-      triggerHaptic(25);
-      this.playCompletionSound();
-      const stats = this.calculateHabitStats(habit);
-      this.checkHabitPetMilestone(habit, stats.currentStreak);
+      try {
+        triggerHaptic(25);
+        this.playCompletionSound();
+        const stats = this.calculateHabitStats(habit);
+        this.checkHabitPetMilestone(habit, stats.currentStreak);
+      } catch (err) {
+        console.warn('Non-critical habit reward effect failed:', err);
+      }
     } else {
-      triggerHaptic(15);
+      try {
+        triggerHaptic(15);
+      } catch (e) { }
     }
 
     this.saveHabits();
@@ -4960,6 +5882,66 @@ class NotebookApp {
     this.widgetStreak = document.getElementById('widgetStreak');
     this.widgetMedal = document.getElementById('widgetMedal');
     this.widgetSettings = document.getElementById('widgetSettings');
+    this.widgetCycle = document.getElementById('widgetCycle');
+    this.widgetCycleDay = document.getElementById('widgetCycleDay');
+
+    // Cycle Tracker & Women's Health Elements
+    this.cycleTracker = (window.Plan4UCycleTracker && window.Plan4UCycleTracker.CycleTracker) ? new window.Plan4UCycleTracker.CycleTracker() : null;
+    this.cycleModalBackdrop = document.getElementById('cycleModalBackdrop');
+    this.cycleCloseBtn = document.getElementById('cycleCloseBtn');
+    this.cycleStatusCard = document.getElementById('cycleStatusCard');
+    this.cycleDayBadge = document.getElementById('cycleDayBadge');
+    this.cyclePhasePill = document.getElementById('cyclePhasePill');
+    this.cycleOrbitBox = document.getElementById('cycleOrbitBox');
+    this.cycleOrbitDayNum = document.getElementById('cycleOrbitDayNum');
+    this.cycleOrbitDayLabel = document.getElementById('cycleOrbitDayLabel');
+    this.cycleOrbitTotalLabel = document.getElementById('cycleOrbitTotalLabel');
+    this.cycleOrbitPointerArm = document.getElementById('cycleOrbitPointerArm');
+    this.orbitArcMenstrual = document.getElementById('orbitArcMenstrual');
+    this.orbitArcFollicular = document.getElementById('orbitArcFollicular');
+    this.orbitArcOvulation = document.getElementById('orbitArcOvulation');
+    this.orbitArcLuteal = document.getElementById('orbitArcLuteal');
+    this.legendTextMenstrual = document.getElementById('legendTextMenstrual');
+    this.legendTextFollicular = document.getElementById('legendTextFollicular');
+    this.legendTextOvulation = document.getElementById('legendTextOvulation');
+    this.legendTextLuteal = document.getElementById('legendTextLuteal');
+    this.cycleAdviceBox = document.getElementById('cycleAdviceBox');
+    this.cycleEnergyTag = document.getElementById('cycleEnergyTag');
+    this.cycleAdviceText = document.getElementById('cycleAdviceText');
+    this.cyclePredictionLabel = document.getElementById('cyclePredictionLabel');
+    this.cyclePredictionValue = document.getElementById('cyclePredictionValue');
+    this.cyclePredictionSub = document.getElementById('cyclePredictionSub');
+    this.btnCycleStartToday = document.getElementById('btnCycleStartToday');
+    this.btnCycleOvulationToday = document.getElementById('btnCycleOvulationToday');
+    this.btnCycleAddManual = document.getElementById('btnCycleAddManual');
+    this.cycleHistoryCount = document.getElementById('cycleHistoryCount');
+    this.cycleHistoryList = document.getElementById('cycleHistoryList');
+    this.cycleAddModalBackdrop = document.getElementById('cycleAddModalBackdrop');
+    this.cycleAddModalTitle = document.getElementById('cycleAddModalTitle');
+    this.cycleAddCloseBtn = document.getElementById('cycleAddCloseBtn');
+    this.cycleAddCancelBtn = document.getElementById('cycleAddCancelBtn');
+    this.cycleAddSaveBtn = document.getElementById('cycleAddSaveBtn');
+    this.cycleAddDeleteBtn = document.getElementById('cycleAddDeleteBtn');
+    this.cycleFormDurationBadge = document.getElementById('cycleFormDurationBadge');
+    this.editingCycleId = null;
+    this.cycleInputStartDate = document.getElementById('cycleInputStartDate');
+    this.cycleInputEndDate = document.getElementById('cycleInputEndDate');
+    this.cycleInputIsOutlier = document.getElementById('cycleInputIsOutlier');
+    this.cycleInputNotes = document.getElementById('cycleInputNotes');
+    this.calendarCycleStrip = document.getElementById('calendarCycleStrip');
+    this.calendarCyclePill = document.getElementById('calendarCyclePill');
+    this.calendarCycleDesc = document.getElementById('calendarCycleDesc');
+    this.btnCalendarCycleShortcut = document.getElementById('btnCalendarCycleShortcut');
+    this.toggleCycleTracker = document.getElementById('toggleCycleTracker');
+    this.cycleSubSettings = document.getElementById('cycleSubSettings');
+    this.toggleCycleIrregular = document.getElementById('toggleCycleIrregular');
+    this.cyclePeriodLengthRange = document.getElementById('cyclePeriodLengthRange');
+    this.cyclePeriodLengthVal = document.getElementById('cyclePeriodLengthVal');
+    this.cycleDefaultLengthRange = document.getElementById('cycleDefaultLengthRange');
+    this.cycleDefaultLengthVal = document.getElementById('cycleDefaultLengthVal');
+    this.toggleCycleWidget = document.getElementById('toggleCycleWidget');
+    this.btnOpenCycleFromSettings = document.getElementById('btnOpenCycleFromSettings');
+
     this.weekDaysBar = document.getElementById('weekDaysBar');
     this.weekDaysTrack = document.getElementById('weekDaysTrack');
     this.btnAddHabit = document.getElementById('btnAddHabit');
@@ -5098,9 +6080,23 @@ class NotebookApp {
       returnBtn.addEventListener('click', triggerReturnToday);
       returnBtn.addEventListener('touchend', triggerReturnToday);
     }
-    const returnWrapper = document.getElementById('pastDayReturnWrapper');
-    if (returnWrapper) {
-      returnWrapper.addEventListener('click', triggerReturnToday);
+    const navPrevBtn = document.getElementById('pastDayNavPrev');
+    if (navPrevBtn) {
+      navPrevBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        triggerHaptic(15);
+        this.navigateDayOffset(-1);
+      });
+    }
+    const navNextBtn = document.getElementById('pastDayNavNext');
+    if (navNextBtn) {
+      navNextBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        triggerHaptic(15);
+        this.navigateDayOffset(1);
+      });
     }
   }
 
@@ -5111,10 +6107,164 @@ class NotebookApp {
         document.activeElement.blur();
       }
     } catch (e) { }
+    this.clearTextSelectionAndFocus();
+  }
+
+  // Universal helper to remove any text selection and drop focus
+  clearTextSelectionAndFocus() {
+    try {
+      if (window.getSelection) {
+        const sel = window.getSelection();
+        if (sel) {
+          if (typeof sel.removeAllRanges === 'function') sel.removeAllRanges();
+          if (typeof sel.empty === 'function') sel.empty();
+        }
+      }
+      if (document.selection && typeof document.selection.empty === 'function') {
+        document.selection.empty();
+      }
+    } catch (e) { }
+    try {
+      if (document.activeElement && typeof document.activeElement.blur === 'function') {
+        document.activeElement.blur();
+      }
+    } catch (e) { }
+  }
+
+  // Universal controller-only dragging for all range sliders across the app
+  initThumbOnlySliders() {
+    const setupSlider = (slider) => {
+      if (!slider || slider._thumbOnlyInit) return;
+      slider._thumbOnlyInit = true;
+
+      let isDraggingThumb = false;
+      let startVal = slider.value;
+
+      const isPointNearThumb = (clientX) => {
+        const rect = slider.getBoundingClientRect();
+        if (!rect.width) return true;
+        const min = parseFloat(slider.min) !== undefined && !isNaN(parseFloat(slider.min)) ? parseFloat(slider.min) : 0;
+        const max = parseFloat(slider.max) !== undefined && !isNaN(parseFloat(slider.max)) ? parseFloat(slider.max) : 100;
+        const val = parseFloat(slider.value) !== undefined && !isNaN(parseFloat(slider.value)) ? parseFloat(slider.value) : min;
+        const range = max - min;
+        const ratio = range > 0 ? (val - min) / range : 0;
+
+        const thumbWidth = 24;
+        const thumbRadius = thumbWidth / 2;
+        const availableWidth = Math.max(rect.width - thumbWidth, 1);
+        const thumbCenterX = rect.left + thumbRadius + ratio * availableWidth;
+
+        const dist = Math.abs(clientX - thumbCenterX);
+        // Grab tolerance: radius is 12px, 24px tolerance comfortably allows finger grab while blocking track clicks (>24px)
+        return dist <= 24;
+      };
+
+      const handlePointerDown = (e) => {
+        const onThumb = isPointNearThumb(e.clientX);
+        if (!onThumb) {
+          // Tapped on the track away from thumb -> cancel instant value jump!
+          e.preventDefault();
+          e.stopPropagation();
+          isDraggingThumb = false;
+          return false;
+        }
+        isDraggingThumb = true;
+        startVal = slider.value;
+        slider.classList.add('is-dragging');
+      };
+
+      const handlePointerUp = () => {
+        isDraggingThumb = false;
+        slider.classList.remove('is-dragging');
+      };
+
+      slider.addEventListener('pointerdown', handlePointerDown, { passive: false });
+      window.addEventListener('pointerup', handlePointerUp, { passive: true });
+      window.addEventListener('pointercancel', handlePointerUp, { passive: true });
+
+      // Safety check: if an input event fires without active dragging, revert value
+      slider.addEventListener('input', (e) => {
+        if (!isDraggingThumb) {
+          slider.value = startVal;
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      });
+    };
+
+    // Bind current sliders
+    document.querySelectorAll('input[type="range"], .range-slider').forEach(setupSlider);
+
+    // Watch for newly rendered sliders (e.g. modals)
+    try {
+      const observer = new MutationObserver(() => {
+        document.querySelectorAll('input[type="range"], .range-slider').forEach(setupSlider);
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    } catch (err) { }
+  }
+
+  // Watch for virtual keyboard visibility & toggle keyboard-open class
+  initKeyboardStateWatcher() {
+    let isKeyboardOpen = false;
+
+    const setKeyboardState = (isOpen) => {
+      if (isKeyboardOpen === isOpen) return;
+      isKeyboardOpen = isOpen;
+      document.body.classList.toggle('keyboard-open', isOpen);
+      const appFrame = document.getElementById('appFrame');
+      if (appFrame) appFrame.classList.toggle('keyboard-open', isOpen);
+    };
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', () => {
+        const heightDiff = window.innerHeight - window.visualViewport.height;
+        const isKb = heightDiff > 140;
+        setKeyboardState(isKb);
+      });
+    }
+
+    window.addEventListener('resize', () => {
+      const container = document.getElementById('tabsSubstrateContainer');
+      if (container && container.classList.contains('is-expanded')) {
+        this.updateAddHabitButtonWidth();
+      }
+    });
+
+    document.addEventListener('focusin', (e) => {
+      const tag = e.target ? e.target.tagName : '';
+      const type = e.target ? (e.target.type || '').toLowerCase() : '';
+      if ((tag === 'INPUT' || tag === 'TEXTAREA') && !['checkbox', 'radio', 'range', 'button', 'submit'].includes(type)) {
+        setKeyboardState(true);
+        if (e.target.closest('.modal-sheet, .modal-form')) {
+          setTimeout(() => {
+            try {
+              e.target.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            } catch (err) { }
+          }, 200);
+        }
+      }
+    });
+
+    document.addEventListener('focusout', () => {
+      setTimeout(() => {
+        const activeTag = document.activeElement ? document.activeElement.tagName : '';
+        const activeType = document.activeElement ? (document.activeElement.type || '').toLowerCase() : '';
+        const isInputStillActive = (activeTag === 'INPUT' || activeTag === 'TEXTAREA') && !['checkbox', 'radio', 'range', 'button', 'submit'].includes(activeType);
+        if (!isInputStillActive) {
+          if (!window.visualViewport || (window.innerHeight - window.visualViewport.height <= 140)) {
+            setKeyboardState(false);
+          }
+        }
+      }, 120);
+    });
   }
 
   // Bind event listeners
   initEventListeners() {
+    this.initThumbOnlySliders();
+    this.initKeyboardStateWatcher();
+
     // Automatically dismiss keyboard/focus from text inputs when any modal, sheet or submenu opens
     const modalBackdrops = document.querySelectorAll('.modal-backdrop, .pet-modal-overlay');
     modalBackdrops.forEach(backdrop => {
@@ -5145,9 +6295,26 @@ class NotebookApp {
       }
     });
 
-    // Also blur active input when tapping interactive widgets, buttons, or sheet actions
+    // Debounced resize watcher to accurately recalculate hand-drawn strike lines on screen orientation/window change
+    let resizeStrikeTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeStrikeTimer);
+      resizeStrikeTimer = setTimeout(() => {
+        this.applyHandDrawnStrikes();
+      }, 150);
+    });
+
+
+    // Also blur active input when tapping outside or on main screen actions (never inside modal sheets!)
     document.addEventListener('pointerdown', (e) => {
-      if (e.target.closest('.widget-circle, .folder-tab, .add-tab-btn, .fab-button, .notebook-pet-anchor, .section-header-btn, .btn-primary-block, .btn-secondary-block, .modal-backdrop, .modal-sheet')) {
+      // Direct tap on modal backdrop outside the sheet
+      if (e.target.classList && (e.target.classList.contains('modal-backdrop') || e.target.classList.contains('pet-modal-overlay'))) {
+        this.dismissActiveKeyboard();
+        return;
+      }
+      // Tap on main screen action widgets (ignoring anything inside modal sheets or forms)
+      if (!e.target.closest('.modal-sheet, .pet-modal-sheet, .modal-form') &&
+        e.target.closest('.widget-circle, .folder-tab, .add-tab-btn, .fab-button, .notebook-pet-anchor, .section-header-btn, .btn-primary-block, .btn-secondary-block')) {
         this.dismissActiveKeyboard();
       }
     }, { capture: true, passive: true });
@@ -5546,7 +6713,14 @@ class NotebookApp {
         const days = this.streakData ? this.streakData.count : 15;
         const daysWord = this.getDaysWord(days);
         const record = this.streakData ? this.streakData.bestStreak : days;
-        this.showToast(`🔥 Беспрерывная серия: ${days} ${daysWord}! (Рекорд: ${record})`, '🔥');
+        const currentWeekKey = this.getISOWeekKey ? this.getISOWeekKey(new Date()) : '';
+        const isFreezeUsed = this.streakData && (this.streakData.lastFreezeWeek === currentWeekKey);
+
+        if (isFreezeUsed) {
+          this.showToast(`🔥 Серия: ${days} ${daysWord} (Рекорд: ${record}) • На этой неделе активен «Выходной ☕» — стрик защищён!`, '☕');
+        } else {
+          this.showToast(`🔥 Серия: ${days} ${daysWord} (Рекорд: ${record}) • Доступен 1 «Выходной ☕» в неделю на случай пропуска!`, '🔥');
+        }
       });
     }
 
@@ -5564,7 +6738,117 @@ class NotebookApp {
       });
     }
 
-    if (this.weekDaysBar) {
+    if (this.widgetCycle) {
+      this.widgetCycle.addEventListener('click', () => {
+        triggerHaptic(20);
+        this.openCycleModal();
+      });
+    }
+
+    // Cycle Tracker Modal Listeners
+    if (this.cycleCloseBtn) {
+      this.cycleCloseBtn.addEventListener('click', () => this.closeCycleModal());
+    }
+    bindSafeBackdrop(this.cycleModalBackdrop, () => this.closeCycleModal(), () => this._cycleModalOpenedAt);
+
+    if (this.btnCalendarCycleShortcut) {
+      this.btnCalendarCycleShortcut.addEventListener('click', () => {
+        triggerHaptic(20);
+        this.closeCalendarModal();
+        this.openCycleModal();
+      });
+    }
+
+    if (this.btnOpenCycleFromSettings) {
+      this.btnOpenCycleFromSettings.addEventListener('click', () => {
+        triggerHaptic(20);
+        this.closeSettingsModal();
+        this.openCycleModal();
+      });
+    }
+
+    if (this.btnCycleStartToday) {
+      this.btnCycleStartToday.addEventListener('click', () => {
+        triggerHaptic([20, 40, 20]);
+        if (this.cycleTracker) {
+          const isPeriodActive = this.cycleTracker.isPeriodCurrentlyActive();
+          if (isPeriodActive) {
+            this.cycleTracker.recordTodayAsEnd();
+            this.refreshCycleUI('cycle_toast_ended', '✨');
+          } else {
+            this.cycleTracker.recordTodayAsStart();
+            this.refreshCycleUI('cycle_toast_started', '🍒');
+          }
+        }
+      });
+    }
+
+    if (this.btnCycleOvulationToday) {
+      this.btnCycleOvulationToday.addEventListener('click', () => {
+        triggerHaptic([15, 30, 15]);
+        if (this.cycleTracker) {
+          this.cycleTracker.setOvulationDateForCurrentCycle();
+          this.refreshCycleUI('cycle_toast_ovulation', '✨');
+        }
+      });
+    }
+
+    if (this.btnCycleAddManual) {
+      this.btnCycleAddManual.addEventListener('click', () => {
+        triggerHaptic(15);
+        this.openCycleAddModal();
+      });
+    }
+
+    // Add Cycle Modal Listeners
+    [this.cycleAddCloseBtn, this.cycleAddCancelBtn].forEach(btn => {
+      btn?.addEventListener('click', () => this.closeCycleAddModal());
+    });
+    bindSafeBackdrop(this.cycleAddModalBackdrop, () => this.closeCycleAddModal(), () => this._cycleAddModalOpenedAt);
+
+    if (this.cycleAddSaveBtn) {
+      this.cycleAddSaveBtn.addEventListener('click', () => this.saveCycleFromForm());
+    }
+
+    if (this.cycleAddDeleteBtn) {
+      this.cycleAddDeleteBtn.addEventListener('click', () => {
+        if (!this.editingCycleId || !this.cycleTracker) return;
+        triggerHaptic(20);
+        if (confirm(this.t('cycle_confirm_delete'))) {
+          this.cycleTracker.deleteCycle(this.editingCycleId);
+          this.editingCycleId = null;
+          this.closeCycleAddModal();
+          this.refreshCycleUI('cycle_toast_deleted', '🗑️');
+        }
+      });
+    }
+
+    if (this.cycleInputStartDate) {
+      this.cycleInputStartDate.addEventListener('input', () => {
+        const start = this.cycleInputStartDate.value;
+        const end = this.cycleInputEndDate ? this.cycleInputEndDate.value : '';
+        if (start && end && end < start) {
+          const periodLen = this.cycleTracker ? (this.cycleTracker.getSettings().periodLength || 5) : 5;
+          if (this.cycleInputEndDate) {
+            this.cycleInputEndDate.value = window.Plan4UCycleTracker ? Plan4UCycleTracker.addDays(start, periodLen - 1) : start;
+          }
+        }
+        this.updateCycleFormDurationBadge();
+      });
+    }
+
+    if (this.cycleInputEndDate) {
+      this.cycleInputEndDate.addEventListener('input', () => {
+        this.updateCycleFormDurationBadge();
+      });
+    }
+
+    if (this.weekDaysTrack) {
+      this.weekDaysTrack.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleSubstrateDrawer();
+      });
+    } else if (this.weekDaysBar) {
       this.weekDaysBar.addEventListener('click', (e) => {
         // If clicking on Add Habit button or habit input row, do not toggle drawer
         if (e.target.closest('#btnAddHabit') || e.target.closest('#habitAddSlot') || e.target.closest('#habitAddRow')) {
@@ -5683,30 +6967,43 @@ class NotebookApp {
       });
     }
 
+    // Safe action helper: prevents input blur from jumping viewport before button action completes
+    const bindSafeModalAction = (btnEl, actionFn) => {
+      if (!btnEl) return;
+      btnEl.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+      });
+      btnEl.addEventListener('click', (e) => {
+        e.preventDefault();
+        actionFn(e);
+      });
+    };
+
     // Tabs
-    statsTab?.addEventListener('click', () => {
+    bindSafeModalAction(statsTab, () => {
       triggerHaptic(10);
       this.switchHabitModalTab('stats');
     });
 
-    settingsTab?.addEventListener('click', () => {
+    bindSafeModalAction(settingsTab, () => {
       triggerHaptic(10);
       this.switchHabitModalTab('settings');
     });
 
-    // Type toggles
-    btnBool?.addEventListener('click', () => {
+    // Type toggles (Reliable tap even when virtual keyboard is active!)
+    bindSafeModalAction(btnBool, () => {
       triggerHaptic(10);
       this.setHabitFormType('boolean');
     });
 
-    btnNum?.addEventListener('click', () => {
+    bindSafeModalAction(btnNum, () => {
       triggerHaptic(10);
       this.setHabitFormType('numeric');
     });
 
     // Unit chips
     document.querySelectorAll('#habitUnitChips .habit-unit-chip').forEach(chip => {
+      chip.addEventListener('pointerdown', (e) => e.preventDefault());
       chip.addEventListener('click', (e) => {
         e.preventDefault();
         triggerHaptic(10);
@@ -5733,13 +7030,44 @@ class NotebookApp {
       });
     });
 
+    document.querySelectorAll('.habit-sched-option').forEach(opt => {
+      opt.addEventListener('pointerdown', (e) => {
+        const radio = opt.querySelector('input[type="radio"]');
+        if (radio) {
+          radio.checked = true;
+          triggerHaptic(10);
+          this.updateHabitScheduleUI(radio.value);
+        }
+      });
+    });
+
     // Weekday buttons
     document.querySelectorAll('#habitWeekdaysPicker .habit-dow-btn').forEach(btn => {
+      btn.addEventListener('pointerdown', (e) => e.preventDefault());
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         triggerHaptic(10);
         btn.classList.toggle('active');
       });
+    });
+
+    // Habit reminder toggle and wheel picker
+    this.initHabitTimeWheelPicker();
+    const reminderToggle = document.getElementById('habitReminderToggle');
+    const reminderTimeBox = document.getElementById('habitReminderTimeBox');
+
+    reminderToggle?.addEventListener('change', async () => {
+      triggerHaptic(10);
+      if (reminderTimeBox) {
+        reminderTimeBox.style.display = reminderToggle.checked ? 'block' : 'none';
+        if (reminderToggle.checked) {
+          const currentTime = document.getElementById('habitReminderTimeInput')?.value || '09:00';
+          this.setHabitWheelTime(currentTime);
+        }
+      }
+      if (reminderToggle.checked && !this.settings.notificationsEnabled) {
+        await this.requestNotificationPermission();
+      }
     });
 
     // Delete in edit modal
@@ -5776,7 +7104,7 @@ class NotebookApp {
         if (submitBtn.setPointerCapture) {
           submitBtn.setPointerCapture(e.pointerId);
         }
-      } catch (err) {}
+      } catch (err) { }
     });
 
     submitBtn?.addEventListener('pointerup', (e) => {
@@ -5786,7 +7114,7 @@ class NotebookApp {
           if (submitBtn.releasePointerCapture) {
             submitBtn.releasePointerCapture(e.pointerId);
           }
-        } catch (err) {}
+        } catch (err) { }
         if (Math.abs(e.clientY - submitPointerY) < 25) {
           triggerSave(e);
         }
@@ -5827,7 +7155,7 @@ class NotebookApp {
           this.currentHabitChartPeriod = chosenPeriod;
           try {
             localStorage.setItem('plan4u_habit_chart_period', chosenPeriod);
-          } catch(err) {}
+          } catch (err) { }
 
           this.updateHabitPeriodDropdownUI(chosenPeriod);
 
@@ -5949,6 +7277,7 @@ class NotebookApp {
 
     minusBtn?.addEventListener('click', (e) => {
       e.preventDefault();
+      e.stopPropagation();
       if (!this.currentStepperHabitId) return;
       const habit = (this.habits || []).find(h => h.id === this.currentStepperHabitId);
       const step = this.getHabitAutoStep(habit);
@@ -5958,6 +7287,7 @@ class NotebookApp {
 
     plusBtn?.addEventListener('click', (e) => {
       e.preventDefault();
+      e.stopPropagation();
       if (!this.currentStepperHabitId) return;
       const habit = (this.habits || []).find(h => h.id === this.currentStepperHabitId);
       const step = this.getHabitAutoStep(habit);
@@ -5967,6 +7297,7 @@ class NotebookApp {
 
     quick1?.addEventListener('click', (e) => {
       e.preventDefault();
+      e.stopPropagation();
       if (!this.currentStepperHabitId) return;
       const habit = (this.habits || []).find(h => h.id === this.currentStepperHabitId);
       const step = this.getHabitAutoStep(habit);
@@ -5976,6 +7307,7 @@ class NotebookApp {
 
     quick2?.addEventListener('click', (e) => {
       e.preventDefault();
+      e.stopPropagation();
       if (!this.currentStepperHabitId) return;
       const habit = (this.habits || []).find(h => h.id === this.currentStepperHabitId);
       const step = this.getHabitAutoStep(habit);
@@ -5985,6 +7317,7 @@ class NotebookApp {
 
     quickComplete?.addEventListener('click', (e) => {
       e.preventDefault();
+      e.stopPropagation();
       if (!this.currentStepperHabitId) return;
       const habit = (this.habits || []).find(h => h.id === this.currentStepperHabitId);
       const tgt = Number(habit?.target?.value) || 1;
@@ -5993,6 +7326,7 @@ class NotebookApp {
 
     quickReset?.addEventListener('click', (e) => {
       e.preventDefault();
+      e.stopPropagation();
       this.setHabitStepperValue(0);
     });
   }
@@ -6139,6 +7473,7 @@ class NotebookApp {
         pressTimer = setTimeout(() => {
           isLongPress = true;
           triggerHaptic([30, 50, 30]);
+          this.clearTextSelectionAndFocus();
           this.openEditTabModal(tab.id);
         }, 450);
       };
@@ -6149,6 +7484,11 @@ class NotebookApp {
           pressTimer = null;
         }
       };
+
+      tabBtn.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      });
 
       tabBtn.addEventListener('pointerdown', (e) => {
         if (e.button !== 0) return;
@@ -6219,6 +7559,7 @@ class NotebookApp {
   // Open Edit Tab Modal (Long press)
   openEditTabModal(tabId) {
     this.dismissActiveKeyboard();
+    this.clearTextSelectionAndFocus();
     const tab = this.tabs.find(t => t.id === tabId);
     if (!tab) return;
 
@@ -6230,6 +7571,10 @@ class NotebookApp {
     if (this.editTabId) this.editTabId.value = tabId;
     if (this.editTabTitleInput) {
       this.editTabTitleInput.value = tab.title.replace('\n', ' ');
+      this.editTabTitleInput.blur();
+      try {
+        this.editTabTitleInput.selectionStart = this.editTabTitleInput.selectionEnd = this.editTabTitleInput.value.length;
+      } catch (e) { }
     }
 
     // 1. Render Color Picker with live sheet preview
@@ -6323,10 +7668,25 @@ class NotebookApp {
       this.editTabModalBackdrop.classList.add('open');
       this.editTabModalBackdrop.setAttribute('aria-hidden', 'false');
     }
+
+    this.clearTextSelectionAndFocus();
+    if (this.editTabTitleInput) this.editTabTitleInput.blur();
+
+    [40, 100, 200, 350].forEach(delay => {
+      setTimeout(() => {
+        if (this.editTabModalBackdrop && this.editTabModalBackdrop.classList.contains('open')) {
+          if (document.activeElement === this.editTabTitleInput || (document.activeElement && document.activeElement.tagName === 'INPUT')) {
+            document.activeElement.blur();
+          }
+          this.clearTextSelectionAndFocus();
+        }
+      }, delay);
+    });
   }
 
   // Close Edit Tab Modal
   closeEditTabModal() {
+    this.clearTextSelectionAndFocus();
     if (this.editTabModalBackdrop) {
       this.editTabModalBackdrop.classList.remove('open');
       this.editTabModalBackdrop.setAttribute('aria-hidden', 'true');
@@ -7128,7 +8488,7 @@ class NotebookApp {
       if (typeof launchConfetti === 'function') {
         launchConfetti();
       }
-      triggerHaptic([40, 60, 40, 120]);
+      triggerHaptic([40, 60, 50, 80, 60, 100, 80, 160]);
       this.playTriumphSound();
       const toastMsg = this.t('toast_all_tasks_completed') || 'Все дела на сегодня закрыты! Отличная работа ✨';
       this.showToast(toastMsg, '✨');
@@ -7139,108 +8499,24 @@ class NotebookApp {
   openSettingsModal() {
     this.collapseSubstrateDrawer(true);
     this.dismissActiveKeyboard();
+    this.clearTextSelectionAndFocus();
     if (!this.settingsModalBackdrop) return;
 
-    // 0. Language Selector (Circular Badge & Dropdown Submenu)
-    const langCircleBtn = document.getElementById('langCircleBadgeBtn');
-    const langDropdown = document.getElementById('langDropdownMenu');
-    const langBadgeText = document.getElementById('langBadgeText');
+    // Trigger instant hardware-composited slide-up animation immediately
+    this._settingsModalOpenedAt = Date.now();
+    this.settingsModalBackdrop.classList.add('open');
+    this.settingsModalBackdrop.setAttribute('aria-hidden', 'false');
 
-    const currentLang = this.settings.lang || detectSystemLanguage();
-    if (langBadgeText) {
-      langBadgeText.textContent = (I18N[currentLang] || I18N.ru).code;
-    }
-
-    if (langDropdown) {
-      langDropdown.querySelectorAll('.lang-dropdown-opt').forEach(opt => {
-        opt.classList.toggle('active', opt.dataset.lang === currentLang);
-        opt.onclick = (e) => {
-          e.stopPropagation();
-          const selectedLang = opt.dataset.lang;
-          this.applyLanguage(selectedLang);
-          triggerHaptic(20);
-          this.showToast(this.t('toast_lang_changed'), '🌐');
-          if (langCircleBtn) langCircleBtn.classList.remove('open');
-          if (langDropdown) langDropdown.classList.remove('show');
-        };
-      });
-    }
-
-    if (langCircleBtn) {
-      langCircleBtn.onclick = (e) => {
-        e.stopPropagation();
-        triggerHaptic(15);
-        const isOpen = langDropdown && langDropdown.classList.contains('show');
-        if (langCircleBtn) langCircleBtn.classList.toggle('open', !isOpen);
-        if (langDropdown) langDropdown.classList.toggle('show', !isOpen);
-      };
-    }
-
-    // 1. Theme segmented control
-    if (this.themeSelector) {
-      const currentTheme = this.settings.theme || 'light';
-      this.themeSelector.querySelectorAll('.segmented-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.theme === currentTheme);
-        btn.onclick = () => {
-          this.settings.theme = btn.dataset.theme;
-          this.themeSelector.querySelectorAll('.segmented-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          this.saveSettings();
-          this.applySettings();
-          triggerHaptic(15);
-        };
-      });
-    }
-
-    // 2. Accent Color Swatches
-    if (this.accentColorPicker) {
-      this.accentColorPicker.innerHTML = ACCENT_COLORS.map(c => `
-        <button type="button" class="accent-swatch ${c.id === this.settings.accentColorId ? 'active' : ''}" 
-                data-accent-id="${c.id}" 
-                style="background-color: ${c.color};" 
-                title="${this.t('theme_accent_' + c.id) || c.name}">
-        </button>
-      `).join('');
-
-      this.accentColorPicker.querySelectorAll('.accent-swatch').forEach(swatch => {
-        swatch.onclick = () => {
-          if (this.isDarkMode()) return;
-          this.settings.accentColorId = swatch.dataset.accentId;
-          this.accentColorPicker.querySelectorAll('.accent-swatch').forEach(s => s.classList.remove('active'));
-          swatch.classList.add('active');
-          this.saveSettings();
-          this.applySettings();
-          this.renderTabs();
-          triggerHaptic(15);
-        };
-      });
-    }
-
-    // 3. Font Family Select
-    if (this.fontFamilySelect) {
-      this.fontFamilySelect.value = this.settings.fontFamily || "'PT Serif', Georgia, serif";
-      this.fontFamilySelect.onchange = (e) => {
-        this.settings.fontFamily = e.target.value;
-        this.saveSettings();
-        this.applySettings();
-        this.updateFontPreview();
-        triggerHaptic(15);
-      };
-    }
-
-    // 4. Font Size Range
-    if (this.fontSizeRange && this.fontSizeVal) {
-      this.fontSizeRange.value = this.settings.fontSize || 14;
-      this.fontSizeVal.textContent = `${this.settings.fontSize || 14} px`;
-
-      this.fontSizeRange.oninput = (e) => {
-        this.settings.fontSize = parseInt(e.target.value, 10);
-        this.fontSizeVal.textContent = `${this.settings.fontSize} px`;
-        this.saveSettings();
-        this.applySettings();
-        this.updateFontPreview();
-      };
-    }
+    [40, 100, 200].forEach(delay => {
+      setTimeout(() => {
+        if (this.settingsModalBackdrop && this.settingsModalBackdrop.classList.contains('open')) {
+          if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT')) {
+            document.activeElement.blur();
+          }
+          this.clearTextSelectionAndFocus();
+        }
+      }, delay);
+    });
 
     const getRegularWeightLabel = (w) => {
       const isUk = this.settings.lang === 'uk';
@@ -7261,148 +8537,361 @@ class NotebookApp {
       return isEn ? `${w} (Max / Heavy)` : (isUk ? `${w} (Максимальний)` : `${w} (Максимальный)`);
     };
 
-    // 5. Regular Task Font Weight Slider (400..600)
+    const langCircleBtn = document.getElementById('langCircleBadgeBtn');
+    const langDropdown = document.getElementById('langDropdownMenu');
+    const langBadgeText = document.getElementById('langBadgeText');
+
+    // Bind event listeners and generate static swatches only once
+    if (!this._settingsListenersBound) {
+      this._settingsListenersBound = true;
+
+      if (langDropdown) {
+        langDropdown.querySelectorAll('.lang-dropdown-opt').forEach(opt => {
+          opt.onclick = (e) => {
+            e.stopPropagation();
+            const selectedLang = opt.dataset.lang;
+            this.applyLanguage(selectedLang);
+            triggerHaptic(20);
+            this.showToast(this.t('toast_lang_changed'), '🌐');
+            if (langCircleBtn) langCircleBtn.classList.remove('open');
+            if (langDropdown) langDropdown.classList.remove('show');
+            const langWrapper = document.getElementById('langPickerWrapper');
+            if (langWrapper) langWrapper.classList.remove('open');
+            const langSection = document.getElementById('settingsLangSection') || document.querySelector('.settings-section-lang');
+            if (langSection) langSection.classList.remove('dropdown-open');
+          };
+        });
+      }
+
+      if (langCircleBtn) {
+        langCircleBtn.onclick = (e) => {
+          e.stopPropagation();
+          triggerHaptic(15);
+          const isOpen = langDropdown && langDropdown.classList.contains('show');
+          const willOpen = !isOpen;
+          if (langCircleBtn) langCircleBtn.classList.toggle('open', willOpen);
+          if (langDropdown) langDropdown.classList.toggle('show', willOpen);
+          const langWrapper = document.getElementById('langPickerWrapper');
+          if (langWrapper) langWrapper.classList.toggle('open', willOpen);
+          const langSection = document.getElementById('settingsLangSection') || document.querySelector('.settings-section-lang');
+          if (langSection) langSection.classList.toggle('dropdown-open', willOpen);
+        };
+      }
+
+      // Close language dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('#langPickerWrapper')) {
+          if (langCircleBtn) langCircleBtn.classList.remove('open');
+          if (langDropdown) langDropdown.classList.remove('show');
+          const langWrapper = document.getElementById('langPickerWrapper');
+          if (langWrapper) langWrapper.classList.remove('open');
+          const langSection = document.getElementById('settingsLangSection') || document.querySelector('.settings-section-lang');
+          if (langSection) langSection.classList.remove('dropdown-open');
+        }
+      });
+
+      if (this.themeSelector) {
+        this.themeSelector.querySelectorAll('.segmented-btn').forEach(btn => {
+          btn.onclick = () => {
+            this.settings.theme = btn.dataset.theme;
+            this.themeSelector.querySelectorAll('.segmented-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            this.saveSettings();
+            this.applySettings();
+            triggerHaptic(15);
+          };
+        });
+      }
+
+      if (this.accentColorPicker) {
+        this.accentColorPicker.innerHTML = ACCENT_COLORS.map(c => `
+          <button type="button" class="accent-swatch ${c.id === this.settings.accentColorId ? 'active' : ''}" 
+                  data-accent-id="${c.id}" 
+                  style="background-color: ${c.color};" 
+                  title="${this.t('theme_accent_' + c.id) || c.name}">
+          </button>
+        `).join('');
+
+        this.accentColorPicker.querySelectorAll('.accent-swatch').forEach(swatch => {
+          swatch.onclick = () => {
+            if (this.isDarkMode()) return;
+            this.settings.accentColorId = swatch.dataset.accentId;
+            this.accentColorPicker.querySelectorAll('.accent-swatch').forEach(s => s.classList.remove('active'));
+            swatch.classList.add('active');
+            this.saveSettings();
+            this.applySettings();
+            this.renderTabs();
+            triggerHaptic(15);
+          };
+        });
+      }
+
+      if (this.fontFamilySelect) {
+        this.fontFamilySelect.onchange = (e) => {
+          this.settings.fontFamily = e.target.value;
+          this.saveSettings();
+          this.applySettings();
+          this.updateFontPreview();
+          triggerHaptic(15);
+        };
+      }
+
+      if (this.fontSizeRange && this.fontSizeVal) {
+        this.fontSizeRange.oninput = (e) => {
+          this.settings.fontSize = parseInt(e.target.value, 10);
+          this.fontSizeVal.textContent = `${this.settings.fontSize} px`;
+          this.saveSettings();
+          this.applySettings();
+          this.updateFontPreview();
+        };
+      }
+
+      if (this.taskWeightRange && this.taskWeightVal) {
+        this.taskWeightRange.min = '400';
+        this.taskWeightRange.max = '600';
+        this.taskWeightRange.step = '50';
+        this.taskWeightRange.oninput = (e) => {
+          this.settings.taskFontWeight = parseInt(e.target.value, 10);
+          this.taskWeightVal.textContent = getRegularWeightLabel(this.settings.taskFontWeight);
+          this.saveSettings();
+          this.applySettings();
+          this.updateFontPreview();
+        };
+      }
+
+      if (this.priorityWeightRange && this.priorityWeightVal) {
+        this.priorityWeightRange.oninput = (e) => {
+          this.settings.priorityFontWeight = parseInt(e.target.value, 10);
+          this.priorityWeightVal.textContent = getPrioWeightLabel(this.settings.priorityFontWeight);
+          this.saveSettings();
+          this.applySettings();
+          this.updateFontPreview();
+        };
+      }
+
+      if (this.toggleNotifications) {
+        this.toggleNotifications.onchange = async (e) => {
+          if (e.target.checked) {
+            const granted = await this.requestNotificationPermission();
+            if (!granted) {
+              e.target.checked = false;
+            } else {
+              this.scheduleSmartDailyNotifications();
+              this.scheduleAllHabitReminders();
+            }
+          } else {
+            this.settings.notificationsEnabled = false;
+            this.saveSettings();
+            this.scheduleSmartDailyNotifications();
+          }
+        };
+      }
+
+      if (this.toggleMorningNotif) {
+        this.toggleMorningNotif.onchange = (e) => {
+          this.settings.morningNotifEnabled = e.target.checked;
+          this.saveSettings();
+          this.scheduleSmartDailyNotifications();
+        };
+      }
+
+      if (this.morningNotifTime) {
+        this.morningNotifTime.onchange = (e) => {
+          this.settings.morningNotifTime = e.target.value || '09:00';
+          this.saveSettings();
+          this.scheduleSmartDailyNotifications();
+        };
+      }
+
+      if (this.toggleEveningNotif) {
+        this.toggleEveningNotif.onchange = (e) => {
+          this.settings.eveningNotifEnabled = e.target.checked;
+          this.saveSettings();
+          this.scheduleSmartDailyNotifications();
+        };
+      }
+
+      if (this.eveningNotifTime) {
+        this.eveningNotifTime.onchange = (e) => {
+          this.settings.eveningNotifTime = e.target.value || '21:00';
+          this.saveSettings();
+          this.scheduleSmartDailyNotifications();
+        };
+      }
+
+      if (this.togglePetNotif) {
+        this.togglePetNotif.onchange = (e) => {
+          this.settings.petNotifEnabled = e.target.checked;
+          this.saveSettings();
+          this.scheduleSmartDailyNotifications();
+        };
+      }
+
+      if (this.toggleHaptics) {
+        this.toggleHaptics.onchange = (e) => {
+          this.settings.hapticsEnabled = e.target.checked;
+          this.saveSettings();
+          if (e.target.checked) triggerHaptic(20);
+        };
+      }
+
+      if (this.toggleSound) {
+        this.toggleSound.onchange = (e) => {
+          this.settings.soundEnabled = e.target.checked;
+          this.saveSettings();
+          if (e.target.checked) this.playCompletionSound();
+        };
+      }
+
+      if (this.btnTestNotification) {
+        this.btnTestNotification.onclick = () => {
+          this.sendTestNotification();
+        };
+      }
+
+      if (this.cycleTracker) {
+        if (this.toggleCycleTracker) {
+          this.toggleCycleTracker.onchange = (e) => {
+            this.cycleTracker.updateSettings({ enabled: e.target.checked });
+            if (this.cycleSubSettings) {
+              this.cycleSubSettings.style.display = e.target.checked ? 'flex' : 'none';
+            }
+            this.updateCycleWidget();
+            this.renderCalendar();
+          };
+        }
+
+        if (this.toggleCycleIrregular) {
+          this.toggleCycleIrregular.onchange = (e) => {
+            this.cycleTracker.updateSettings({ isIrregular: e.target.checked });
+            this.renderCalendar();
+          };
+        }
+
+        if (this.cyclePeriodLengthRange) {
+          this.cyclePeriodLengthRange.oninput = (e) => {
+            const val = parseInt(e.target.value, 10) || 5;
+            if (this.cyclePeriodLengthVal) {
+              this.cyclePeriodLengthVal.textContent = `${val} дн.`;
+            }
+            this.cycleTracker.updateSettings({ periodLength: val });
+            this.renderCalendar();
+          };
+        }
+
+        if (this.cycleDefaultLengthRange) {
+          this.cycleDefaultLengthRange.oninput = (e) => {
+            const val = parseInt(e.target.value, 10) || 28;
+            if (this.cycleDefaultLengthVal) {
+              this.cycleDefaultLengthVal.textContent = `${val} дн.`;
+            }
+            this.cycleTracker.updateSettings({ defaultCycleLength: val });
+            this.renderCycleModalContent();
+            this.renderCalendar();
+            this.updateCycleWidget();
+          };
+        }
+
+        if (this.toggleCycleWidget) {
+          this.toggleCycleWidget.onchange = (e) => {
+            this.cycleTracker.updateSettings({ showInTopBar: e.target.checked });
+            this.updateCycleWidget();
+          };
+        }
+      }
+
+      if (this.importBackupFile) {
+        this.importBackupFile.onchange = (e) => this.importBackup(e);
+      }
+      if (this.btnSaveToGoogleDrive) {
+        this.btnSaveToGoogleDrive.onclick = () => this.saveToGoogleDriveDirect();
+      }
+      if (this.btnDownloadLocalBackup) {
+        this.btnDownloadLocalBackup.onclick = () => this.downloadLocalBackup();
+      }
+    }
+
+    // Fast synchronous value updates
+    const currentLang = this.settings.lang || detectSystemLanguage();
+    if (langBadgeText) {
+      langBadgeText.textContent = (I18N[currentLang] || I18N.ru).code;
+    }
+
+    if (langDropdown) {
+      langDropdown.querySelectorAll('.lang-dropdown-opt').forEach(opt => {
+        opt.classList.toggle('active', opt.dataset.lang === currentLang);
+      });
+    }
+
+    if (this.themeSelector) {
+      const currentTheme = this.settings.theme || 'light';
+      this.themeSelector.querySelectorAll('.segmented-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.theme === currentTheme);
+      });
+    }
+
+    if (this.accentColorPicker) {
+      this.accentColorPicker.querySelectorAll('.accent-swatch').forEach(s => {
+        s.classList.toggle('active', s.dataset.accentId === this.settings.accentColorId);
+      });
+    }
+
+    if (this.fontFamilySelect) {
+      this.fontFamilySelect.value = this.settings.fontFamily || "'PT Serif', Georgia, serif";
+    }
+
+    if (this.fontSizeRange && this.fontSizeVal) {
+      this.fontSizeRange.value = this.settings.fontSize || 14;
+      this.fontSizeVal.textContent = `${this.settings.fontSize || 14} px`;
+    }
+
     if (this.taskWeightRange && this.taskWeightVal) {
-      this.taskWeightRange.min = '400';
-      this.taskWeightRange.max = '600';
-      this.taskWeightRange.step = '50';
       const currentTaskWeight = Math.min(600, Math.max(400, this.settings.taskFontWeight || 500));
       this.taskWeightRange.value = currentTaskWeight;
       this.taskWeightVal.textContent = getRegularWeightLabel(currentTaskWeight);
-
-      this.taskWeightRange.oninput = (e) => {
-        this.settings.taskFontWeight = parseInt(e.target.value, 10);
-        this.taskWeightVal.textContent = getRegularWeightLabel(this.settings.taskFontWeight);
-        this.saveSettings();
-        this.applySettings();
-        this.updateFontPreview();
-      };
     }
 
-    // 6. Priority Task Font Weight Slider
     if (this.priorityWeightRange && this.priorityWeightVal) {
       const currentPrioWeight = this.settings.priorityFontWeight || 900;
       this.priorityWeightRange.value = currentPrioWeight;
       this.priorityWeightVal.textContent = getPrioWeightLabel(currentPrioWeight);
-
-      this.priorityWeightRange.oninput = (e) => {
-        this.settings.priorityFontWeight = parseInt(e.target.value, 10);
-        this.priorityWeightVal.textContent = getPrioWeightLabel(this.settings.priorityFontWeight);
-        this.saveSettings();
-        this.applySettings();
-        this.updateFontPreview();
-      };
     }
 
     this.updateFontPreview();
 
-    // 8. Toggles
-    if (this.toggleNotifications) {
-      this.toggleNotifications.checked = !!this.settings.notificationsEnabled;
-      this.toggleNotifications.onchange = async (e) => {
-        if (e.target.checked) {
-          const granted = await this.requestNotificationPermission();
-          if (!granted) {
-            e.target.checked = false;
-          } else {
-            this.scheduleSmartDailyNotifications();
-          }
-        } else {
-          this.settings.notificationsEnabled = false;
-          this.saveSettings();
-          this.scheduleSmartDailyNotifications();
+    if (this.toggleNotifications) this.toggleNotifications.checked = !!this.settings.notificationsEnabled;
+    if (this.toggleMorningNotif) this.toggleMorningNotif.checked = this.settings.morningNotifEnabled !== false;
+    if (this.morningNotifTime) this.morningNotifTime.value = this.settings.morningNotifTime || '09:00';
+    if (this.toggleEveningNotif) this.toggleEveningNotif.checked = this.settings.eveningNotifEnabled !== false;
+    if (this.eveningNotifTime) this.eveningNotifTime.value = this.settings.eveningNotifTime || '21:00';
+    if (this.togglePetNotif) this.togglePetNotif.checked = this.settings.petNotifEnabled !== false;
+    if (this.toggleHaptics) this.toggleHaptics.checked = this.settings.hapticsEnabled !== false;
+    if (this.toggleSound) this.toggleSound.checked = this.settings.soundEnabled !== false;
+
+    if (this.cycleTracker) {
+      const cSet = this.cycleTracker.getSettings();
+      if (this.toggleCycleTracker) {
+        this.toggleCycleTracker.checked = !!cSet.enabled;
+        if (this.cycleSubSettings) {
+          this.cycleSubSettings.style.display = cSet.enabled ? 'flex' : 'none';
         }
-      };
-    }
-
-    if (this.toggleMorningNotif) {
-      this.toggleMorningNotif.checked = this.settings.morningNotifEnabled !== false;
-      this.toggleMorningNotif.onchange = (e) => {
-        this.settings.morningNotifEnabled = e.target.checked;
-        this.saveSettings();
-        this.scheduleSmartDailyNotifications();
-      };
-    }
-
-    if (this.morningNotifTime) {
-      this.morningNotifTime.value = this.settings.morningNotifTime || '09:00';
-      this.morningNotifTime.onchange = (e) => {
-        this.settings.morningNotifTime = e.target.value || '09:00';
-        this.saveSettings();
-        this.scheduleSmartDailyNotifications();
-      };
-    }
-
-    if (this.toggleEveningNotif) {
-      this.toggleEveningNotif.checked = this.settings.eveningNotifEnabled !== false;
-      this.toggleEveningNotif.onchange = (e) => {
-        this.settings.eveningNotifEnabled = e.target.checked;
-        this.saveSettings();
-        this.scheduleSmartDailyNotifications();
-      };
-    }
-
-    if (this.eveningNotifTime) {
-      this.eveningNotifTime.value = this.settings.eveningNotifTime || '21:00';
-      this.eveningNotifTime.onchange = (e) => {
-        this.settings.eveningNotifTime = e.target.value || '21:00';
-        this.saveSettings();
-        this.scheduleSmartDailyNotifications();
-      };
-    }
-
-    if (this.togglePetNotif) {
-      this.togglePetNotif.checked = this.settings.petNotifEnabled !== false;
-      this.togglePetNotif.onchange = (e) => {
-        this.settings.petNotifEnabled = e.target.checked;
-        this.saveSettings();
-        this.scheduleSmartDailyNotifications();
-      };
-    }
-
-    if (this.toggleHaptics) {
-      this.toggleHaptics.checked = this.settings.hapticsEnabled !== false;
-      this.toggleHaptics.onchange = (e) => {
-        this.settings.hapticsEnabled = e.target.checked;
-        this.saveSettings();
-        if (e.target.checked) triggerHaptic(20);
-      };
-    }
-
-    if (this.toggleSound) {
-      this.toggleSound.checked = this.settings.soundEnabled !== false;
-      this.toggleSound.onchange = (e) => {
-        this.settings.soundEnabled = e.target.checked;
-        this.saveSettings();
-        if (e.target.checked) this.playCompletionSound();
-      };
-    }
-
-    if (this.btnTestNotification) {
-      this.btnTestNotification.onclick = () => {
-        this.sendTestNotification();
-      };
-    }
-
-    // 6. Google Drive & Backup Actions
-    if (this.importBackupFile) {
-      this.importBackupFile.onchange = (e) => this.importBackup(e);
-    }
-    if (this.btnSaveToGoogleDrive) {
-      this.btnSaveToGoogleDrive.onclick = () => this.saveToGoogleDriveDirect();
-    }
-    if (this.btnDownloadLocalBackup) {
-      this.btnDownloadLocalBackup.onclick = () => this.downloadLocalBackup();
+      }
+      if (this.toggleCycleIrregular) this.toggleCycleIrregular.checked = !!cSet.isIrregular;
+      if (this.cyclePeriodLengthRange) {
+        this.cyclePeriodLengthRange.value = cSet.periodLength || 5;
+        if (this.cyclePeriodLengthVal) this.cyclePeriodLengthVal.textContent = `${cSet.periodLength || 5} дн.`;
+      }
+      if (this.cycleDefaultLengthRange) {
+        this.cycleDefaultLengthRange.value = cSet.defaultCycleLength || 28;
+        if (this.cycleDefaultLengthVal) this.cycleDefaultLengthVal.textContent = `${cSet.defaultCycleLength || 28} дн.`;
+      }
+      if (this.toggleCycleWidget) this.toggleCycleWidget.checked = cSet.showInTopBar !== false;
     }
 
     const last = localStorage.getItem('plan4u_last_gdrive_export');
     if (this.cloudLastSyncText && last) {
       this.cloudLastSyncText.innerHTML = `Сохранено на Диск: <b>${last}</b>`;
     }
-
-    this._settingsModalOpenedAt = Date.now();
-    this.settingsModalBackdrop.classList.add('open');
-    this.settingsModalBackdrop.setAttribute('aria-hidden', 'false');
   }
 
   // Update Font Preview text styling in settings
@@ -7437,6 +8926,15 @@ class NotebookApp {
 
   // Close Settings Modal
   closeSettingsModal() {
+    const langCircleBtn = document.getElementById('langCircleBadgeBtn');
+    const langDropdown = document.getElementById('langDropdownMenu');
+    const langWrapper = document.getElementById('langPickerWrapper');
+    const langSection = document.getElementById('settingsLangSection') || document.querySelector('.settings-section-lang');
+    if (langCircleBtn) langCircleBtn.classList.remove('open');
+    if (langDropdown) langDropdown.classList.remove('show');
+    if (langWrapper) langWrapper.classList.remove('open');
+    if (langSection) langSection.classList.remove('dropdown-open');
+    this.clearTextSelectionAndFocus();
     if (this.settingsModalBackdrop) {
       this.settingsModalBackdrop.classList.remove('open');
       this.settingsModalBackdrop.setAttribute('aria-hidden', 'true');
@@ -7535,6 +9033,89 @@ class NotebookApp {
       }
     } catch (err) {
       console.warn('Error scheduling smart notifications:', err);
+    }
+  }
+
+  // Get stable unique notification ID for a habit
+  getHabitNotifId(habitId) {
+    if (!habitId) return 20001;
+    let hash = 0;
+    const str = String(habitId);
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash % 900000) + 20000;
+  }
+
+  // Schedule local notification for a specific habit
+  async scheduleHabitNotification(habit) {
+    if (!habit || !habit.id) return;
+    const notifId = this.getHabitNotifId(habit.id);
+
+    // Cancel existing notification first
+    await this.cancelHabitNotification(habit.id);
+
+    if (!habit.reminderEnabled || !habit.reminderTime) return;
+
+    const [hStr, mStr] = String(habit.reminderTime).split(':');
+    const hour = parseInt(hStr, 10);
+    const minute = parseInt(mStr, 10);
+    if (isNaN(hour) || isNaN(minute)) return;
+
+    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
+      try {
+        const { LocalNotifications } = window.Capacitor.Plugins;
+        const isEn = this.settings?.lang === 'en';
+        const isUk = this.settings?.lang === 'uk';
+        const title = isEn ? 'Plan4U — Habit Reminder ⏰' : (isUk ? 'Plan4U — Нагадування про звичку ⏰' : 'Plan4U — Напоминание о привычке ⏰');
+        const body = isEn
+          ? `Time to complete: "${habit.title}"! Keep your streak burning 🔥`
+          : (isUk
+            ? `Час виконати: «${habit.title}»! Збережіть серію 🔥`
+            : `Пора выполнить: «${habit.title}»! Не дай огоньку погаснуть 🔥`);
+
+        await LocalNotifications.schedule({
+          notifications: [{
+            id: notifId,
+            title,
+            body,
+            schedule: {
+              on: { hour, minute },
+              every: 'day'
+            },
+            sound: 'beep.wav',
+            smallIcon: 'ic_launcher'
+          }]
+        });
+      } catch (err) {
+        console.warn('Error scheduling habit notification:', err);
+      }
+    }
+  }
+
+  // Cancel scheduled notification for a habit
+  async cancelHabitNotification(habitId) {
+    if (!habitId) return;
+    const notifId = this.getHabitNotifId(habitId);
+    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
+      try {
+        await window.Capacitor.Plugins.LocalNotifications.cancel({
+          notifications: [{ id: notifId }]
+        }).catch(() => { });
+      } catch (err) {
+        console.warn('Error cancelling habit notification:', err);
+      }
+    }
+  }
+
+  // Schedule notifications for all habits that have reminders enabled
+  async scheduleAllHabitReminders() {
+    if (!this.habits || !Array.isArray(this.habits)) return;
+    for (const habit of this.habits) {
+      if (habit.reminderEnabled && habit.reminderTime) {
+        await this.scheduleHabitNotification(habit);
+      }
     }
   }
 
@@ -7816,7 +9397,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.1.7',
+      appVersion: '0.3.5',
       email: this.cloudEmail,
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
@@ -7831,6 +9412,7 @@ class NotebookApp {
       settings: this.settings,
       streak: this.streakData,
       habits: this.habits || [],
+      cycleData: this.cycleTracker ? this.cycleTracker.data : (JSON.parse(localStorage.getItem('plan4u_cycle_data') || 'null')),
       pet: this.petSystem ? this.petSystem.getPetSnapshot() : (JSON.parse(localStorage.getItem('plan4u_pet_data') || '{}'))
     };
   }
@@ -8014,6 +9596,21 @@ class NotebookApp {
       this.saveHabits();
     }
 
+    // 11c. Cycle Tracker (Female calendar data & settings)
+    if (data.cycleData && typeof data.cycleData === 'object') {
+      try {
+        localStorage.setItem('plan4u_cycle_data', JSON.stringify(data.cycleData));
+        if (this.cycleTracker && typeof this.cycleTracker.loadData === 'function') {
+          this.cycleTracker.data = this.cycleTracker.loadData();
+          this.renderCycleModalContent?.();
+          this.renderCalendar?.();
+          this.updateCycleWidget?.();
+        }
+      } catch (e) {
+        console.warn('Could not restore cycle tracker data:', e);
+      }
+    }
+
     // 12. Apply visual state & update UI components
     this.currentTab = this.tabs.length > 0 ? this.tabs[0].id : 'todo';
     this.rolloverPastUncompletedTasks();
@@ -8059,7 +9656,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.1.7',
+      appVersion: '0.3.5',
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
       sections: this.tabSections || {},
@@ -8073,6 +9670,7 @@ class NotebookApp {
       settings: this.settings,
       streak: this.streakData,
       stickers: this.stickers || {},
+      cycleData: this.cycleTracker ? this.cycleTracker.data : (JSON.parse(localStorage.getItem('plan4u_cycle_data') || 'null')),
       pet: this.petSystem ? this.petSystem.getPetSnapshot() : (JSON.parse(localStorage.getItem('plan4u_pet_data') || '{}'))
     };
   }
@@ -8464,14 +10062,14 @@ class NotebookApp {
   openCalendarModal() {
     this.dismissActiveKeyboard();
     if (!this.calendarModalBackdrop) return;
+    this._calendarModalOpenedAt = Date.now();
+    this.calendarModalBackdrop.classList.add('open');
+    this.calendarModalBackdrop.setAttribute('aria-hidden', 'false');
+
     this.tempSelectedDate = this.selectedDate || this.getTodayDateString();
     const [y, m, d] = this.tempSelectedDate.split('-').map(Number);
     this.displayedCalendarMonth = new Date(y, m - 1, 1);
     this.renderCalendar();
-
-    this._calendarModalOpenedAt = Date.now();
-    this.calendarModalBackdrop.classList.add('open');
-    this.calendarModalBackdrop.setAttribute('aria-hidden', 'false');
   }
 
   // Close Calendar Modal
@@ -8496,6 +10094,7 @@ class NotebookApp {
     this.render();
     this.renderStickers();
     this.updateWorkloadWidget();
+    this.updateCycleWidget();
     this.renderTabs();
     this.syncWithNativeWidget?.();
   }
@@ -8543,7 +10142,26 @@ class NotebookApp {
     let completedCount = 0;
 
     allHabits.forEach(h => {
+      // Determine when this habit was created / first tracked
+      let hStartStr = null;
+      if (h.created) {
+        const cd = new Date(h.created);
+        if (!isNaN(cd.getTime())) {
+          hStartStr = `${cd.getFullYear()}-${String(cd.getMonth() + 1).padStart(2, '0')}-${String(cd.getDate()).padStart(2, '0')}`;
+        }
+      }
+      if (h.history && typeof h.history === 'object') {
+        const hDates = Object.keys(h.history).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k)).sort();
+        if (hDates.length > 0 && (!hStartStr || hDates[0] < hStartStr)) {
+          hStartStr = hDates[0];
+        }
+      }
+
       const hEntry = h.history && h.history[dateStr];
+      if (hStartStr && dateStr < hStartStr && !hEntry) {
+        return; // Skip: this habit did not exist on this date
+      }
+
       let frac = 0;
       let isDone = false;
       if (h.type === 'numeric') {
@@ -8678,6 +10296,28 @@ class NotebookApp {
         cell.appendChild(hBadge);
       }
 
+      // Cycle status highlight (period, irregular window, ovulation)
+      if (this.cycleTracker && this.cycleTracker.isEnabled()) {
+        const cStatus = this.cycleTracker.getDayClassification(dateStr);
+        if (cStatus.isPeriod) {
+          cell.classList.add('is-period');
+          const pDot = document.createElement('span');
+          pDot.className = 'cycle-period-dot';
+          pDot.title = 'Менструация';
+          cell.appendChild(pDot);
+        } else if (cStatus.isPredictedWindow) {
+          cell.classList.add('is-cycle-window');
+          cell.title = 'Окно ожидаемого начала цикла';
+        }
+        if (cStatus.isOvulation) {
+          cell.classList.add('is-ovulation');
+          const ovDot = document.createElement('span');
+          ovDot.className = 'cycle-ovulation-dot';
+          ovDot.title = 'Овуляция';
+          cell.appendChild(ovDot);
+        }
+      }
+
       cell.onclick = () => {
         triggerHaptic(15);
         this.tempSelectedDate = dateStr;
@@ -8749,6 +10389,32 @@ class NotebookApp {
             : (lang === 'en' ? 'No tasks yet for this day. Open it to make a plan!' : (lang === 'uk' ? 'На цей день поки немає записів. Відкрийте його для планування!' : 'На этот день пока нет записей. Откройте его, чтобы составить план!'));
           this.calendarInfoStats.textContent = emptyText;
         }
+      }
+    }
+
+    // Update Calendar Cycle Strip
+    if (this.calendarCycleStrip) {
+      if (this.cycleTracker && this.cycleTracker.isEnabled()) {
+        const cDayStatus = this.cycleTracker.getStatusForDate(this.tempSelectedDate);
+        this.calendarCycleStrip.style.display = 'flex';
+        if (cDayStatus.hasData) {
+          const phaseAdvice = this.cycleTracker.getPhaseAdvice(cDayStatus.phase, lang, cDayStatus.dayInCycle, cDayStatus);
+          if (this.calendarCyclePill) {
+            this.calendarCyclePill.textContent = `🍒 ${this.t('cycle_cal_day_badge', { day: cDayStatus.dayInCycle })}`;
+          }
+          if (this.calendarCycleDesc) {
+            let desc = phaseAdvice.badge || phaseAdvice.title;
+            if (cDayStatus.inWindow) {
+              desc += ` • ${this.t('cycle_cal_window_badge')}`;
+            }
+            this.calendarCycleDesc.textContent = desc;
+          }
+        } else {
+          if (this.calendarCyclePill) this.calendarCyclePill.textContent = '🍒 Цикл';
+          if (this.calendarCycleDesc) this.calendarCycleDesc.textContent = 'Нажмите 🍒, чтобы начать отслеживание';
+        }
+      } else {
+        this.calendarCycleStrip.style.display = 'none';
       }
     }
   }
@@ -8954,11 +10620,12 @@ class NotebookApp {
     this.dismissActiveKeyboard();
     if (!this.achievementsModalBackdrop) return;
 
-    this.renderAchievements();
-    this.updateTrophyWidgetAura();
     this._achievementsModalOpenedAt = Date.now();
     this.achievementsModalBackdrop.classList.add('open');
     this.achievementsModalBackdrop.setAttribute('aria-hidden', 'false');
+
+    this.renderAchievements();
+    this.updateTrophyWidgetAura();
   }
 
   // Close Achievements Modal
@@ -9152,17 +10819,8 @@ class NotebookApp {
       return;
     }
 
-    // Capture previous visual positions of all task items before re-sorting
-    const oldPositions = new Map();
-    const prevWrappers = this.contentContainer.querySelectorAll('.task-row-wrapper[data-id]');
-    prevWrappers.forEach(el => {
-      const id = el.dataset.id;
-      if (id) {
-        oldPositions.set(id, el.getBoundingClientRect().top);
-      }
-    });
-
-    task.completed = !task.completed;
+    const isCompleting = !task.completed;
+    task.completed = isCompleting;
 
     // Update in dailyTasks directly ONLY for todo tab
     const targetDate = this.selectedDate || todayStr;
@@ -9173,7 +10831,7 @@ class NotebookApp {
       }
     }
 
-    if (task.completed) {
+    if (isCompleting) {
       this.playCompletionSound();
       this.checkAllTasksCompletedTriumph();
       if (this.petSystem && !task.rewarded) {
@@ -9225,73 +10883,196 @@ class NotebookApp {
       }
     }
 
-    // Re-render UI
-    this.render();
-    this.renderTabs();
-
-    // 2. Ultra-smooth FLIP animation: 50% slower (~0.65s), hardware-accelerated, zero-jank
-    if (oldPositions.size > 0) {
-      const newWrappers = this.contentContainer.querySelectorAll('.task-row-wrapper[data-id]');
-
-      // PHASE 1: Read all new bounding rects in one pass (no layout thrashing)
-      const moves = [];
-      newWrappers.forEach(el => {
-        const id = el.dataset.id;
-        if (id && oldPositions.has(id)) {
-          const oldTop = oldPositions.get(id);
-          const newTop = el.getBoundingClientRect().top;
-          const deltaY = oldTop - newTop;
-          if (Math.abs(deltaY) > 0.5) {
-            moves.push({ el, id, deltaY });
-          }
-        }
-      });
-
-      // PHASE 2: Apply initial inverted transforms (GPU accelerated)
-      moves.forEach(({ el, id, deltaY }) => {
-        el.style.transform = `translate3d(0, ${deltaY}px, 0)`;
-        el.style.transition = 'none';
-        el.style.willChange = 'transform';
-        el.style.zIndex = (String(id) === String(taskId)) ? '25' : '20';
-        if (String(id) === String(taskId)) {
-          el.classList.add('just-completed-gliding');
-        }
-      });
-
-      // PHASE 3: Animate smoothly to natural position (2.00s, ultra smooth cubic-bezier)
-      if (moves.length > 0) {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            moves.forEach(({ el }) => {
-              el.style.transition = 'transform 2.00s cubic-bezier(0.16, 1, 0.3, 1)';
-              el.style.transform = 'translate3d(0, 0, 0)';
-
-              const cleanup = () => {
-                el.style.transform = '';
-                el.style.transition = '';
-                el.style.willChange = '';
-                el.style.zIndex = '';
-                el.classList.remove('just-completed-gliding');
-                el.removeEventListener('transitionend', cleanup);
-              };
-              el.addEventListener('transitionend', cleanup, { once: true });
-              setTimeout(cleanup, 2100);
-            });
-          });
-        });
-      }
-    }
-
     // Synchronously flush changes to ensure instant persistence
     this.saveTasks();
     this.saveDayHistory();
+    if (this.currentTab === 'todo') {
+      this.saveDailyTasks();
+    }
 
-    // PHASE 4: Defer heavy visual/computational operations (achievements check, widget updates)
-    // to avoid dropping frames during the animation
-    setTimeout(() => {
-      this.checkAchievements(true);
+    if (isCompleting) {
+      // PHASE 1: Animate checkbox and hand-drawn strike-through IN PLACE without moving the task
+      const currentWrapper = this.contentContainer ? this.contentContainer.querySelector(`.task-row-wrapper[data-id="${taskId}"]`) : null;
+      const currentRow = currentWrapper ? currentWrapper.querySelector('.task-row') : null;
+      const titleSpan = currentRow ? currentRow.querySelector('.task-title-text') : null;
+
+      let delayBeforeDescent = 480; // ms
+
+      if (currentRow && titleSpan) {
+        currentRow.classList.add('completed');
+        if (currentWrapper) currentWrapper.classList.add('no-swipe');
+        const checkbox = currentRow.querySelector('.task-checkbox');
+        if (checkbox) checkbox.setAttribute('aria-checked', 'true');
+
+        // Play authentic hand-drawn strike-through animation right here in place
+        this.renderHandDrawnStrikeForElement(titleSpan, taskId, true);
+
+        // Calculate accurate strike duration based on line count (280ms duration + 130ms per extra line)
+        // Add 140ms natural pause so user clearly sees the crossed-out task before it descends
+        const strikePaths = titleSpan.querySelectorAll('.hand-strike-path');
+        const lineCount = Math.max(1, strikePaths.length);
+        delayBeforeDescent = Math.round((lineCount - 1) * 130 + 320 + 140);
+      }
+
+      // Clear any previous completion timer for this task
+      if (!this._pendingCompletionTimers) this._pendingCompletionTimers = {};
+      if (this._pendingCompletionTimers[taskId]) {
+        clearTimeout(this._pendingCompletionTimers[taskId]);
+      }
+
+      // PHASE 2: After strike-through completes, smoothly glide task down to the bottom of active tasks
+      this._pendingCompletionTimers[taskId] = setTimeout(() => {
+        delete this._pendingCompletionTimers[taskId];
+
+        if (!this.contentContainer) return;
+        const currentTabTasks = this.tasks[this.currentTab] || [];
+        const stillInCurrentTab = currentTabTasks.some(t => String(t.id) === String(taskId));
+        if (!stillInCurrentTab) return;
+
+        // 1. Capture previous visual positions of all task items
+        const oldPositions = new Map();
+        const prevWrappers = this.contentContainer.querySelectorAll('.task-row-wrapper[data-id]');
+        prevWrappers.forEach(el => {
+          const id = el.dataset.id;
+          if (id) {
+            oldPositions.set(id, el.getBoundingClientRect().top);
+          }
+        });
+
+        // 2. Re-render UI with tasks in new sorted order (completed task moves to bottom of section)
+        this.render();
+        this.renderTabs();
+        this.applyHandDrawnStrikes();
+
+        // 3. Ultra-smooth FLIP animation: hardware-accelerated glide downwards
+        if (oldPositions.size > 0) {
+          const newWrappers = this.contentContainer.querySelectorAll('.task-row-wrapper[data-id]');
+          const moves = [];
+          newWrappers.forEach(el => {
+            const id = el.dataset.id;
+            if (id && oldPositions.has(id)) {
+              const oldTop = oldPositions.get(id);
+              const newTop = el.getBoundingClientRect().top;
+              const deltaY = oldTop - newTop;
+              if (Math.abs(deltaY) > 0.5) {
+                moves.push({ el, id, deltaY });
+              }
+            }
+          });
+
+          if (moves.length > 0) {
+            // Apply initial inverted transforms
+            moves.forEach(({ el, id, deltaY }) => {
+              el.style.transform = `translate3d(0, ${deltaY}px, 0)`;
+              el.style.transition = 'none';
+              el.style.willChange = 'transform';
+              el.style.zIndex = (String(id) === String(taskId)) ? '25' : '20';
+              if (String(id) === String(taskId)) {
+                el.classList.add('just-completed-gliding');
+              }
+            });
+
+            // Force reflow so starting transform is committed to GPU
+            void this.contentContainer.offsetHeight;
+
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                moves.forEach(({ el }) => {
+                  // Silky smooth, gentle deceleration curve (0.65s)
+                  el.style.transition = 'transform 0.65s cubic-bezier(0.25, 1, 0.5, 1)';
+                  el.style.transform = 'translate3d(0, 0, 0)';
+
+                  const cleanup = () => {
+                    el.style.transform = '';
+                    el.style.transition = '';
+                    el.style.willChange = '';
+                    el.style.zIndex = '';
+                    el.classList.remove('just-completed-gliding');
+                    el.removeEventListener('transitionend', cleanup);
+                  };
+                  el.addEventListener('transitionend', cleanup, { once: true });
+                  setTimeout(cleanup, 750);
+                });
+              });
+            });
+          }
+        }
+
+        // Defer heavy visual/computational operations after descent starts
+        setTimeout(() => {
+          this.checkAchievements(true);
+          this.updateWorkloadWidget();
+        }, 150);
+      }, delayBeforeDescent);
+
+    } else {
+      // Uncompleting: instant restoration with smooth upward glide
+      if (this._pendingCompletionTimers && this._pendingCompletionTimers[taskId]) {
+        clearTimeout(this._pendingCompletionTimers[taskId]);
+        delete this._pendingCompletionTimers[taskId];
+      }
+
+      const oldPositions = new Map();
+      const prevWrappers = this.contentContainer ? this.contentContainer.querySelectorAll('.task-row-wrapper[data-id]') : [];
+      prevWrappers.forEach(el => {
+        const id = el.dataset.id;
+        if (id) {
+          oldPositions.set(id, el.getBoundingClientRect().top);
+        }
+      });
+
+      this.render();
+      this.renderTabs();
+      this.applyHandDrawnStrikes();
+
+      if (oldPositions.size > 0 && this.contentContainer) {
+        const newWrappers = this.contentContainer.querySelectorAll('.task-row-wrapper[data-id]');
+        const moves = [];
+        newWrappers.forEach(el => {
+          const id = el.dataset.id;
+          if (id && oldPositions.has(id)) {
+            const oldTop = oldPositions.get(id);
+            const newTop = el.getBoundingClientRect().top;
+            const deltaY = oldTop - newTop;
+            if (Math.abs(deltaY) > 0.5) {
+              moves.push({ el, id, deltaY });
+            }
+          }
+        });
+
+        if (moves.length > 0) {
+          moves.forEach(({ el, id, deltaY }) => {
+            el.style.transform = `translate3d(0, ${deltaY}px, 0)`;
+            el.style.transition = 'none';
+            el.style.willChange = 'transform';
+            el.style.zIndex = (String(id) === String(taskId)) ? '25' : '20';
+          });
+
+          void this.contentContainer.offsetHeight;
+
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              moves.forEach(({ el }) => {
+                el.style.transition = 'transform 0.50s cubic-bezier(0.25, 1, 0.5, 1)';
+                el.style.transform = 'translate3d(0, 0, 0)';
+
+                const cleanup = () => {
+                  el.style.transform = '';
+                  el.style.transition = '';
+                  el.style.willChange = '';
+                  el.style.zIndex = '';
+                  el.removeEventListener('transitionend', cleanup);
+                };
+                el.addEventListener('transitionend', cleanup, { once: true });
+                setTimeout(cleanup, 600);
+              });
+            });
+          });
+        }
+      }
+
       this.updateWorkloadWidget();
-    }, 150);
+    }
   }
 
   // Delete Task
@@ -9434,6 +11215,11 @@ class NotebookApp {
       this.showToast(msg, '🔒');
       return;
     }
+    if (!this.taskModalBackdrop) return;
+    this._taskModalOpenedAt = Date.now();
+    this.taskModalBackdrop.classList.add('open');
+    this.taskModalBackdrop.setAttribute('aria-hidden', 'false');
+
     this.editingTaskId = null;
     this.tempPhotoData = null;
     this._activeSectionForNewTask = defaultSection || null;
@@ -9448,10 +11234,6 @@ class NotebookApp {
     if (modalTitle) modalTitle.textContent = 'Новая запись';
     const submitBtn = document.getElementById('modalSubmitBtn');
     if (submitBtn) submitBtn.textContent = 'Сохранить';
-
-    this._taskModalOpenedAt = Date.now();
-    this.taskModalBackdrop.classList.add('open');
-    this.taskModalBackdrop.setAttribute('aria-hidden', 'false');
   }
 
   // Open Edit Task Modal with existing task values pre-filled
@@ -9464,6 +11246,11 @@ class NotebookApp {
     if (!tabTasks) return;
     const task = tabTasks.find(t => t.id === taskId);
     if (!task || task.isMaineQuest || task.isSecretQuest) return;
+    if (!this.taskModalBackdrop) return;
+
+    this._taskModalOpenedAt = Date.now();
+    this.taskModalBackdrop.classList.add('open');
+    this.taskModalBackdrop.setAttribute('aria-hidden', 'false');
 
     this.editingTaskId = taskId;
     this.tempPhotoData = task.photo || null;
@@ -9543,10 +11330,6 @@ class NotebookApp {
     if (sectionSelect) {
       sectionSelect.value = task.section || getTaskSection(task) || 'personal';
     }
-
-    this._taskModalOpenedAt = Date.now();
-    this.taskModalBackdrop.classList.add('open');
-    this.taskModalBackdrop.setAttribute('aria-hidden', 'false');
   }
 
   // Close Task Modal
@@ -9906,7 +11689,9 @@ class NotebookApp {
     const priorityHint = this.dynamicFormFields.querySelector('#taskPriorityHint');
     const chips = this.dynamicFormFields.querySelectorAll('.priority-chip');
     chips.forEach(chip => {
-      chip.addEventListener('click', () => {
+      chip.addEventListener('pointerdown', (e) => e.preventDefault());
+      chip.addEventListener('click', (e) => {
+        e.preventDefault();
         chips.forEach(c => c.classList.remove('selected'));
         chip.classList.add('selected');
         const radio = chip.querySelector('input[type="radio"]');
@@ -9937,7 +11722,9 @@ class NotebookApp {
     // Attach Priority Color Option click events
     const colorOptions = this.dynamicFormFields.querySelectorAll('.priority-color-circle');
     colorOptions.forEach(opt => {
-      opt.addEventListener('click', () => {
+      opt.addEventListener('pointerdown', (e) => e.preventDefault());
+      opt.addEventListener('click', (e) => {
+        e.preventDefault();
         colorOptions.forEach(o => o.classList.remove('selected'));
         opt.classList.add('selected');
         const radio = opt.querySelector('input[type="radio"]');
@@ -9955,6 +11742,7 @@ class NotebookApp {
     const photoBadge = this.dynamicFormFields.querySelector('#photoAttachedBadge');
 
     if (btnTriggerPhoto && photoFileInput) {
+      btnTriggerPhoto.addEventListener('pointerdown', (e) => e.preventDefault());
       btnTriggerPhoto.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -10751,11 +12539,92 @@ class NotebookApp {
     const isFutureDay = isTodoTab && this.selectedDate > todayStr;
     const isNotToday = isPastDay || isFutureDay;
 
+    let pastDaysCount = 0;
+    let ageIntensity = 0;
+    if (isPastDay) {
+      const [ty, tm, td] = todayStr.split('-').map(Number);
+      const [sy, sm, sd] = this.selectedDate.split('-').map(Number);
+      const todayDate = new Date(ty, tm - 1, td);
+      const selDate = new Date(sy, sm - 1, sd);
+      const diffMs = todayDate.getTime() - selDate.getTime();
+      pastDaysCount = Math.max(0, Math.round(diffMs / (1000 * 60 * 60 * 24)));
+      // Progressive curve: starts delicate at 1 day, reaches deep vintage by ~130-150 days
+      ageIntensity = Math.min(1, Math.max(0.06, Math.pow(pastDaysCount / 140, 0.55)));
+    }
+
     const appFrame = document.getElementById('appFrame') || document.body;
     if (appFrame) {
       appFrame.classList.toggle('is-past-day-mode', isPastDay);
     }
     document.body.classList.toggle('is-past-day-mode', isPastDay);
+
+    if (sheetEl) {
+      sheetEl.classList.toggle('is-aged-paper', isPastDay);
+      if (isPastDay) {
+        // Interpolate colors smoothly
+        // Light mode aged background: from #ffffff to #ddbd88
+        const rLight = Math.round(255 - ageIntensity * (255 - 221));
+        const gLight = Math.round(255 - ageIntensity * (255 - 189));
+        const bLight = Math.round(255 - ageIntensity * (255 - 136));
+        const agedPaperBgLight = `rgb(${rLight}, ${gLight}, ${bLight})`;
+
+        // Dark mode aged background: from #131620 to #2b221a
+        const rDark = Math.round(19 + ageIntensity * (43 - 19));
+        const gDark = Math.round(22 + ageIntensity * (34 - 22));
+        const bDark = Math.round(32 - ageIntensity * (32 - 26));
+        const agedPaperBgDark = `rgb(${rDark}, ${gDark}, ${bDark})`;
+
+        // Margin line fading: from #f4a5c0 (fresh pink) to #a65e6d (faded antique cinnabar rose)
+        const rMarg = Math.round(244 - ageIntensity * (244 - 166));
+        const gMarg = Math.round(165 - ageIntensity * (165 - 94));
+        const bMarg = Math.round(192 - ageIntensity * (192 - 109));
+        const agedMargin = `rgb(${rMarg}, ${gMarg}, ${bMarg})`;
+
+        // Notebook ruling line: from rgba(150, 130, 145, 0.32) to rgba(125, 90, 50, 0.38)
+        const agedLine = `rgba(${Math.round(150 - ageIntensity * 25)}, ${Math.round(130 - ageIntensity * 40)}, ${Math.round(145 - ageIntensity * 95)}, ${(0.32 + ageIntensity * 0.08).toFixed(2)})`;
+        const agedGrid = `rgba(${Math.round(150 - ageIntensity * 25)}, ${Math.round(130 - ageIntensity * 40)}, ${Math.round(145 - ageIntensity * 95)}, ${(0.25 + ageIntensity * 0.08).toFixed(2)})`;
+        const agedDot = `rgba(${Math.round(120 - ageIntensity * 20)}, ${Math.round(105 - ageIntensity * 35)}, ${Math.round(125 - ageIntensity * 85)}, ${(0.42 + ageIntensity * 0.1).toFixed(2)})`;
+
+        // Vintage ink color: from #1f2937 to #38271a
+        const agedInk = `rgb(${Math.round(31 + ageIntensity * (56 - 31))}, ${Math.round(41 - ageIntensity * (41 - 39))}, ${Math.round(55 - ageIntensity * (55 - 26))})`;
+
+        // Inset vignette shadow color
+        const vignetteAlpha = (0.15 + ageIntensity * 0.32).toFixed(2);
+        const agedVignette = `rgba(110, 68, 20, ${vignetteAlpha})`;
+
+        sheetEl.style.setProperty('--archive-age-intensity', ageIntensity.toFixed(3));
+        sheetEl.style.setProperty('--archive-past-days', pastDaysCount);
+        sheetEl.style.setProperty('--aged-paper-bg', agedPaperBgLight);
+        sheetEl.style.setProperty('--aged-paper-bg-dark', agedPaperBgDark);
+        sheetEl.style.setProperty('--accent-margin-line', agedMargin);
+        sheetEl.style.setProperty('--notebook-line-color', agedLine);
+        sheetEl.style.setProperty('--notebook-grid-color', agedGrid);
+        sheetEl.style.setProperty('--notebook-dot-color', agedDot);
+        sheetEl.style.setProperty('--aged-ink-color', agedInk);
+        sheetEl.style.setProperty('--aged-vignette-color', agedVignette);
+
+        if (appFrame) {
+          appFrame.style.setProperty('--archive-age-intensity', ageIntensity.toFixed(3));
+          appFrame.style.setProperty('--archive-past-days', pastDaysCount);
+        }
+      } else {
+        sheetEl.style.removeProperty('--archive-age-intensity');
+        sheetEl.style.removeProperty('--archive-past-days');
+        sheetEl.style.removeProperty('--aged-paper-bg');
+        sheetEl.style.removeProperty('--aged-paper-bg-dark');
+        sheetEl.style.removeProperty('--accent-margin-line');
+        sheetEl.style.removeProperty('--notebook-line-color');
+        sheetEl.style.removeProperty('--notebook-grid-color');
+        sheetEl.style.removeProperty('--notebook-dot-color');
+        sheetEl.style.removeProperty('--aged-ink-color');
+        sheetEl.style.removeProperty('--aged-vignette-color');
+
+        if (appFrame) {
+          appFrame.style.removeProperty('--archive-age-intensity');
+          appFrame.style.removeProperty('--archive-past-days');
+        }
+      }
+    }
 
     // 1. Manage FAB button visibility (hidden ONLY on past archive days)
     if (this.fabBtn) {
@@ -10779,15 +12648,47 @@ class NotebookApp {
       petAnchor.style.setProperty('display', isPastDay ? 'none' : 'flex', 'important');
     }
 
-    // 4. Manage Floating Return to Today Button (visible in past and future days)
+    // 4. Manage Floating Return to Today & Day Navigation Bar (visible in past and future days)
     const returnWrapper = document.getElementById('pastDayReturnWrapper');
     if (returnWrapper) {
       returnWrapper.style.setProperty('display', isNotToday ? 'flex' : 'none', 'important');
+      returnWrapper.classList.toggle('is-past-day', isPastDay);
       returnWrapper.classList.toggle('is-future-day', isFutureDay);
+
       const returnText = document.getElementById('pastDayReturnText');
       if (returnText) {
         const lang = this.settings?.lang || 'ru';
         returnText.textContent = lang === 'en' ? 'Back to Today' : (lang === 'uk' ? 'Повернутися до Сьогодні' : 'Вернуться в Сегодня');
+      }
+
+      const returnLabel = document.getElementById('pastDayReturnLabel');
+      if (returnLabel) {
+        if (isPastDay) {
+          returnLabel.style.display = 'inline-flex';
+          returnLabel.textContent = this.formatDaysAgoLabel(pastDaysCount);
+        } else if (isFutureDay) {
+          const [ty, tm, td] = todayStr.split('-').map(Number);
+          const [sy, sm, sd] = this.selectedDate.split('-').map(Number);
+          const diffDays = Math.max(1, Math.round((new Date(sy, sm - 1, sd) - new Date(ty, tm - 1, td)) / 86400000));
+          returnLabel.style.display = 'inline-flex';
+          returnLabel.textContent = this.formatFutureDaysLabel(diffDays);
+        } else {
+          returnLabel.style.display = 'none';
+        }
+      }
+
+      const prevBtn = document.getElementById('pastDayNavPrev');
+      const nextBtn = document.getElementById('pastDayNavNext');
+      const lang = this.settings?.lang || 'ru';
+      const prevTitle = lang === 'en' ? 'Day back' : (lang === 'uk' ? 'День тому' : 'День назад');
+      const nextTitle = lang === 'en' ? 'Day forward' : (lang === 'uk' ? 'День вперед' : 'День вперёд');
+      if (prevBtn) {
+        prevBtn.title = prevTitle;
+        prevBtn.setAttribute('aria-label', prevTitle);
+      }
+      if (nextBtn) {
+        nextBtn.title = nextTitle;
+        nextBtn.setAttribute('aria-label', nextTitle);
       }
     }
 
@@ -10917,10 +12818,10 @@ class NotebookApp {
       });
 
       if (isPastDay) {
+        const isEn = this.settings.lang === 'en';
+        const isUk = this.settings.lang === 'uk';
         const totalPastTasks = currentTasks.filter(t => !t.isEmpty && t.text && t.text.trim().length > 0).length;
         if (totalPastTasks === 0) {
-          const isEn = this.settings.lang === 'en';
-          const isUk = this.settings.lang === 'uk';
           const emptyTitle = isEn ? 'Archive is empty' : (isUk ? 'Архів цього дня порожній' : 'Архив этого дня пуст');
           const emptySub = isEn ? 'No completed tasks recorded on this day' : (isUk ? 'У цей день не було виконаних завдань' : 'В этот день не было выполненных дел');
           html += `
@@ -10931,15 +12832,6 @@ class NotebookApp {
             </div>
           `;
         } else {
-          const isEn = this.settings.lang === 'en';
-          const isUk = this.settings.lang === 'uk';
-          const bannerText = isEn ? 'Archive of past day • Read only' : (isUk ? 'Архів минулого дня • Тільки перегляд' : 'Архив прошедшего дня • Только просмотр');
-          html += `
-            <div class="past-day-archive-banner">
-              <span>🔒</span>
-              <span>${bannerText}</span>
-            </div>
-          `;
 
           sections.forEach(sec => {
             const tasksInSec = grouped[sec.id] || [];
@@ -11041,7 +12933,177 @@ class NotebookApp {
     this.renderStickers();
 
     this.updateWorkloadWidget();
+
+    // Attach interactive archive banner day flipping events
+    this.attachArchiveBannerEvents();
+
+    // Apply authentic hand-drawn strikes to all completed tasks
+    this.applyHandDrawnStrikes();
   }
+
+  // Format past day relative time string for archive header and badges
+  formatPastDayRelative(pastDaysCount) {
+    const lang = this.settings?.lang || 'ru';
+    const isEn = lang === 'en';
+    const isUk = lang === 'uk';
+
+    if (pastDaysCount <= 1) {
+      return window.Plan4UI18n
+        ? Plan4UI18n.t('archive_yesterday', {}, lang)
+        : (isEn ? 'Yesterday (1 day ago)' : (isUk ? 'Вчора (1 день тому)' : 'Вчера (1 день назад)'));
+    }
+
+    if (pastDaysCount < 30) {
+      return window.Plan4UI18n
+        ? Plan4UI18n.t('archive_days_ago', { count: pastDaysCount }, lang)
+        : (isEn ? `${pastDaysCount} days ago` : (isUk ? `${pastDaysCount} дн. тому` : `${pastDaysCount} дн. назад`));
+    }
+
+    const months = Math.max(1, Math.round(pastDaysCount / 30));
+    return window.Plan4UI18n
+      ? Plan4UI18n.t('archive_months_ago', { count: months }, lang)
+      : (isEn ? `${months} mo. ago` : (isUk ? `${months} міс. тому` : `${months} мес. назад`));
+  }
+
+  // Navigate to a specific date safely, preserving current tab tasks
+  navigateToDate(targetDateStr) {
+    if (!targetDateStr || targetDateStr === this.selectedDate) return;
+    const todayStr = this.getTodayDateString();
+
+    // Save current tasks if we were on today or future before switching
+    if (this.selectedDate >= todayStr && this.tasks && this.tasks.todo && this.dailyTasks) {
+      this.dailyTasks[this.selectedDate] = this.tasks.todo;
+      this.saveDailyTasks();
+    }
+
+    this.selectedDate = targetDateStr;
+    this.tempSelectedDate = targetDateStr;
+    this.syncSelectedDate();
+
+    const formatted = this.formatDateTitle(this.selectedDate);
+    if (this.selectedDate === todayStr) {
+      const lang = this.settings?.lang || 'ru';
+      const isEn = lang === 'en';
+      const isUk = lang === 'uk';
+      const msg = isEn ? 'Back to Today! ✨' : (isUk ? 'Сьогодні 📍' : 'Сегодня 📍');
+      this.showToast(msg, '📅');
+    } else {
+      this.showToast(formatted, '📜');
+    }
+  }
+
+  // Navigate by day offset (-1 day back / +1 day forward)
+  navigateDayOffset(offset) {
+    if (!offset) return;
+    const todayStr = this.getTodayDateString();
+    const curDateStr = this.selectedDate || todayStr;
+    const [y, m, d] = curDateStr.split('-').map(Number);
+    const dateObj = new Date(y, m - 1, d);
+    dateObj.setDate(dateObj.getDate() + offset);
+
+    const nextDateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+    if (offset > 0 && nextDateStr > todayStr) {
+      this.navigateToDate(todayStr);
+      return;
+    }
+
+    this.navigateToDate(nextDateStr);
+  }
+
+  // Format concise days ago label for the floating return bar
+  formatDaysAgoLabel(pastDaysCount) {
+    const lang = this.settings?.lang || 'ru';
+    const isEn = lang === 'en';
+    const isUk = lang === 'uk';
+
+    if (pastDaysCount <= 1) {
+      if (isEn) return 'Yesterday • 1 day ago';
+      if (isUk) return 'Вчора • 1 день тому';
+      return 'Вчера • 1 день назад';
+    }
+
+    if (isEn) {
+      if (pastDaysCount < 30) {
+        return `${pastDaysCount} days ago`;
+      }
+      const months = Math.max(1, Math.round(pastDaysCount / 30));
+      return `${pastDaysCount} days ago (${months} mo.)`;
+    }
+
+    if (isUk) {
+      const mod10 = pastDaysCount % 10;
+      const mod100 = pastDaysCount % 100;
+      let word = 'днів';
+      if (mod10 === 1 && mod100 !== 11) {
+        word = 'день';
+      } else if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) {
+        word = 'дні';
+      }
+      if (pastDaysCount < 30) {
+        return `${pastDaysCount} ${word} тому`;
+      }
+      const months = Math.max(1, Math.round(pastDaysCount / 30));
+      return `${pastDaysCount} ${word} тому (${months} міс.)`;
+    }
+
+    // Russian default
+    const mod10 = pastDaysCount % 10;
+    const mod100 = pastDaysCount % 100;
+    let word = 'дней';
+    if (mod10 === 1 && mod100 !== 11) {
+      word = 'день';
+    } else if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) {
+      word = 'дня';
+    }
+    if (pastDaysCount < 30) {
+      return `${pastDaysCount} ${word} назад`;
+    }
+    const months = Math.max(1, Math.round(pastDaysCount / 30));
+    return `${pastDaysCount} ${word} назад (${months} мес.)`;
+  }
+
+  // Format concise future days label for the floating return bar
+  formatFutureDaysLabel(futureDaysCount) {
+    const lang = this.settings?.lang || 'ru';
+    const isEn = lang === 'en';
+    const isUk = lang === 'uk';
+
+    if (futureDaysCount <= 1) {
+      if (isEn) return 'Tomorrow • in 1 day';
+      if (isUk) return 'Завтра • через 1 день';
+      return 'Завтра • через 1 день';
+    }
+
+    if (isEn) {
+      return `In ${futureDaysCount} days`;
+    }
+
+    if (isUk) {
+      const mod10 = futureDaysCount % 10;
+      const mod100 = futureDaysCount % 100;
+      let word = 'днів';
+      if (mod10 === 1 && mod100 !== 11) {
+        word = 'день';
+      } else if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) {
+        word = 'дні';
+      }
+      return `Через ${futureDaysCount} ${word}`;
+    }
+
+    // Russian default
+    const mod10 = futureDaysCount % 10;
+    const mod100 = futureDaysCount % 100;
+    let word = 'дней';
+    if (mod10 === 1 && mod100 !== 11) {
+      word = 'день';
+    } else if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) {
+      word = 'дня';
+    }
+    return `Через ${futureDaysCount} ${word}`;
+  }
+
+  // Legacy archive banner events hook (kept safe as no-op)
+  attachArchiveBannerEvents() { }
 
   // Attach Long-Press (Only) and Context Menu to Section Headers
   // Attach Long-Press (Only) and Context Menu strictly to Section Header Badge
@@ -11256,17 +13318,269 @@ class NotebookApp {
     `;
   }
 
+  // Generate authentic hand-drawn Bezier curve path for notebook strikethrough (6 organic styles)
+  getHandDrawnPath(x0, y0, w, h, seed) {
+    const ym = y0 + h * 0.52;
+    switch (seed % 6) {
+      case 0:
+        // 1. Bold Organic Arc: gentle sag in the middle, sweeping flick up at the end
+        return `M ${(x0 - 4).toFixed(1)},${(ym + 0.5).toFixed(1)} C ${(x0 + w * 0.30).toFixed(1)},${(ym + 3.5).toFixed(1)} ${(x0 + w * 0.70).toFixed(1)},${(ym + 3.0).toFixed(1)} ${(x0 + w + 6).toFixed(1)},${(ym - 2.8).toFixed(1)}`;
+      case 1:
+        // 2. Dynamic Upward Slash: starts lower, sweeps diagonally up with confident flick
+        return `M ${(x0 - 4).toFixed(1)},${(ym + 3.2).toFixed(1)} C ${(x0 + w * 0.32).toFixed(1)},${(ym + 1.0).toFixed(1)} ${(x0 + w * 0.68).toFixed(1)},${(ym - 1.8).toFixed(1)} ${(x0 + w + 7).toFixed(1)},${(ym - 4.5).toFixed(1)}`;
+      case 2:
+        // 3. Expressive S-Wave: climbs over initial letters, dips through the center, flicks at the end
+        return `M ${(x0 - 3).toFixed(1)},${(ym - 2.6).toFixed(1)} C ${(x0 + w * 0.28).toFixed(1)},${(ym + 3.4).toFixed(1)} ${(x0 + w * 0.72).toFixed(1)},${(ym - 2.6).toFixed(1)} ${(x0 + w + 5).toFixed(1)},${(ym + 1.2).toFixed(1)}`;
+      case 3:
+        // 4. High Arch: arches up over vowel ascenders, then lands firmly at baseline
+        return `M ${(x0 - 4).toFixed(1)},${(ym + 1.6).toFixed(1)} C ${(x0 + w * 0.35).toFixed(1)},${(ym - 3.6).toFixed(1)} ${(x0 + w * 0.70).toFixed(1)},${(ym - 1.5).toFixed(1)} ${(x0 + w + 6).toFixed(1)},${(ym + 2.2).toFixed(1)}`;
+      case 4:
+        // 5. Swift Careless Flick: quick horizontal stroke with a tiny downward hand drop at tail
+        return `M ${(x0 - 4).toFixed(1)},${(ym - 1.0).toFixed(1)} C ${(x0 + w * 0.40).toFixed(1)},${(ym + 2.4).toFixed(1)} ${(x0 + w * 0.80).toFixed(1)},${(ym - 0.6).toFixed(1)} ${(x0 + w + 6).toFixed(1)},${(ym + 2.4).toFixed(1)}`;
+      case 5:
+      default:
+        // 6. Subtle Sinuous Ripple: gentle micro double-wave mimicking natural hand movement
+        return `M ${(x0 - 3).toFixed(1)},${(ym + 2.0).toFixed(1)} C ${(x0 + w * 0.24).toFixed(1)},${(ym - 2.5).toFixed(1)} ${(x0 + w * 0.62).toFixed(1)},${(ym + 2.2).toFixed(1)} ${(x0 + w + 6).toFixed(1)},${(ym - 1.8).toFixed(1)}`;
+    }
+  }
+
+  // Secondary stroke for rare intentional double-crossing (~12-14% of tasks / 1-2 per day)
+  getDoubleStrikePath(x0, y0, w, h, seed) {
+    const ym = y0 + h * 0.52;
+    if (seed % 2 === 0) {
+      return `M ${(x0 - 2).toFixed(1)},${(ym - 3.0).toFixed(1)} C ${(x0 + w * 0.35).toFixed(1)},${(ym - 1.0).toFixed(1)} ${(x0 + w * 0.72).toFixed(1)},${(ym + 2.4).toFixed(1)} ${(x0 + w + 4).toFixed(1)},${(ym + 1.5).toFixed(1)}`;
+    } else {
+      return `M ${(x0 - 3).toFixed(1)},${(ym + 2.8).toFixed(1)} C ${(x0 + w * 0.38).toFixed(1)},${(ym - 2.2).toFixed(1)} ${(x0 + w * 0.65).toFixed(1)},${(ym + 0.6).toFixed(1)} ${(x0 + w + 5).toFixed(1)},${(ym - 3.4).toFixed(1)}`;
+    }
+  }
+
+  // Render hand-drawn pen strike SVG overlay on task title element
+  renderHandDrawnStrikeForElement(titleSpan, taskId, isAnimated = false) {
+    if (!titleSpan) return;
+    const titleRect = titleSpan.getBoundingClientRect();
+    if (titleRect.width < 2 || titleRect.height < 2) return;
+
+    titleSpan.classList.add('has-hand-strike');
+    const row = titleSpan.closest('.task-row');
+    if (row) row.classList.add('has-hand-strike');
+
+    // Remove any previous SVG before measuring so SVG rect does not pollute getClientRects
+    let svg = titleSpan.querySelector(':scope > .hand-strike-svg');
+    if (svg) svg.remove();
+
+    // Use DOM Range to measure text-only content
+    let rawRects = [];
+    try {
+      const range = document.createRange();
+      const textNodes = [];
+      const walker = document.createTreeWalker(titleSpan, NodeFilter.SHOW_TEXT, null, false);
+      let node;
+      while ((node = walker.nextNode())) {
+        if (node.textContent && node.textContent.trim().length > 0) {
+          textNodes.push(node);
+        }
+      }
+      if (textNodes.length > 0) {
+        range.setStart(textNodes[0], 0);
+        const lastNode = textNodes[textNodes.length - 1];
+        range.setEnd(lastNode, lastNode.textContent.length);
+        rawRects = Array.from(range.getClientRects()).filter(r => r.width > 3 && r.height > 3);
+      }
+    } catch (e) {
+      rawRects = [];
+    }
+    if (!rawRects.length) {
+      rawRects = Array.from(titleSpan.getClientRects()).filter(r => r.width > 3 && r.height > 3);
+    }
+    if (!rawRects.length) rawRects = [titleRect];
+
+    // Cluster rects belonging to the same visual line (to prevent multiple strokes on 1 line)
+    const lineRects = [];
+    rawRects.sort((a, b) => a.top - b.top || a.left - b.left);
+    rawRects.forEach(rect => {
+      const lineThreshold = Math.max(8, (rect.height || 18) * 0.55);
+      const existing = lineRects.find(m => Math.abs(m.top - rect.top) < lineThreshold);
+      if (existing) {
+        const left = Math.min(existing.left, rect.left);
+        const right = Math.max(existing.right, rect.right);
+        const top = Math.min(existing.top, rect.top);
+        const bottom = Math.max(existing.bottom, rect.bottom);
+        existing.left = left;
+        existing.right = right;
+        existing.top = top;
+        existing.bottom = bottom;
+        existing.width = right - left;
+        existing.height = bottom - top;
+      } else {
+        lineRects.push({
+          left: rect.left,
+          right: rect.right,
+          top: rect.top,
+          bottom: rect.bottom,
+          width: rect.width,
+          height: rect.height
+        });
+      }
+    });
+
+    let hash = 0;
+    const str = String(taskId || '0');
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      hash |= 0;
+    }
+    const baseSeed = Math.abs(hash);
+
+    // Rare intentional double strike: ~14% chance (roughly 1 in 7 tasks / 1-2 per day)
+    const isDoubleStrike = (baseSeed % 7 === 0);
+
+    svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'hand-strike-svg');
+    svg.setAttribute('aria-hidden', 'true');
+    titleSpan.appendChild(svg);
+
+    const svgWidth = Math.ceil(titleRect.width + 10);
+    const svgHeight = Math.ceil(titleRect.height);
+    svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
+    svg.style.width = `${svgWidth}px`;
+    svg.style.height = `${svgHeight}px`;
+    svg.style.left = '-4px';
+    svg.style.top = '0px';
+
+    lineRects.forEach((lineRect, i) => {
+      const lx0 = Math.max(0, lineRect.left - titleRect.left + 4);
+      const lw = Math.max(8, lineRect.width);
+      const ly0 = lineRect.top - titleRect.top;
+      const lh = lineRect.height || 20;
+      const lineSeed = (baseSeed + i * 2) % 6;
+
+      // Primary expressive hand-drawn stroke
+      const d = this.getHandDrawnPath(lx0, ly0, lw, lh, lineSeed);
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('class', 'hand-strike-path');
+      path.setAttribute('d', d);
+      svg.appendChild(path);
+
+      if (isAnimated) {
+        const pathLen = Math.ceil(path.getTotalLength() || (lw + 14));
+        path.style.strokeDasharray = `${pathLen} ${pathLen}`;
+        path.style.strokeDashoffset = `${pathLen}`;
+        path.style.transition = 'none';
+
+        const delayMs = i * 130;
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            path.style.transition = `stroke-dashoffset 0.28s cubic-bezier(0.22, 1, 0.36, 1) ${delayMs}ms`;
+            path.style.strokeDashoffset = '0';
+          });
+        });
+      } else {
+        path.style.strokeDasharray = 'none';
+        path.style.strokeDashoffset = '0';
+      }
+
+      // Rare double strike (only on ~14% of tasks, 1-2 per day)
+      if (isDoubleStrike) {
+        const d2 = this.getDoubleStrikePath(lx0, ly0, lw, lh, lineSeed);
+        const path2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path2.setAttribute('class', 'hand-strike-path double-stroke');
+        path2.setAttribute('d', d2);
+        svg.appendChild(path2);
+
+        if (isAnimated) {
+          const pathLen2 = Math.ceil(path2.getTotalLength() || (lw + 14));
+          path2.style.strokeDasharray = `${pathLen2} ${pathLen2}`;
+          path2.style.strokeDashoffset = `${pathLen2}`;
+          path2.style.transition = 'none';
+
+          const delayMs2 = i * 130 + 80;
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              path2.style.transition = `stroke-dashoffset 0.24s cubic-bezier(0.22, 1, 0.36, 1) ${delayMs2}ms`;
+              path2.style.strokeDashoffset = '0';
+            });
+          });
+        } else {
+          path2.style.strokeDasharray = 'none';
+          path2.style.strokeDashoffset = '0';
+        }
+      }
+    });
+  }
+
+  // Apply hand-drawn pen strikes to all completed tasks in the current view
+  applyHandDrawnStrikes(animatedTaskId = null) {
+    if (!this.contentContainer) return;
+    const completedRows = this.contentContainer.querySelectorAll('.task-row.completed');
+    if (!completedRows.length) return;
+
+    requestAnimationFrame(() => {
+      completedRows.forEach(row => {
+        const titleSpan = row.querySelector('.task-title-text');
+        if (!titleSpan) return;
+        const taskId = row.dataset.id;
+        const isAnimated = (animatedTaskId !== null && String(taskId) === String(animatedTaskId));
+        this.renderHandDrawnStrikeForElement(titleSpan, taskId, isAnimated);
+      });
+    });
+  }
+
   // Attach touch and drag swipe gestures for each task row
   attachSwipeEvents() {
     const wrappers = this.contentContainer.querySelectorAll('.task-row-wrapper:not(.no-swipe)');
     let activeOpenWrapper = null;
 
-    const closeAllSwipes = () => {
-      wrappers.forEach(w => {
-        w.classList.remove('open', 'swiping');
-        const r = w.querySelector('.task-row');
-        const a = w.querySelector('.task-swipe-actions-right');
-        const bg = w.querySelector('.task-swipe-check-bg');
+    const snapOpen = (w) => {
+      if (!w) return;
+      const isSingle = w.classList.contains('is-single-delete');
+      const isMaine = w.classList.contains('is-maine-quest-wrapper');
+      const maxLeft = isSingle ? -58 : (isMaine ? -112 : -180);
+      const r = w.querySelector('.task-row');
+      const a = w.querySelector('.task-swipe-actions-right');
+      if (r) {
+        r.style.transition = 'transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1)';
+        r.style.transform = `translate3d(${maxLeft}px, 0, 0)`;
+      }
+      if (a) {
+        a.style.transition = 'transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1)';
+        a.style.transform = 'translate3d(0px, 0, 0)';
+      }
+      setTimeout(() => {
+        if (w.classList.contains('open') && !w.classList.contains('swiping')) {
+          if (r) {
+            r.style.transition = '';
+            r.style.transform = '';
+          }
+          if (a) {
+            a.style.transition = '';
+            a.style.transform = '';
+          }
+        }
+      }, 220);
+    };
+
+    const closeWrapper = (w, animated = true) => {
+      if (!w) return;
+      w.classList.remove('open', 'swiping');
+      const r = w.querySelector('.task-row');
+      const a = w.querySelector('.task-swipe-actions-right');
+      const bg = w.querySelector('.task-swipe-check-bg');
+      if (animated) {
+        if (r) {
+          r.style.transition = 'transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1)';
+          r.style.transform = '';
+        }
+        if (a) {
+          a.style.transition = 'transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1)';
+          a.style.transform = '';
+        }
+        setTimeout(() => {
+          if (!w.classList.contains('open') && !w.classList.contains('swiping')) {
+            if (r) r.style.transition = '';
+            if (a) a.style.transition = '';
+          }
+        }, 260);
+      } else {
         if (r) {
           r.style.transform = '';
           r.style.transition = '';
@@ -11275,7 +13589,16 @@ class NotebookApp {
           a.style.transform = '';
           a.style.transition = '';
         }
-        if (bg) bg.classList.remove('visible');
+      }
+      if (bg) bg.classList.remove('visible');
+      if (activeOpenWrapper === w) activeOpenWrapper = null;
+    };
+
+    const closeAllSwipes = (animated = true) => {
+      wrappers.forEach(w => {
+        if (w.classList.contains('open') || w.classList.contains('swiping')) {
+          closeWrapper(w, animated);
+        }
       });
       activeOpenWrapper = null;
     };
@@ -11283,7 +13606,7 @@ class NotebookApp {
     // Close open swipe on tap outside
     const outsideTapHandler = (e) => {
       if (activeOpenWrapper && !activeOpenWrapper.contains(e.target)) {
-        closeAllSwipes();
+        closeAllSwipes(true);
       }
     };
     document.removeEventListener('pointerdown', this._outsideTapHandler);
@@ -11307,8 +13630,10 @@ class NotebookApp {
       let rafId = null;
       const isSingleDelete = wrapper.classList.contains('is-single-delete');
       const isMaineQuest = wrapper.classList.contains('is-maine-quest-wrapper');
-      const maxLeftSwipe = isSingleDelete ? -58 : (isMaineQuest ? -112 : -180);
-      const actionsBaseWidth = isSingleDelete ? 58 : (isMaineQuest ? 112 : 180);
+      const getActionsWidth = () => {
+        if (actionsRight && actionsRight.offsetWidth > 0) return actionsRight.offsetWidth;
+        return isSingleDelete ? 58 : (isMaineQuest ? 112 : 180);
+      };
       const openThreshold = isSingleDelete ? -25 : (isMaineQuest ? -35 : -40);
       const maxRightSwipe = 90;
 
@@ -11324,7 +13649,7 @@ class NotebookApp {
           return false;
         }
         if (activeOpenWrapper && activeOpenWrapper !== wrapper) {
-          closeAllSwipes();
+          closeAllSwipes(true);
         }
         startX = clientX;
         startY = clientY;
@@ -11358,33 +13683,47 @@ class NotebookApp {
 
         if (e && e.cancelable) e.preventDefault();
 
+        const actionsBaseWidth = getActionsWidth();
+        const maxLeftSwipe = -actionsBaseWidth;
+
         let translateX = dx;
         if (wrapper.classList.contains('open')) {
           translateX = maxLeftSwipe + dx;
-        }
-
-        // Resistance at ends
-        if (translateX < maxLeftSwipe) {
-          translateX = maxLeftSwipe + (translateX - maxLeftSwipe) * 0.25;
-        } else if (translateX > maxRightSwipe) {
-          translateX = maxRightSwipe + (translateX - maxRightSwipe) * 0.25;
+          // Resistance at ends when open
+          if (translateX > 0) {
+            translateX = translateX * 0.2;
+          } else if (translateX < maxLeftSwipe) {
+            translateX = maxLeftSwipe + (translateX - maxLeftSwipe) * 0.25;
+          }
+        } else {
+          // Resistance at ends when closed
+          if (translateX < maxLeftSwipe) {
+            translateX = maxLeftSwipe + (translateX - maxLeftSwipe) * 0.25;
+          } else if (translateX > maxRightSwipe) {
+            translateX = maxRightSwipe + (translateX - maxRightSwipe) * 0.25;
+          }
         }
 
         if (rafId) cancelAnimationFrame(rafId);
         rafId = requestAnimationFrame(() => {
           if (row) row.style.transform = `translate3d(${translateX}px, 0, 0)`;
 
-          if (translateX < 0) {
-            // Actions follow directly
+          if (wrapper.classList.contains('open')) {
             const actionsOffset = Math.max(0, actionsBaseWidth + translateX);
             if (actionsRight) actionsRight.style.transform = `translate3d(${actionsOffset}px, 0, 0)`;
             if (checkBg) checkBg.classList.remove('visible');
-          } else if (translateX > 15) {
-            if (actionsRight) actionsRight.style.transform = 'translate3d(100%, 0, 0)';
-            if (checkBg) checkBg.classList.add('visible');
           } else {
-            if (actionsRight) actionsRight.style.transform = 'translate3d(100%, 0, 0)';
-            if (checkBg) checkBg.classList.remove('visible');
+            if (translateX < 0) {
+              const actionsOffset = Math.max(0, actionsBaseWidth + translateX);
+              if (actionsRight) actionsRight.style.transform = `translate3d(${actionsOffset}px, 0, 0)`;
+              if (checkBg) checkBg.classList.remove('visible');
+            } else if (translateX > 15) {
+              if (actionsRight) actionsRight.style.transform = 'translate3d(100%, 0, 0)';
+              if (checkBg) checkBg.classList.add('visible');
+            } else {
+              if (actionsRight) actionsRight.style.transform = 'translate3d(100%, 0, 0)';
+              if (checkBg) checkBg.classList.remove('visible');
+            }
           }
         });
       };
@@ -11399,36 +13738,36 @@ class NotebookApp {
         if (actionsRight) actionsRight.style.transition = '';
         if (checkBg) checkBg.classList.remove('visible');
 
-        if (target && target.closest('.task-checkbox-container, .task-checkbox, .task-attached-photo-btn, .task-attached-link, a, button, input')) {
+        const wasDragging = isDragging;
+        isDragging = false;
+
+        if (!wasDragging) {
+          // If user tapped on the main task row while open, close the swipe
+          if (wrapper.classList.contains('open') && (!target || !target.closest('.task-swipe-actions-right'))) {
+            closeAllSwipes(true);
+          }
           return;
         }
 
-        if (!isDragging) {
-          closeAllSwipes();
-          return;
-        }
-
+        const actionsBaseWidth = getActionsWidth();
+        const maxLeftSwipe = -actionsBaseWidth;
         const dx = clientX - startX;
 
         if (wrapper.classList.contains('open')) {
-          if (dx > 30) {
-            // Swiped right -> close
-            wrapper.classList.remove('open');
-            if (row) row.style.transform = '';
-            if (actionsRight) actionsRight.style.transform = '';
-            activeOpenWrapper = null;
+          if (dx > 25) {
+            // Swiped right -> smoothly close sub-menu!
+            closeWrapper(wrapper, true);
+            triggerHaptic(15);
           } else {
-            // Stay open
-            if (row) row.style.transform = `translate3d(${maxLeftSwipe}px, 0, 0)`;
-            if (actionsRight) actionsRight.style.transform = 'translate3d(0px, 0, 0)';
+            // Did not swipe right enough -> snap back to fully open
+            snapOpen(wrapper);
           }
         } else {
           if (dx < openThreshold) {
             // Swiped left enough -> open action menu
-            closeAllSwipes();
+            closeAllSwipes(true);
             wrapper.classList.add('open');
-            if (row) row.style.transform = `translate3d(${maxLeftSwipe}px, 0, 0)`;
-            if (actionsRight) actionsRight.style.transform = 'translate3d(0px, 0, 0)';
+            snapOpen(wrapper);
             activeOpenWrapper = wrapper;
             triggerHaptic(15);
           } else if (dx > 45) {
@@ -11472,7 +13811,7 @@ class NotebookApp {
         photoBtn.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
       }
 
-      // Pointer / Mouse events
+      // Pointer / Mouse events on task row
       let pointerActive = false;
       row.addEventListener('pointerdown', (e) => {
         if (e.button !== 0) return;
@@ -11503,7 +13842,7 @@ class NotebookApp {
         row.addEventListener('pointercancel', onPointerUp);
       });
 
-      // Native Touch events (smooth & bulletproof on all mobile phones)
+      // Native Touch events on task row (smooth & bulletproof on all mobile phones)
       let touchActive = false;
       let touchStartTarget = null;
       row.addEventListener('touchstart', (e) => {
@@ -11534,6 +13873,166 @@ class NotebookApp {
           touchStartTarget = null;
         }
       }, { passive: true });
+
+      // Action sub-menu right-swipe listeners
+      if (actionsRight) {
+        // Desktop / Mouse swipe right on actions sub-menu
+        actionsRight.addEventListener('pointerdown', (e) => {
+          if (e.button !== 0) return;
+          if (e.pointerType === 'touch') return; // Handled by touch events
+          if (!wrapper.classList.contains('open')) return;
+
+          const startX = e.clientX;
+          const startY = e.clientY;
+          let isDragging = false;
+
+          const onPointerMove = (ev) => {
+            const dx = ev.clientX - startX;
+            const dy = ev.clientY - startY;
+
+            if (!isDragging) {
+              if (dx > 12 && dx > Math.abs(dy) * 1.2) {
+                isDragging = true;
+                wrapper.classList.add('swiping');
+                if (row) row.style.transition = 'none';
+                actionsRight.style.transition = 'none';
+              }
+            }
+
+            if (isDragging) {
+              const actionsBaseWidth = getActionsWidth();
+              const maxLeftSwipe = -actionsBaseWidth;
+              let translateX = maxLeftSwipe + dx;
+              if (translateX > 0) translateX = translateX * 0.2;
+              const actionsOffset = Math.max(0, actionsBaseWidth + translateX);
+
+              if (row) row.style.transform = `translate3d(${translateX}px, 0, 0)`;
+              actionsRight.style.transform = `translate3d(${actionsOffset}px, 0, 0)`;
+            }
+          };
+
+          const onPointerUp = (ev) => {
+            window.removeEventListener('pointermove', onPointerMove);
+            window.removeEventListener('pointerup', onPointerUp);
+            window.removeEventListener('pointercancel', onPointerUp);
+
+            if (!isDragging) {
+              // It was just a click! Normal native click on button proceeds untouched.
+              return;
+            }
+
+            // It was a drag/swipe! Block click on actions buttons
+            const blockClick = (clickEv) => {
+              clickEv.preventDefault();
+              clickEv.stopPropagation();
+              clickEv.stopImmediatePropagation();
+            };
+            actionsRight.addEventListener('click', blockClick, { capture: true, once: true });
+            setTimeout(() => {
+              actionsRight.removeEventListener('click', blockClick, { capture: true });
+            }, 300);
+
+            wrapper.classList.remove('swiping');
+            const dx = ev.clientX - startX;
+            if (dx > 30) {
+              closeWrapper(wrapper, true);
+              triggerHaptic(15);
+            } else {
+              snapOpen(wrapper);
+            }
+          };
+
+          window.addEventListener('pointermove', onPointerMove);
+          window.addEventListener('pointerup', onPointerUp);
+          window.addEventListener('pointercancel', onPointerUp);
+        });
+
+        // Native Touch events on actions sub-menu (Mobile phones)
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let isTouchDragging = false;
+        let isTouchVertical = false;
+
+        actionsRight.addEventListener('touchstart', (e) => {
+          if (!wrapper.classList.contains('open')) return;
+          const touch = e.touches[0];
+          touchStartX = touch.clientX;
+          touchStartY = touch.clientY;
+          isTouchDragging = false;
+          isTouchVertical = false;
+        }, { passive: true });
+
+        actionsRight.addEventListener('touchmove', (e) => {
+          if (isTouchVertical) return;
+          const touch = e.touches[0];
+          const dx = touch.clientX - touchStartX;
+          const dy = touch.clientY - touchStartY;
+
+          if (!isTouchDragging) {
+            if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) {
+              isTouchVertical = true;
+              return;
+            }
+            if (dx > 12 && dx > Math.abs(dy) * 1.2) {
+              isTouchDragging = true;
+              wrapper.classList.add('swiping');
+              if (row) row.style.transition = 'none';
+              actionsRight.style.transition = 'none';
+            }
+          }
+
+          if (isTouchDragging) {
+            if (e.cancelable) e.preventDefault();
+            const actionsBaseWidth = getActionsWidth();
+            const maxLeftSwipe = -actionsBaseWidth;
+            let translateX = maxLeftSwipe + dx;
+            if (translateX > 0) translateX = translateX * 0.2;
+            const actionsOffset = Math.max(0, actionsBaseWidth + translateX);
+
+            if (row) row.style.transform = `translate3d(${translateX}px, 0, 0)`;
+            actionsRight.style.transform = `translate3d(${actionsOffset}px, 0, 0)`;
+          }
+        }, { passive: false });
+
+        actionsRight.addEventListener('touchend', (e) => {
+          if (!isTouchDragging) {
+            // It was a tap! Let standard touch click happen untouched!
+            return;
+          }
+
+          // It was a swipe! Block the synthetic click
+          const blockClick = (clickEv) => {
+            clickEv.preventDefault();
+            clickEv.stopPropagation();
+            clickEv.stopImmediatePropagation();
+          };
+          actionsRight.addEventListener('click', blockClick, { capture: true, once: true });
+          setTimeout(() => {
+            actionsRight.removeEventListener('click', blockClick, { capture: true });
+          }, 300);
+
+          wrapper.classList.remove('swiping');
+          const touch = e.changedTouches[0];
+          const endX = touch ? touch.clientX : touchStartX;
+          const dx = endX - touchStartX;
+
+          if (dx > 30) {
+            closeWrapper(wrapper, true);
+            triggerHaptic(15);
+          } else {
+            snapOpen(wrapper);
+          }
+          isTouchDragging = false;
+        }, { passive: true });
+
+        actionsRight.addEventListener('touchcancel', () => {
+          if (isTouchDragging) {
+            wrapper.classList.remove('swiping');
+            snapOpen(wrapper);
+            isTouchDragging = false;
+          }
+        }, { passive: true });
+      }
     });
   }
 
@@ -12790,6 +15289,410 @@ class NotebookApp {
     div.textContent = str;
     return div.innerHTML;
   }
+
+  // =========================================================================
+  //  CYCLE TRACKER & WOMEN'S HEALTH METHODS
+  // =========================================================================
+
+  refreshCycleUI(toastKey = null, toastIcon = '🍒') {
+    this.renderCycleModalContent();
+    this.renderCalendar();
+    this.updateCycleWidget();
+    if (toastKey) this.showToast(this.t(toastKey), toastIcon);
+  }
+
+  updateCycleWidget() {
+    if (!this.widgetCycle) return;
+    if (!this.cycleTracker || !this.cycleTracker.isEnabled() || this.cycleTracker.getSettings().showInTopBar === false) {
+      this.widgetCycle.style.display = 'none';
+      return;
+    }
+
+    this.widgetCycle.style.display = 'flex';
+    const status = this.cycleTracker.getStatusForDate();
+    if (status && status.hasData) {
+      if (this.widgetCycleDay) {
+        this.widgetCycleDay.textContent = `${status.dayInCycle}д`;
+      }
+      const phaseAdvice = this.cycleTracker.getPhaseAdvice(status.phase, this.settings.lang || 'ru', status.dayInCycle, status);
+      this.widgetCycle.title = `${this.t('cycle_settings_title')}: День ${status.dayInCycle} (${phaseAdvice.title})`;
+    } else {
+      if (this.widgetCycleDay) {
+        this.widgetCycleDay.textContent = '--';
+      }
+      this.widgetCycle.title = this.t('cycle_settings_title');
+    }
+  }
+
+  openCycleModal() {
+    this.dismissActiveKeyboard();
+    if (!this.cycleModalBackdrop) return;
+    this._cycleModalOpenedAt = Date.now();
+    this.cycleModalBackdrop.classList.add('open');
+    this.cycleModalBackdrop.setAttribute('aria-hidden', 'false');
+
+    this._currentModalAdvice = null; // Pick a fresh, warm, random living phrase each time the user opens the modal
+    this.renderCycleModalContent();
+  }
+
+  closeCycleModal() {
+    if (this.cycleModalBackdrop) {
+      this.cycleModalBackdrop.classList.remove('open');
+      this.cycleModalBackdrop.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  renderCycleOrbitWheel(status, lang) {
+    if (!this.cycleTracker) return;
+    const orbitData = this.cycleTracker.getOrbitData(status ? status.curDateStr : null);
+
+    // Update legend localized texts
+    [
+      [this.legendTextMenstrual, 'cycle_orbit_legend_menstrual'],
+      [this.legendTextFollicular, 'cycle_orbit_legend_follicular'],
+      [this.legendTextOvulation, 'cycle_orbit_legend_ovulation'],
+      [this.legendTextLuteal, 'cycle_orbit_legend_luteal']
+    ].forEach(([el, key]) => { if (el) el.textContent = this.t(key); });
+
+    const C = 2 * Math.PI * 46; // Circumference ≈ 289.027
+
+    if (orbitData && orbitData.hasData) {
+      if (this.cycleOrbitDayNum) this.cycleOrbitDayNum.textContent = orbitData.currentDay;
+      if (this.cycleOrbitDayLabel) this.cycleOrbitDayLabel.textContent = this.t('cycle_orbit_day_label');
+      if (this.cycleOrbitTotalLabel) this.cycleOrbitTotalLabel.textContent = this.t('cycle_orbit_of_total', { total: orbitData.totalDays });
+
+      // Rotate cherry arm around the center
+      if (this.cycleOrbitPointerArm) {
+        this.cycleOrbitPointerArm.style.transform = `rotate(${orbitData.pointerAngleDeg}deg)`;
+      }
+
+      // Draw 4 phase arcs with clean dasharrays and gaps
+      let offsetProgress = 0;
+      const arcEls = {
+        menstrual: this.orbitArcMenstrual,
+        follicular: this.orbitArcFollicular,
+        ovulation: this.orbitArcOvulation,
+        luteal: this.orbitArcLuteal
+      };
+
+      if (Array.isArray(orbitData.segments)) {
+        orbitData.segments.forEach(seg => {
+          const el = arcEls[seg.key];
+          if (!el) return;
+          const frac = seg.days / orbitData.totalDays;
+          const arcLen = frac * C;
+          const dash = Math.max(0.1, arcLen - 3.5);
+          el.style.strokeDasharray = `${dash} ${C - dash}`;
+          el.style.strokeDashoffset = `${-offsetProgress}`;
+          offsetProgress += arcLen;
+        });
+      }
+    } else {
+      if (this.cycleOrbitDayNum) this.cycleOrbitDayNum.textContent = '--';
+      if (this.cycleOrbitDayLabel) this.cycleOrbitDayLabel.textContent = this.t('cycle_orbit_day_label');
+      if (this.cycleOrbitTotalLabel) this.cycleOrbitTotalLabel.textContent = '';
+      if (this.cycleOrbitPointerArm) this.cycleOrbitPointerArm.style.transform = 'rotate(0deg)';
+
+      [this.orbitArcMenstrual, this.orbitArcFollicular, this.orbitArcOvulation, this.orbitArcLuteal].forEach(el => {
+        if (el) {
+          el.style.strokeDasharray = '0 300';
+          el.style.strokeDashoffset = '0';
+        }
+      });
+    }
+  }
+
+  renderCycleModalContent() {
+    if (!this.cycleTracker) return;
+    const lang = this.settings.lang || 'ru';
+    const status = this.cycleTracker.getStatusForDate();
+    const prediction = this.cycleTracker.getPrediction();
+
+    // 1. Cycle Orbit Wheel with Moving Cherry
+    this.renderCycleOrbitWheel(status, lang);
+
+    // 2. Status Card
+    if (status && status.hasData) {
+      if (this.cycleDayBadge) {
+        this.cycleDayBadge.textContent = this.t('cycle_card_cur_day', { day: status.dayInCycle });
+      }
+      if (!this._currentModalAdvice || this._currentModalAdviceLang !== lang || this._currentModalAdviceDay !== status.dayInCycle) {
+        this._currentModalAdvice = this.cycleTracker.getPhaseAdvice(status.phase, lang, status.dayInCycle, status);
+        this._currentModalAdviceLang = lang;
+        this._currentModalAdviceDay = status.dayInCycle;
+      }
+      const advice = this._currentModalAdvice;
+      if (this.cyclePhasePill) {
+        this.cyclePhasePill.textContent = advice.badge || advice.title;
+      }
+      if (this.cycleEnergyTag) {
+        this.cycleEnergyTag.textContent = advice.energy;
+      }
+      if (this.cycleAdviceText) {
+        this.cycleAdviceText.textContent = advice.taskTip;
+      }
+    } else {
+      [
+        [this.cycleDayBadge, 'cycle_card_empty_day'],
+        [this.cyclePhasePill, 'cycle_card_empty_pill'],
+        [this.cycleEnergyTag, 'cycle_card_empty_energy'],
+        [this.cycleAdviceText, 'cycle_card_empty_advice']
+      ].forEach(([el, key]) => { if (el) el.textContent = this.t(key); });
+    }
+
+    // Dynamic Action Button (Start Cycle vs End Period)
+    const isPeriodActive = this.cycleTracker ? this.cycleTracker.isPeriodCurrentlyActive() : false;
+    if (this.btnCycleStartToday) {
+      const iconEl = this.btnCycleStartToday.querySelector('.cycle-action-icon');
+      const textEl = this.btnCycleStartToday.querySelector('.cycle-action-text');
+      if (isPeriodActive) {
+        if (iconEl) iconEl.textContent = '✨';
+        if (textEl) textEl.textContent = this.t('cycle_btn_end_today');
+        this.btnCycleStartToday.classList.add('is-active-end');
+      } else {
+        if (iconEl) iconEl.textContent = '🩸';
+        if (textEl) textEl.textContent = this.t('cycle_btn_start_today');
+        this.btnCycleStartToday.classList.remove('is-active-end');
+      }
+    }
+
+    // 2. Prediction Box
+    if (this.cyclePredictionValue && this.cyclePredictionSub) {
+      if (prediction) {
+        if (status.inWindow) {
+          this.cyclePredictionValue.textContent = this.t('cycle_card_in_window');
+          this.cyclePredictionSub.textContent = `Ожидаемое окно: ${prediction.windowStart} – ${prediction.windowEnd}`;
+        } else if (status.isOverdue) {
+          this.cyclePredictionValue.textContent = this.t('cycle_card_overdue');
+          this.cyclePredictionSub.textContent = `Ожидались: ${prediction.windowStart} – ${prediction.windowEnd}. Нажмите кнопку выше, если начался новый цикл.`;
+        } else if (status.daysUntilWindow > 0) {
+          this.cyclePredictionValue.textContent = this.t('cycle_card_expected_window', { start: prediction.windowStart, end: prediction.windowEnd });
+          this.cyclePredictionSub.textContent = this.t('cycle_card_until_window', { days: status.daysUntilWindow });
+        } else if (prediction.historyCount === 0) {
+          this.cyclePredictionValue.textContent = this.t('cycle_card_expected_window', { start: prediction.windowStart, end: prediction.windowEnd });
+          this.cyclePredictionSub.textContent = `Базовый цикл: ${prediction.defaultCycleLength || 28} дн. (окно: ${prediction.minLen}–${prediction.maxLen} дн.)`;
+        } else {
+          this.cyclePredictionValue.textContent = this.t('cycle_card_expected_window', { start: prediction.windowStart, end: prediction.windowEnd });
+          this.cyclePredictionSub.textContent = `Медиана: ${prediction.medianLength} дн. (базовая: ${prediction.defaultCycleLength || 28} дн., разброс: ${prediction.minLen}–${prediction.maxLen} дн.)`;
+        }
+      } else {
+        this.cyclePredictionValue.textContent = 'Ожидает первых данных';
+        this.cyclePredictionSub.textContent = 'Добавьте хотя бы одну дату начала цикла';
+      }
+    }
+
+    // 3. History List
+    if (this.cycleHistoryList) {
+      this.cycleHistoryList.innerHTML = '';
+      const history = this.cycleTracker.getHistory();
+      if (this.cycleHistoryCount) {
+        this.cycleHistoryCount.textContent = `${history.length} записей`;
+      }
+
+      if (history.length === 0) {
+        const emptyEl = document.createElement('div');
+        emptyEl.style.cssText = 'text-align: center; padding: 18px 10px; color: #94a3b8; font-size: 12.5px;';
+        emptyEl.textContent = 'История пока пуста. Добавьте даты цикла кнопками выше ✨';
+        this.cycleHistoryList.appendChild(emptyEl);
+      } else {
+        history.forEach((cycle, idx) => {
+          const card = document.createElement('div');
+          card.className = `cycle-history-card ${cycle.isOutlier ? 'is-outlier' : ''}`;
+          card.onclick = (e) => {
+            if (e.target.closest('.cycle-outlier-chip') || e.target.closest('.cycle-history-edit-btn')) return;
+            triggerHaptic(15);
+            this.openCycleAddModal(cycle);
+          };
+
+          const main = document.createElement('div');
+          main.className = 'cycle-history-main';
+
+          const datesEl = document.createElement('div');
+          datesEl.className = 'cycle-history-dates';
+          datesEl.textContent = `${cycle.startDate} – ${cycle.endDate || '...'}`;
+
+          const metaEl = document.createElement('div');
+          metaEl.className = 'cycle-history-meta';
+
+          let lenText = '';
+          const nextCycle = history[idx - 1]; // т.к. history отсортирована по убыванию (новейшие вверху)
+          if (nextCycle) {
+            const daysLen = window.Plan4UCycleTracker ? Plan4UCycleTracker.diffInDays(cycle.startDate, nextCycle.startDate) : 0;
+            lenText = `Длина: ${daysLen} дн.`;
+          } else if (idx === 0) {
+            lenText = 'Текущий цикл';
+          }
+
+          metaEl.textContent = lenText;
+
+          if (cycle.isOutlier) {
+            const outTag = document.createElement('span');
+            outTag.className = 'cycle-outlier-tag';
+            outTag.textContent = this.t('cycle_outlier_badge');
+            metaEl.appendChild(outTag);
+          }
+
+          if (cycle.ovulationDate) {
+            const ovTag = document.createElement('span');
+            ovTag.style.cssText = 'font-size: 10px; font-weight: 700; color: #7c3aed; background: rgba(124, 58, 237, 0.15); padding: 1px 6px; border-radius: 6px;';
+            ovTag.textContent = `✨ Овуляция: ${cycle.ovulationDate}`;
+            metaEl.appendChild(ovTag);
+          }
+
+          if (cycle.notes) {
+            const notesEl = document.createElement('div');
+            notesEl.style.cssText = 'font-size: 11px; color: #64748b; font-style: italic; margin-top: 2px;';
+            notesEl.textContent = `«${cycle.notes}»`;
+            main.appendChild(notesEl);
+          }
+
+          main.prepend(datesEl);
+          main.appendChild(metaEl);
+
+          const actions = document.createElement('div');
+          actions.className = 'cycle-history-actions';
+
+          // Если цикл был помечен как аномальный (болезнь/стресс), показываем деликатный чип
+          if (cycle.isOutlier) {
+            const outlierChip = document.createElement('button');
+            outlierChip.type = 'button';
+            outlierChip.className = 'cycle-outlier-chip';
+            outlierChip.title = this.t('cycle_outlier_tooltip');
+            outlierChip.textContent = this.t('cycle_outlier_chip');
+            outlierChip.onclick = (e) => {
+              e.stopPropagation();
+              triggerHaptic(15);
+              this.cycleTracker.toggleOutlier(cycle.id);
+              this.refreshCycleUI('cycle_toast_outlier', '⚙️');
+            };
+            actions.appendChild(outlierChip);
+          }
+
+          // Аккуратная кнопка-иконка редактирования записи
+          const editBtn = document.createElement('button');
+          editBtn.type = 'button';
+          editBtn.className = 'cycle-history-edit-btn';
+          editBtn.title = this.t('cycle_history_edit_tooltip');
+          editBtn.textContent = '✏️';
+          editBtn.onclick = (e) => {
+            e.stopPropagation();
+            triggerHaptic(10);
+            this.openCycleAddModal(cycle);
+          };
+          actions.appendChild(editBtn);
+
+          card.appendChild(main);
+          card.appendChild(actions);
+          this.cycleHistoryList.appendChild(card);
+        });
+      }
+    }
+  }
+
+  openCycleAddModal(cycleToEdit = null) {
+    this.dismissActiveKeyboard();
+    if (!this.cycleAddModalBackdrop) return;
+
+    this._cycleAddModalOpenedAt = Date.now();
+    this.cycleAddModalBackdrop.classList.add('open');
+    this.cycleAddModalBackdrop.setAttribute('aria-hidden', 'false');
+
+    if (cycleToEdit) {
+      this.editingCycleId = cycleToEdit.id;
+      if (this.cycleAddModalTitle) {
+        this.cycleAddModalTitle.textContent = this.t('cycle_edit_modal_title');
+      }
+      if (this.cycleInputStartDate) this.cycleInputStartDate.value = cycleToEdit.startDate || '';
+      if (this.cycleInputEndDate) this.cycleInputEndDate.value = cycleToEdit.endDate || '';
+      if (this.cycleInputIsOutlier) this.cycleInputIsOutlier.checked = !!cycleToEdit.isOutlier;
+      if (this.cycleInputNotes) this.cycleInputNotes.value = cycleToEdit.notes || '';
+      if (this.cycleAddDeleteBtn) this.cycleAddDeleteBtn.style.display = 'flex';
+    } else {
+      this.editingCycleId = null;
+      if (this.cycleAddModalTitle) {
+        this.cycleAddModalTitle.textContent = this.t('cycle_add_modal_title');
+      }
+      const todayStr = this.getTodayDateString();
+      if (this.cycleInputStartDate) this.cycleInputStartDate.value = todayStr;
+      const periodLen = this.cycleTracker ? (this.cycleTracker.getSettings().periodLength || 5) : 5;
+      if (this.cycleInputEndDate) {
+        this.cycleInputEndDate.value = window.Plan4UCycleTracker ? Plan4UCycleTracker.addDays(todayStr, periodLen - 1) : todayStr;
+      }
+      if (this.cycleInputIsOutlier) this.cycleInputIsOutlier.checked = false;
+      if (this.cycleInputNotes) this.cycleInputNotes.value = '';
+      if (this.cycleAddDeleteBtn) this.cycleAddDeleteBtn.style.display = 'none';
+    }
+
+    this.updateCycleFormDurationBadge();
+  }
+
+  updateCycleFormDurationBadge() {
+    if (!this.cycleFormDurationBadge) return;
+    const startStr = this.cycleInputStartDate ? this.cycleInputStartDate.value : '';
+    const endStr = this.cycleInputEndDate ? this.cycleInputEndDate.value : '';
+    if (!startStr) {
+      this.cycleFormDurationBadge.textContent = '📅 ' + this.t('cycle_duration_pick');
+      this.cycleFormDurationBadge.classList.remove('is-error');
+      return;
+    }
+    if (!endStr) {
+      this.cycleFormDurationBadge.textContent = '✨ ' + this.t('cycle_duration_days', { days: 1 });
+      this.cycleFormDurationBadge.classList.remove('is-error');
+      return;
+    }
+    const diff = window.Plan4UCycleTracker ? Plan4UCycleTracker.diffInDays(startStr, endStr) : 0;
+    if (diff < 0) {
+      this.cycleFormDurationBadge.textContent = '⚠️ ' + this.t('cycle_duration_invalid');
+      this.cycleFormDurationBadge.classList.add('is-error');
+    } else {
+      const days = diff + 1;
+      this.cycleFormDurationBadge.textContent = '✨ ' + this.t('cycle_duration_days', { days });
+      this.cycleFormDurationBadge.classList.remove('is-error');
+    }
+  }
+
+  closeCycleAddModal() {
+    this.editingCycleId = null;
+    if (this.cycleAddModalBackdrop) {
+      this.cycleAddModalBackdrop.classList.remove('open');
+      this.cycleAddModalBackdrop.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  saveCycleFromForm() {
+    if (!this.cycleTracker) return;
+    const startDate = this.cycleInputStartDate ? this.cycleInputStartDate.value : '';
+    if (!startDate) {
+      alert('Пожалуйста, выберите дату начала цикла');
+      return;
+    }
+    const endDate = this.cycleInputEndDate ? this.cycleInputEndDate.value : null;
+    if (endDate && endDate < startDate) {
+      alert(this.t ? this.t('cycle_duration_invalid') : 'Дата окончания не может быть раньше даты начала цикла');
+      triggerHaptic([30, 50, 30]);
+      return;
+    }
+    const isOutlier = this.cycleInputIsOutlier ? !!this.cycleInputIsOutlier.checked : false;
+    const notes = this.cycleInputNotes ? this.cycleInputNotes.value.trim() : '';
+
+    if (this.editingCycleId) {
+      this.cycleTracker.updateCycle(this.editingCycleId, {
+        startDate,
+        endDate: endDate || startDate,
+        isOutlier,
+        notes
+      });
+      this.showToast(this.t('cycle_toast_outlier'), '🍒');
+    } else {
+      this.cycleTracker.addCycle(startDate, endDate, isOutlier, null, notes);
+      this.showToast(this.t('cycle_toast_started'), '🍒');
+    }
+
+    this.editingCycleId = null;
+    triggerHaptic(20);
+    this.closeCycleAddModal();
+    this.refreshCycleUI();
+  }
 }
 
 /**
@@ -13157,13 +16060,15 @@ class MaineCoonPetSystem {
     if (this.app) this.app.dismissActiveKeyboard();
     else if (document.activeElement && typeof document.activeElement.blur === 'function') document.activeElement.blur();
     if (!this.petModalBackdrop) return;
+
+    this._petModalOpenedAt = Date.now();
+    this.petModalBackdrop.classList.add('open');
+    this.petModalBackdrop.setAttribute('aria-hidden', 'false');
+
     this.renderFullModal();
     if (this.petSettingsPopup) {
       this.petSettingsPopup.classList.remove('show');
     }
-    this._petModalOpenedAt = Date.now();
-    this.petModalBackdrop.classList.add('open');
-    this.petModalBackdrop.setAttribute('aria-hidden', 'false');
   }
 
   closePetModal() {
