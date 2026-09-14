@@ -6589,6 +6589,28 @@ class NotebookApp {
     if (this.settingsDoneBtn) {
       this.settingsDoneBtn.addEventListener('click', () => this.closeSettingsModal());
     }
+    const btnForceCacheReset = document.getElementById('btnForceCacheReset');
+    if (btnForceCacheReset) {
+      btnForceCacheReset.addEventListener('click', async () => {
+        triggerHaptic([30, 50, 30]);
+        btnForceCacheReset.textContent = '⏳ Очистка...';
+        try {
+          if (window.caches) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(k => caches.delete(k)));
+          }
+          if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (const reg of registrations) {
+              await reg.unregister();
+            }
+          }
+        } catch (e) {
+          console.warn('Cache clear error:', e);
+        }
+        window.location.reload(true);
+      });
+    }
     bindSafeBackdrop(this.settingsModalBackdrop, () => this.closeSettingsModal(), () => this._settingsModalOpenedAt);
 
     // Calendar Modal listeners
