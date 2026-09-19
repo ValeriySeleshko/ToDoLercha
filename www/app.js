@@ -21,6 +21,16 @@ function detectSystemLanguage() {
   return 'en';
 }
 
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 // Device Haptic & Vibration Engine
 function triggerHaptic(pattern = 20) {
   try {
@@ -1650,6 +1660,13 @@ const STICKERS_CATALOG = {
       id: `reptile_${num}`,
       img: `./assets/stickers/reptiles/reptile_${num}.webp`
     };
+  }),
+  sport: Array.from({ length: 49 }, (_, i) => {
+    const num = String(i + 1).padStart(2, '0');
+    return {
+      id: `sport_${num}`,
+      img: `./assets/stickers/sport/sport_${num}.webp`
+    };
   })
 };
 
@@ -1663,7 +1680,8 @@ const DEFAULT_STICKER_CATEGORIES = [
   { id: 'pigs', key: 'cat_pigs', icon: '🐹', fallback: 'Свини' },
   { id: 'food', key: 'cat_food', icon: '🍔', fallback: 'Еда' },
   { id: 'sweets', key: 'cat_sweets', icon: '🍰', fallback: 'Сладости' },
-  { id: 'reptiles', key: 'cat_reptiles', icon: '🐸', fallback: 'Рептилии' }
+  { id: 'reptiles', key: 'cat_reptiles', icon: '🐸', fallback: 'Рептилии' },
+  { id: 'sport', key: 'cat_sport', icon: '⚽', fallback: 'Спорт' }
 ];
 
 class NotebookApp {
@@ -1729,7 +1747,13 @@ class NotebookApp {
     this.updateWeekDaysProgress();
     this.updateWorkloadWidget();
     this.updateCycleWidget();
-    this.syncWithNativeWidget();
+    this.updateFinanceWidget();
+    this.updateFinanceArchiveStamp();
+    this.updateModulesHubState();
+    this.cleanLegacyLocalStorageKeys();
+    this.syncFromNativeWidget().finally(() => {
+      this.syncWithNativeWidget();
+    });
     this.initDayChangeListener();
     this.scheduleSmartDailyNotifications();
     this.scheduleAllHabitReminders();
@@ -1877,12 +1901,17 @@ class NotebookApp {
         this.flushAllSaves();
       } else if (document.visibilityState === 'visible') {
         this.checkMidnightOrWake();
+        this.syncFromNativeWidget?.();
       }
     });
 
     window.addEventListener('pagehide', () => this.flushAllSaves());
     window.addEventListener('beforeunload', () => this.flushAllSaves());
     window.addEventListener('blur', () => this.flushAllSaves());
+    window.addEventListener('resume', () => {
+      this.checkMidnightOrWake();
+      this.syncFromNativeWidget?.();
+    });
 
     if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
       try {
@@ -1891,10 +1920,17 @@ class NotebookApp {
             this.flushAllSaves();
           } else {
             this.checkMidnightOrWake();
+            this.syncFromNativeWidget?.();
           }
         });
         window.Capacitor.Plugins.App.addListener('pause', () => {
           this.flushAllSaves();
+        });
+        window.Capacitor.Plugins.App.addListener('backButton', () => {
+          const handled = this.handleHardwareBack();
+          if (!handled) {
+            window.Capacitor.Plugins.App.exitApp();
+          }
         });
       } catch (e) {
         console.warn('Capacitor App lifecycle listener error:', e);
@@ -1935,6 +1971,7 @@ class NotebookApp {
       this.tempSelectedDate = todayStr;
       this.initStreakTracker();
       this.rolloverPastUncompletedTasks();
+      this.rolloverBuyTasks();
       if (!this.dailyTasks[todayStr]) {
         this.dailyTasks[todayStr] = [];
       }
@@ -1987,6 +2024,7 @@ class NotebookApp {
         this.tempSelectedDate = todayStr;
         this.initStreakTracker();
         this.rolloverPastUncompletedTasks();
+        this.rolloverBuyTasks();
         if (!this.dailyTasks[todayStr]) {
           this.dailyTasks[todayStr] = [];
         }
@@ -2217,7 +2255,12 @@ class NotebookApp {
       // Show small coffee cup badge on flame widget if freeze was used this week
       this.widgetStreak.classList.toggle('has-freeze-badge', !!isFreezeUsedThisWeek);
 
-      if (isFreezeUsedThisWeek) {
+      const hasUnclaimed = this.achievementsData && Object.keys(this.achievementsData.unlocked || {}).some(id => !this.achievementsData.viewed?.[id]);
+      this.widgetStreak.classList.toggle('has-unclaimed', !!hasUnclaimed);
+
+      if (hasUnclaimed) {
+        this.widgetStreak.title = '🏆 У вас есть новые полученные достижения! Нажмите, чтобы открыть';
+      } else if (isFreezeUsedThisWeek) {
         this.widgetStreak.title = `Беспрерывная серия: ${this.streakData.count} ${daysWord} (Выходной ☕ сохранил серию). Рекорд: ${this.streakData.bestStreak}.`;
       } else {
         this.widgetStreak.title = `Беспрерывная серия: ${this.streakData.count} ${daysWord} (Доступна заморозка: Выходной ☕). Рекорд: ${this.streakData.bestStreak}.`;
@@ -2340,8 +2383,55 @@ class NotebookApp {
     }
   }
 
+  // Carry over uncompleted items in "What to buy" tab to the new day, deleting completed items
+  rolloverBuyTasks() {
+    if (!this.tasks || !Array.isArray(this.tasks.buy)) return false;
+    const todayStr = this.getTodayDateString();
+    const lastRolloverDate = localStorage.getItem('todo_notebook_last_buy_date');
+
+    const todayHistoryBuyIds = new Set();
+    if (this.dayHistory && Array.isArray(this.dayHistory[todayStr])) {
+      this.dayHistory[todayStr].forEach(item => {
+        if (item && item.id && (item.tabId === 'buy' || item.tabId === 'Что купить' || item.tabId === 'Що купити' || item.tabId === 'What to buy')) {
+          todayHistoryBuyIds.add(String(item.id));
+        }
+      });
+    }
+
+    const initialLen = this.tasks.buy.length;
+    this.tasks.buy = this.tasks.buy.filter(task => {
+      if (!task || task.isEmpty || !task.text || !task.text.trim()) {
+        return true;
+      }
+      if (!task.completed) {
+        return true;
+      }
+
+      // If task is completed: keep it ONLY if it was genuinely completed TODAY
+      const isCompletedToday = (task.completedDate && task.completedDate === todayStr) ||
+                               (!task.completedDate && lastRolloverDate === todayStr && todayHistoryBuyIds.has(String(task.id)));
+
+      if (isCompletedToday) {
+        task.completedDate = todayStr;
+        return true;
+      }
+
+      // Completed on a previous day -> remove from sheet upon transitioning to next day
+      return false;
+    });
+
+    localStorage.setItem('todo_notebook_last_buy_date', todayStr);
+
+    if (this.tasks.buy.length !== initialLen) {
+      this.saveTasks();
+      return true;
+    }
+    return false;
+  }
+
   // Carry over uncompleted tasks from past days to today, keeping completed tasks archived in past days
   rolloverPastUncompletedTasks() {
+    this.rolloverBuyTasks();
     if (!this.dailyTasks || typeof this.dailyTasks !== 'object') return;
     const todayStr = this.getTodayDateString();
     let changed = false;
@@ -5737,6 +5827,175 @@ class NotebookApp {
     }
   }
 
+  // Read task completion changes made on Android Home Screen Widget back into notebook
+  async syncFromNativeWidget() {
+    try {
+      if (!window.Capacitor || !window.Capacitor.Plugins || !window.Capacitor.Plugins.WidgetBridge) return;
+      if (typeof window.Capacitor.Plugins.WidgetBridge.getWidgetData !== 'function') return;
+
+      const res = await window.Capacitor.Plugins.WidgetBridge.getWidgetData();
+      if (!res || !res.tasksJson || res.tasksJson === '[]') return;
+
+      let widgetTasks = [];
+      try {
+        widgetTasks = typeof res.tasksJson === 'string' ? JSON.parse(res.tasksJson) : res.tasksJson;
+      } catch (pe) {
+        return;
+      }
+      if (!Array.isArray(widgetTasks) || widgetTasks.length === 0) return;
+
+      const widgetDate = res.dateStr || this.getTodayDateString();
+      const targetDate = this.selectedDate || this.getTodayDateString();
+
+      let targetTaskList = null;
+      if (this.dailyTasks && this.dailyTasks[widgetDate]) {
+        targetTaskList = this.dailyTasks[widgetDate];
+      } else if (widgetDate === targetDate && this.tasks && this.tasks.todo) {
+        targetTaskList = this.tasks.todo;
+      }
+
+      if (!Array.isArray(targetTaskList) || targetTaskList.length === 0) return;
+
+      let hasChanges = false;
+      const widgetMap = new Map();
+      widgetTasks.forEach(t => {
+        if (t && t.id) widgetMap.set(String(t.id), !!t.completed);
+      });
+
+      targetTaskList.forEach(task => {
+        if (task && task.id && widgetMap.has(String(task.id))) {
+          const widgetCompleted = widgetMap.get(String(task.id));
+          if (task.completed !== widgetCompleted) {
+            task.completed = widgetCompleted;
+            hasChanges = true;
+          }
+        }
+      });
+
+      if (hasChanges) {
+        if (widgetDate === targetDate && this.tasks) {
+          this.tasks.todo = targetTaskList;
+        }
+        if (this.dailyTasks) {
+          this.dailyTasks[widgetDate] = targetTaskList;
+        }
+        this.saveTasks();
+        this.saveDailyTasks();
+        this.render();
+        this.updateWorkloadWidget();
+        this.updateDateWidget();
+      }
+    } catch (e) {
+      console.warn('Sync from native widget error:', e);
+    }
+  }
+
+  // Handle hardware Android back button & mobile gestures
+  handleHardwareBack() {
+    try {
+      // 0. Modules Hub Dropdown
+      if (this.modulesHubDropdown && this.modulesHubDropdown.classList.contains('open')) {
+        this.closeModulesHubDropdown();
+        return true;
+      }
+
+      // 1. Specific modal backdrops in priority order (inner submodals first)
+      if (this.financeEntryModalBackdrop && this.financeEntryModalBackdrop.classList.contains('open')) {
+        this.closeFinanceEntryModal();
+        return true;
+      }
+      if (this.financeCategoryModalBackdrop && this.financeCategoryModalBackdrop.classList.contains('open')) {
+        this.closeFinanceCategoryModal();
+        return true;
+      }
+      if (this.financeDatePickerModalBackdrop && this.financeDatePickerModalBackdrop.classList.contains('open')) {
+        this.closeFinanceDatePicker();
+        return true;
+      }
+      if (this.financeModalBackdrop && (this.financeModalBackdrop.classList.contains('active') || this.financeModalBackdrop.classList.contains('open'))) {
+        this.closeFinanceModal();
+        return true;
+      }
+      if (this.cycleModalBackdrop && this.cycleModalBackdrop.classList.contains('active')) {
+        this.closeCycleModal();
+        return true;
+      }
+      if (this.taskModalBackdrop && this.taskModalBackdrop.classList.contains('active')) {
+        this.closeTaskModal();
+        return true;
+      }
+      if (this.newTabModalBackdrop && this.newTabModalBackdrop.classList.contains('active')) {
+        this.closeNewTabModal();
+        return true;
+      }
+      if (this.calendarModalBackdrop && this.calendarModalBackdrop.classList.contains('active')) {
+        this.closeCalendarModal();
+        return true;
+      }
+      if (this.settingsModalBackdrop && this.settingsModalBackdrop.classList.contains('active')) {
+        this.closeSettingsModal();
+        return true;
+      }
+      if (this.trophyModalBackdrop && this.trophyModalBackdrop.classList.contains('active')) {
+        this.closeTrophyModal();
+        return true;
+      }
+      if (this.stickerShopModalBackdrop && this.stickerShopModalBackdrop.classList.contains('active')) {
+        this.closeStickerShopModal();
+        return true;
+      }
+      if (this.dayHistoryModalBackdrop && this.dayHistoryModalBackdrop.classList.contains('active')) {
+        this.closeDayHistoryModal();
+        return true;
+      }
+
+      // 2. Generic fallback for any active modal backdrop
+      const activeModal = document.querySelector('.modal-backdrop.active, .modal-backdrop.open, .cycle-modal-backdrop.active, .finance-modal-backdrop.active, .app-modal-backdrop.active');
+      if (activeModal) {
+        activeModal.classList.remove('active');
+        activeModal.classList.remove('open');
+        activeModal.setAttribute('aria-hidden', 'true');
+        return true;
+      }
+    } catch (e) {
+      console.warn('handleHardwareBack error:', e);
+    }
+    return false;
+  }
+
+  // Safe one-time cleanup of legacy keys from previous notebook versions
+  cleanLegacyLocalStorageKeys() {
+    try {
+      const legacyMigrationKey = 'plan4u_legacy_cleanup_done_v1';
+      if (localStorage.getItem(legacyMigrationKey)) return;
+
+      const legacyKeys = [
+        'todo_notebook_app_settings',
+        'todo_notebook_tasks',
+        'todo_notebook_daily_tasks',
+        'todo_notebook_tab_list',
+        'todo_notebook_tab_sections',
+        'todo_notebook_day_history',
+        'todo_notebook_achievements',
+        'todo_notebook_stickers',
+        'todo_notebook_pet_companion',
+        'todo_notebook_autocomplete_history',
+        'todo_notebook_flag_defer',
+        'todo_notebook_flag_backup'
+      ];
+
+      legacyKeys.forEach(k => {
+        try {
+          localStorage.removeItem(k);
+        } catch (e) {}
+      });
+
+      localStorage.setItem(legacyMigrationKey, 'true');
+    } catch (e) {
+      console.warn('Legacy storage cleanup error:', e);
+    }
+  }
+
   // Initialize DOM elements
   initElements() {
     this.folderTabsBar = document.getElementById('folderTabsBar');
@@ -5874,6 +6133,12 @@ class NotebookApp {
     this.widgetCycle = document.getElementById('widgetCycle');
     this.widgetCycleDay = document.getElementById('widgetCycleDay');
 
+    // Modules Hub & Dropdown Elements
+    this.widgetModulesHub = document.getElementById('widgetModulesHub');
+    this.widgetModulesHubBadge = document.getElementById('widgetModulesHubBadge');
+    this.widgetModulesHubWrapper = document.getElementById('widgetModulesHubWrapper');
+    this.modulesHubDropdown = document.getElementById('modulesHubDropdown');
+
     // Cycle Tracker & Women's Health Elements
     this.cycleTracker = (window.Plan4UCycleTracker && window.Plan4UCycleTracker.CycleTracker) ? new window.Plan4UCycleTracker.CycleTracker() : null;
     this.cycleModalBackdrop = document.getElementById('cycleModalBackdrop');
@@ -5928,8 +6193,98 @@ class NotebookApp {
     this.cyclePeriodLengthVal = document.getElementById('cyclePeriodLengthVal');
     this.cycleDefaultLengthRange = document.getElementById('cycleDefaultLengthRange');
     this.cycleDefaultLengthVal = document.getElementById('cycleDefaultLengthVal');
-    this.toggleCycleWidget = document.getElementById('toggleCycleWidget');
     this.btnOpenCycleFromSettings = document.getElementById('btnOpenCycleFromSettings');
+    this.btnExpandCycleModule = document.getElementById('btnExpandCycleModule');
+    this.btnExpandFinanceModule = document.getElementById('btnExpandFinanceModule');
+    this.moduleCardCycle = document.getElementById('moduleCardCycle');
+    this.moduleCardFinance = document.getElementById('moduleCardFinance');
+    this.moduleHeaderCycle = document.getElementById('moduleHeaderCycle');
+    this.moduleHeaderFinance = document.getElementById('moduleHeaderFinance');
+
+    // Finance Tracker Elements & Instance
+    this.financeTracker = (window.Plan4UFinanceTracker && window.Plan4UFinanceTracker.FinanceTracker) ? new window.Plan4UFinanceTracker.FinanceTracker() : null;
+    this.widgetFinance = document.getElementById('widgetFinance');
+    this.widgetFinanceRing = document.getElementById('widgetFinanceRing');
+    this.widgetFinanceSymbol = document.getElementById('widgetFinanceSymbol');
+    this.notebookFinanceStamp = document.getElementById('notebookFinanceStamp');
+    this.financeModalBackdrop = document.getElementById('financeModalBackdrop');
+    this.financeCloseBtn = document.getElementById('financeCloseBtn');
+    this.btnFinanceAddCategory = document.getElementById('btnFinanceAddCategory');
+    this.financePeriodPills = document.getElementById('financePeriodPills');
+    this.financeViewTabs = document.getElementById('financeViewTabs');
+    this.financePaneOverview = document.getElementById('financePaneOverview');
+    this.financePaneHistory = document.getElementById('financePaneHistory');
+    this.financePaneCategories = document.getElementById('financePaneCategories');
+    this.financeDonutWrapper = document.getElementById('financeDonutWrapper');
+    this.financeDonutCenterSymbol = document.getElementById('financeDonutCenterSymbol');
+    this.financeDonutCenterVal = document.getElementById('financeDonutCenterVal');
+    this.financeDonutCenterSub = document.getElementById('financeDonutCenterSub');
+    this.financeOverviewBreakdown = document.getElementById('financeOverviewBreakdown');
+    this.financeBalanceTotal = document.getElementById('financeBalanceTotal');
+    this.financeBalanceIncome = document.getElementById('financeBalanceIncome');
+    this.financeBalanceExpense = document.getElementById('financeBalanceExpense');
+    this.btnFinanceQuickIncome = document.getElementById('btnFinanceQuickIncome');
+    this.btnFinanceQuickExpense = document.getElementById('btnFinanceQuickExpense');
+    this.financeArchiveActions = document.getElementById('financeArchiveActions');
+    this.btnFinanceArchiveHistory = document.getElementById('btnFinanceArchiveHistory');
+    this.financeHistoryHeaderBar = document.getElementById('financeHistoryHeaderBar');
+    this.btnFinanceArchiveBackToRing = document.getElementById('btnFinanceArchiveBackToRing');
+    this.financeArchiveHistoryTitle = document.getElementById('financeArchiveHistoryTitle');
+    this.isFinanceArchiveMode = false;
+    this.financeHistoryList = document.getElementById('financeHistoryList');
+    this.financeCategoriesList = document.getElementById('financeCategoriesList');
+    this.financeEntryModalBackdrop = document.getElementById('financeEntryModalBackdrop');
+    this.financeEntryModalTitle = document.getElementById('financeEntryModalTitle');
+    this.financeEntryCloseBtn = document.getElementById('financeEntryCloseBtn');
+    this.financeEntryCatsGrid = document.getElementById('financeEntryCatsGrid');
+    this.financeEntryAmountInput = document.getElementById('financeEntryAmountInput');
+    this.financeEntryCurrencyBadge = document.getElementById('financeEntryCurrencyBadge');
+    this.financeQuickChips = document.getElementById('financeQuickChips');
+    this.financeEntryNoteInput = document.getElementById('financeEntryNoteInput');
+    this.btnFinanceEntryBack = document.getElementById('btnFinanceEntryBack');
+    this.btnFinanceEntrySave = document.getElementById('btnFinanceEntrySave');
+    this.btnFinanceEntryDelete = document.getElementById('btnFinanceEntryDelete');
+    this.financeCategoryModalBackdrop = document.getElementById('financeCategoryModalBackdrop');
+    this.financeCategoryModalTitle = document.getElementById('financeCategoryModalTitle');
+    this.financeCategoryCloseBtn = document.getElementById('financeCategoryCloseBtn');
+    this.btnCatTypeExpense = document.getElementById('btnCatTypeExpense');
+    this.btnCatTypeIncome = document.getElementById('btnCatTypeIncome');
+    this.financeCatNameInput = document.getElementById('financeCatNameInput');
+    this.financeColorPalette = document.getElementById('financeColorPalette');
+    this.financeIconPickerGrid = document.getElementById('financeIconPickerGrid');
+    this.btnFinanceCategoryCancel = document.getElementById('btnFinanceCategoryCancel');
+    this.btnFinanceCategorySave = document.getElementById('btnFinanceCategorySave');
+    this.btnFinanceCategoryDelete = document.getElementById('btnFinanceCategoryDelete');
+    this.toggleFinanceTracker = document.getElementById('toggleFinanceTracker');
+    this.financeSubSettings = document.getElementById('financeSubSettings');
+    this.toggleFinanceStamp = document.getElementById('toggleFinanceStamp');
+    this.financeCurrencySelect = document.getElementById('financeCurrencySelect');
+    this.financeInitialBalanceInput = document.getElementById('financeInitialBalanceInput');
+    this.btnOpenFinanceFromSettings = document.getElementById('btnOpenFinanceFromSettings');
+    this.financePeriodSublabel = document.getElementById('financePeriodSublabel');
+    this.financeHeaderDate = document.getElementById('financeHeaderDate');
+    this.financeEntryDateInput = document.getElementById('financeEntryDateInput');
+    this.financeEntryDateBox = document.getElementById('financeEntryDateBox');
+    this.financeDatePickerModalBackdrop = document.getElementById('financeDatePickerModalBackdrop');
+    this.financeDatePickerCloseBtn = document.getElementById('financeDatePickerCloseBtn');
+    this.financeDatePrevMonth = document.getElementById('financeDatePrevMonth');
+    this.financeDateMonthTitle = document.getElementById('financeDateMonthTitle');
+    this.financeDateNextMonth = document.getElementById('financeDateNextMonth');
+    this.financeDatePickerDaysGrid = document.getElementById('financeDatePickerDaysGrid');
+    this.btnFinanceDateToday = document.getElementById('btnFinanceDateToday');
+    this.btnFinanceDateConfirm = document.getElementById('btnFinanceDateConfirm');
+
+    this.financePickerTempDate = null;
+    this.financePickerDisplayedMonth = null;
+
+    this.financeActivePeriod = 'month';
+    this.financeActiveTab = 'overview';
+    this.financeSelectedCatId = null;
+    this.financeEditingTxId = null;
+    this.financeEntryType = 'expense';
+    this.financeNewCatColor = '#22c55e';
+    this.financeNewCatIcon = 0;
+    this.financeNewCatType = 'expense';
 
     this.weekDaysBar = document.getElementById('weekDaysBar');
     this.weekDaysTrack = document.getElementById('weekDaysTrack');
@@ -6343,6 +6698,7 @@ class NotebookApp {
         startedOnBackdrop = false;
       });
     };
+    this.bindSafeBackdrop = bindSafeBackdrop;
 
     // Helper for bulletproof form submit on mobile devices (prevents keyboard jump from cancelling submit)
     const bindReliableSubmit = (formEl, submitBtn, submitHandler) => {
@@ -6688,7 +7044,10 @@ class NotebookApp {
     // Global keyboard Escape key handler to close any open modal
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' || e.key === 'Esc') {
-        this.closeAllModals();
+        const handled = this.handleHardwareBack();
+        if (!handled) {
+          this.closeAllModals();
+        }
       }
     });
 
@@ -6727,24 +7086,53 @@ class NotebookApp {
         const currentWeekKey = this.getISOWeekKey ? this.getISOWeekKey(new Date()) : '';
         const isFreezeUsed = this.streakData && (this.streakData.lastFreezeWeek === currentWeekKey);
 
-        if (isFreezeUsed) {
-          this.showToast(`🔥 Серия: ${days} ${daysWord} (Рекорд: ${record}) • На этой неделе активен «Выходной ☕» — стрик защищён!`, '☕');
+        const hasUnclaimed = this.achievementsData && Object.keys(this.achievementsData.unlocked || {}).some(id => !this.achievementsData.viewed?.[id]);
+
+        if (hasUnclaimed) {
+          this.showToast(`🏆 Новые достижения получены! Открываем награды...`, '🏆');
+          this.openAchievementsModal('all');
         } else {
-          this.showToast(`🔥 Серия: ${days} ${daysWord} (Рекорд: ${record}) • Доступен 1 «Выходной ☕» в неделю на случай пропуска!`, '🔥');
+          if (isFreezeUsed) {
+            this.showToast(`🔥 Серия: ${days} ${daysWord} (Рекорд: ${record}) • На этой неделе активен «Выходной ☕» — стрик защищён!`, '☕');
+          } else {
+            this.showToast(`🔥 Серия: ${days} ${daysWord} (Рекорд: ${record}) • Доступен 1 «Выходной ☕» в неделю на случай пропуска!`, '🔥');
+          }
+          this.openAchievementsModal('streaks');
         }
       });
     }
 
-    if (this.widgetMedal) {
-      this.widgetMedal.addEventListener('click', () => {
+    // Modules Hub Listeners
+    if (this.widgetModulesHub) {
+      this.widgetModulesHub.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.isModulesHubDisabled()) {
+          triggerHaptic(10);
+          const lang = this.settings?.lang || 'ru';
+          const isEn = lang === 'en';
+          const isUk = lang === 'uk';
+          const msg = this.t('modules_hub_no_active_toast') || (isEn
+            ? 'No active modules. Enable them in Settings ✦'
+            : (isUk ? 'Немає активних модулів. Увімкніть їх у Налаштуваннях ✦' : 'Нет активных модулей. Включите их в Настройках ✦'));
+          this.showToast(msg);
+          return;
+        }
         triggerHaptic(20);
-        this.openAchievementsModal();
+        this.toggleModulesHubDropdown();
       });
     }
+
+    // Click outside to close modules dropdown
+    document.addEventListener('pointerdown', (e) => {
+      if (!this.modulesHubDropdown || !this.modulesHubDropdown.classList.contains('open')) return;
+      if (this.widgetModulesHubWrapper && this.widgetModulesHubWrapper.contains(e.target)) return;
+      this.closeModulesHubDropdown();
+    });
 
     if (this.widgetSettings) {
       this.widgetSettings.addEventListener('click', () => {
         triggerHaptic(15);
+        this.closeModulesHubDropdown();
         this.openSettingsModal();
       });
     }
@@ -6752,6 +7140,7 @@ class NotebookApp {
     if (this.widgetCycle) {
       this.widgetCycle.addEventListener('click', () => {
         triggerHaptic(20);
+        this.closeModulesHubDropdown();
         this.openCycleModal();
       });
     }
@@ -6777,6 +7166,61 @@ class NotebookApp {
         this.openCycleModal();
       });
     }
+
+    // Modules Expand / Collapse Listeners
+    if (this.btnExpandCycleModule) {
+      this.btnExpandCycleModule.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.toggleModuleCard('moduleCardCycle', 'cycleSubSettings', 'btnExpandCycleModule');
+      });
+    }
+    if (this.moduleHeaderCycle) {
+      this.moduleHeaderCycle.addEventListener('click', (e) => {
+        if (e.target.closest('.toggle-switch, input, button')) return;
+        this.toggleModuleCard('moduleCardCycle', 'cycleSubSettings', 'btnExpandCycleModule');
+      });
+    }
+
+    if (this.btnExpandFinanceModule) {
+      this.btnExpandFinanceModule.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.toggleModuleCard('moduleCardFinance', 'financeSubSettings', 'btnExpandFinanceModule');
+      });
+    }
+    if (this.moduleHeaderFinance) {
+      this.moduleHeaderFinance.addEventListener('click', (e) => {
+        if (e.target.closest('.toggle-switch, input, button')) return;
+        this.toggleModuleCard('moduleCardFinance', 'financeSubSettings', 'btnExpandFinanceModule');
+      });
+    }
+
+    // Settings Category Expand / Collapse Listeners
+    const setupSectionToggle = (headerId, btnId, sectionId, bodyId) => {
+      const btn = document.getElementById(btnId);
+      const header = document.getElementById(headerId);
+      if (btn) {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.toggleModuleCard(sectionId, bodyId, btnId);
+        });
+      }
+      if (header) {
+        header.addEventListener('click', (e) => {
+          if (e.target.closest('.toggle-switch, input, button, select, label')) return;
+          this.toggleModuleCard(sectionId, bodyId, btnId);
+        });
+      }
+    };
+
+    setupSectionToggle('fontSettingsHeader', 'btnExpandFontSettings', 'fontSettingsSection', 'fontSettingsBody');
+    setupSectionToggle('notifSettingsHeader', 'btnExpandNotifSettings', 'notifSettingsSection', 'notifSettingsBody');
+    setupSectionToggle('backupSettingsHeader', 'btnExpandBackupSettings', 'backupSettingsSection', 'backupSettingsBody');
+
+    // Initialize Finance Tracker Event Listeners
+    this.initFinanceTrackerListeners();
 
     if (this.btnCycleStartToday) {
       this.btnCycleStartToday.addEventListener('click', () => {
@@ -7835,6 +8279,9 @@ class NotebookApp {
     this.collapseSubstrateDrawer();
     if (this.currentTab === tabKey) return;
     this.currentTab = tabKey;
+    if (tabKey === 'buy') {
+      this.rolloverBuyTasks();
+    }
     this.renderTabs();
     this.render();
 
@@ -8508,6 +8955,7 @@ class NotebookApp {
 
   // Open Settings Modal
   openSettingsModal() {
+    this.collapseAllModuleCards();
     this.collapseSubstrateDrawer(true);
     this.dismissActiveKeyboard();
     this.clearTextSelectionAndFocus();
@@ -8763,12 +9211,21 @@ class NotebookApp {
       if (this.cycleTracker) {
         if (this.toggleCycleTracker) {
           this.toggleCycleTracker.onchange = (e) => {
-            this.cycleTracker.updateSettings({ enabled: e.target.checked });
-            if (this.cycleSubSettings) {
-              this.cycleSubSettings.style.display = e.target.checked ? 'flex' : 'none';
-            }
+            const enabled = e.target.checked;
+            this.cycleTracker.updateSettings({ enabled });
             this.updateCycleWidget();
+            this.updateModulesHubState();
             this.renderCalendar();
+            const lang = this.settings?.lang || 'ru';
+            const isEn = lang === 'en';
+            const isUk = lang === 'uk';
+            const msg = enabled
+              ? (this.t('cycle_enabled_toast') || (isEn ? "Women's calendar enabled! 🍒" : (isUk ? 'Жіночий календар увімкнено! 🍒' : 'Женский календарь включен! 🍒')))
+              : (this.t('cycle_disabled_toast') || (isEn ? "Women's calendar disabled" : (isUk ? 'Жіночий календар вимкнено' : 'Женский календарь отключен')));
+            this.showToast(msg, enabled ? '🍒' : null);
+            if (enabled && this.moduleCardCycle && !this.moduleCardCycle.classList.contains('expanded')) {
+              this.toggleModuleCard('moduleCardCycle', 'cycleSubSettings', 'btnExpandCycleModule');
+            }
           };
         }
 
@@ -8799,13 +9256,6 @@ class NotebookApp {
             this.cycleTracker.updateSettings({ defaultCycleLength: val });
             this.renderCycleModalContent();
             this.renderCalendar();
-            this.updateCycleWidget();
-          };
-        }
-
-        if (this.toggleCycleWidget) {
-          this.toggleCycleWidget.onchange = (e) => {
-            this.cycleTracker.updateSettings({ showInTopBar: e.target.checked });
             this.updateCycleWidget();
           };
         }
@@ -8883,9 +9333,6 @@ class NotebookApp {
       const cSet = this.cycleTracker.getSettings();
       if (this.toggleCycleTracker) {
         this.toggleCycleTracker.checked = !!cSet.enabled;
-        if (this.cycleSubSettings) {
-          this.cycleSubSettings.style.display = cSet.enabled ? 'flex' : 'none';
-        }
       }
       if (this.toggleCycleIrregular) this.toggleCycleIrregular.checked = !!cSet.isIrregular;
       if (this.cyclePeriodLengthRange) {
@@ -8896,7 +9343,26 @@ class NotebookApp {
         this.cycleDefaultLengthRange.value = cSet.defaultCycleLength || 28;
         if (this.cycleDefaultLengthVal) this.cycleDefaultLengthVal.textContent = `${cSet.defaultCycleLength || 28} дн.`;
       }
-      if (this.toggleCycleWidget) this.toggleCycleWidget.checked = cSet.showInTopBar !== false;
+    }
+
+    if (this.financeTracker) {
+      const fSet = this.financeTracker.getSettings();
+      if (this.toggleFinanceTracker) {
+        this.toggleFinanceTracker.checked = !!fSet.enabled;
+      }
+      if (this.toggleFinanceStamp) this.toggleFinanceStamp.checked = fSet.showArchiveStamp !== false;
+      if (this.financeCurrencySelect) {
+        const optVal = `${fSet.currency}|${fSet.currencySymbol || '₴'}`;
+        for (let opt of this.financeCurrencySelect.options) {
+          if (opt.value === optVal || opt.value.startsWith(fSet.currency)) {
+            this.financeCurrencySelect.value = opt.value;
+            break;
+          }
+        }
+      }
+      if (this.financeInitialBalanceInput) {
+        this.financeInitialBalanceInput.value = fSet.initialBalance || '';
+      }
     }
 
     const last = localStorage.getItem('plan4u_last_gdrive_export');
@@ -8937,6 +9403,7 @@ class NotebookApp {
 
   // Close Settings Modal
   closeSettingsModal() {
+    this.collapseAllModuleCards();
     const langCircleBtn = document.getElementById('langCircleBadgeBtn');
     const langDropdown = document.getElementById('langDropdownMenu');
     const langWrapper = document.getElementById('langPickerWrapper');
@@ -9408,7 +9875,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.3.6',
+      appVersion: '0.3.8',
       email: this.cloudEmail,
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
@@ -9424,6 +9891,7 @@ class NotebookApp {
       streak: this.streakData,
       habits: this.habits || [],
       cycleData: this.cycleTracker ? this.cycleTracker.data : (JSON.parse(localStorage.getItem('plan4u_cycle_data') || 'null')),
+      financeData: this.financeTracker ? this.financeTracker.exportData() : (JSON.parse(localStorage.getItem('plan4u_finance_data') || 'null')),
       pet: this.petSystem ? this.petSystem.getPetSnapshot() : (JSON.parse(localStorage.getItem('plan4u_pet_data') || '{}'))
     };
   }
@@ -9622,6 +10090,22 @@ class NotebookApp {
       }
     }
 
+    // 11d. Finance Tracker (Income, expenses, categories, settings)
+    if (data.financeData && typeof data.financeData === 'object') {
+      try {
+        if (this.financeTracker && typeof this.financeTracker.importData === 'function') {
+          this.financeTracker.importData(data.financeData);
+          this.updateFinanceWidget?.();
+          this.updateFinanceArchiveStamp?.();
+          this.renderFinanceModalContent?.();
+        } else {
+          localStorage.setItem('plan4u_finance_data', JSON.stringify(data.financeData));
+        }
+      } catch (e) {
+        console.warn('Could not restore finance tracker data:', e);
+      }
+    }
+
     // 12. Apply visual state & update UI components
     this.currentTab = this.tabs.length > 0 ? this.tabs[0].id : 'todo';
     this.rolloverPastUncompletedTasks();
@@ -9667,7 +10151,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.3.6',
+      appVersion: '0.3.8',
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
       sections: this.tabSections || {},
@@ -10106,6 +10590,8 @@ class NotebookApp {
     this.renderStickers();
     this.updateWorkloadWidget();
     this.updateCycleWidget();
+    this.updateFinanceWidget();
+    this.updateFinanceArchiveStamp();
     this.renderTabs();
     this.syncWithNativeWidget?.();
   }
@@ -10508,7 +10994,21 @@ class NotebookApp {
 
     // Persistent tabs tasks
     const buyTasks = this.tasks.buy || [];
-    const buyCompletedCount = buyTasks.filter(t => t.completed).length;
+    let buyHistoryCount = 0;
+    if (this.dayHistory && typeof this.dayHistory === 'object') {
+      const recordedIds = new Set();
+      Object.values(this.dayHistory).forEach(dayList => {
+        if (Array.isArray(dayList)) {
+          dayList.forEach(item => {
+            if (item && (item.tabId === 'buy' || item.tabId === 'What to buy' || item.tabId === 'Що купити' || item.tabId === 'Что купить')) {
+              recordedIds.add(String(item.id || item.text));
+            }
+          });
+        }
+      });
+      buyHistoryCount = recordedIds.size;
+    }
+    const buyCompletedCount = Math.max(buyTasks.filter(t => t.completed).length, buyHistoryCount);
 
     const watchTasks = this.tasks.watch || [];
     const watchCompletedCount = watchTasks.filter(t => t.completed).length;
@@ -10612,24 +11112,36 @@ class NotebookApp {
     }
   }
 
-  // Update pulsating aura on Trophy Widget if there are unclaimed/unviewed achievements
+  // Update pulsating aura on Streak Widget if there are unclaimed/unviewed achievements
   updateTrophyWidgetAura() {
-    if (!this.widgetMedal || !this.achievementsData) return;
-    const hasUnclaimed = Object.keys(this.achievementsData.unlocked || {}).some(id => !this.achievementsData.viewed[id]);
-    this.widgetMedal.classList.toggle('has-unclaimed', hasUnclaimed);
-    if (hasUnclaimed) {
-      this.widgetMedal.title = '🏆 У вас есть новые полученные достижения! Нажмите, чтобы открыть меню';
-    } else {
-      const unlockedCount = Object.keys(this.achievementsData.unlocked || {}).length;
-      this.widgetMedal.title = `🏆 Достижения (${unlockedCount} / ${ACHIEVEMENTS_LIST.length} открыто)`;
+    if (!this.achievementsData) return;
+    const hasUnclaimed = Object.keys(this.achievementsData.unlocked || {}).some(id => !this.achievementsData.viewed?.[id]);
+    
+    // Transfer pulsating golden aura and notification to widgetStreak (Серия)
+    if (this.widgetStreak) {
+      this.widgetStreak.classList.toggle('has-unclaimed', hasUnclaimed);
+      if (hasUnclaimed) {
+        this.widgetStreak.title = '🏆 У вас есть новые полученные достижения! Нажмите, чтобы открыть';
+      } else {
+        this.updateStreakWidget();
+      }
     }
   }
 
-  // Open Achievements Modal
-  openAchievementsModal() {
+  // Open Achievements Modal (Supports direct filter parameter, e.g. 'streaks')
+  openAchievementsModal(defaultFilter = null) {
     this.collapseSubstrateDrawer(true);
     this.dismissActiveKeyboard();
     if (!this.achievementsModalBackdrop) return;
+
+    if (defaultFilter && this.achievementsFilterTabs) {
+      const targetBtn = this.achievementsFilterTabs.querySelector(`[data-filter="${defaultFilter}"]`);
+      if (targetBtn) {
+        this.achievementsFilterTabs.querySelectorAll('.achievement-tab-btn').forEach(b => b.classList.remove('active'));
+        targetBtn.classList.add('active');
+        this.activeAchievementFilter = defaultFilter;
+      }
+    }
 
     this._achievementsModalOpenedAt = Date.now();
     this.achievementsModalBackdrop.classList.add('open');
@@ -10647,14 +11159,176 @@ class NotebookApp {
     }
   }
 
+  // Modules Hub Dropdown Controls
+  toggleModulesHubDropdown() {
+    if (!this.modulesHubDropdown) return;
+    if (this.modulesHubDropdown.classList.contains('open')) {
+      this.closeModulesHubDropdown();
+    } else {
+      this.openModulesHubDropdown();
+    }
+  }
+
+  // Adaptive height calculation for modules hub dropdown based on active connected modules
+  updateModulesHubHeight() {
+    if (!this.modulesHubDropdown) return 52;
+    const moduleCircles = Array.from(this.modulesHubDropdown.querySelectorAll('.widget-circle'));
+    const visibleModules = moduleCircles.filter(btn => {
+      if (!btn) return false;
+      return btn.style.display !== 'none' && !btn.hasAttribute('hidden') && !btn.classList.contains('hidden');
+    });
+
+    const count = visibleModules.length;
+    if (count === 0) {
+      this.modulesHubDropdown.classList.add('is-empty');
+      this.modulesHubDropdown.style.setProperty('--modules-hub-height', '52px');
+      return 52;
+    }
+
+    this.modulesHubDropdown.classList.remove('is-empty');
+
+    // Sunken plaque sizing:
+    // Plaque starts 3px above trigger circle (top: -4.8px)
+    // Padding-top: 62px (3px top clearance + 52px trigger circle + 7px gap to first module)
+    // Each module circle: 52px height
+    // Gap between module circles: 7px
+    // Bottom clearance: 3px
+    // Borders: 3.6px
+    const targetHeight = Math.round(62 + (count * 52) + ((count - 1) * 7) + 3 + 3.6);
+    this.modulesHubDropdown.style.setProperty('--modules-hub-height', `${targetHeight}px`);
+    return targetHeight;
+  }
+
+  hasActiveModules() {
+    const cycleEnabled = !!(this.cycleTracker && typeof this.cycleTracker.isEnabled === 'function' && this.cycleTracker.isEnabled());
+    const financeEnabled = !!(this.financeTracker && typeof this.financeTracker.isEnabled === 'function' && this.financeTracker.isEnabled());
+    return cycleEnabled || financeEnabled;
+  }
+
+  isModulesHubDisabled() {
+    return !this.hasActiveModules();
+  }
+
+  updateModulesHubState() {
+    if (!this.widgetModulesHub) return;
+    const hasModules = this.hasActiveModules();
+
+    const lang = this.settings?.lang || 'ru';
+    const isEn = lang === 'en';
+    const isUk = lang === 'uk';
+
+    if (!hasModules) {
+      this.widgetModulesHub.classList.add('is-disabled');
+      this.widgetModulesHub.setAttribute('aria-disabled', 'true');
+      const disabledTitle = this.t('tooltip_modules_disabled') || (isEn
+        ? 'Modules (no active modules)'
+        : (isUk ? 'Модулі (немає активних модулів)' : 'Модули (нет активных модулей)'));
+      this.widgetModulesHub.title = disabledTitle;
+      this.widgetModulesHub.setAttribute('aria-label', disabledTitle);
+      if (this.modulesHubDropdown && (this.modulesHubDropdown.classList.contains('open') || this.modulesHubDropdown.classList.contains('is-open'))) {
+        this.closeModulesHubDropdown();
+      }
+    } else {
+      this.widgetModulesHub.classList.remove('is-disabled');
+      this.widgetModulesHub.setAttribute('aria-disabled', 'false');
+      const activeTitle = this.t('tooltip_modules') || (isEn ? 'Modules' : (isUk ? 'Модулі' : 'Модули'));
+      this.widgetModulesHub.title = activeTitle;
+      this.widgetModulesHub.setAttribute('aria-label', activeTitle);
+    }
+  }
+
+  openModulesHubDropdown() {
+    if (!this.modulesHubDropdown || this.isModulesHubDisabled()) return;
+    this.collapseSubstrateDrawer(true);
+    this.dismissActiveKeyboard();
+    this._modulesHubOpenedAt = Date.now();
+    clearTimeout(this._modulesHubCloseTimer);
+
+    // Refresh badges and module states first, then compute adaptive height
+    this.updateModulesHubBadges();
+    this.updateModulesHubHeight();
+
+    if (this.widgetModulesHubWrapper) {
+      this.widgetModulesHubWrapper.classList.add('is-open');
+    }
+    this.modulesHubDropdown.classList.remove('is-closing');
+    this.modulesHubDropdown.classList.add('open', 'is-open');
+    this.modulesHubDropdown.setAttribute('aria-hidden', 'false');
+    if (this.widgetModulesHub) {
+      this.widgetModulesHub.classList.add('active');
+      this.widgetModulesHub.setAttribute('aria-expanded', 'true');
+    }
+  }
+
+  closeModulesHubDropdown() {
+    if (this.modulesHubDropdown && (this.modulesHubDropdown.classList.contains('open') || this.modulesHubDropdown.classList.contains('is-open'))) {
+      this.modulesHubDropdown.classList.remove('open', 'is-open');
+      this.modulesHubDropdown.classList.add('is-closing');
+      this.modulesHubDropdown.setAttribute('aria-hidden', 'true');
+      clearTimeout(this._modulesHubCloseTimer);
+      this._modulesHubCloseTimer = setTimeout(() => {
+        if (this.modulesHubDropdown) {
+          this.modulesHubDropdown.classList.remove('is-closing');
+        }
+        if (this.widgetModulesHubWrapper) {
+          this.widgetModulesHubWrapper.classList.remove('is-open');
+        }
+      }, 400);
+    }
+    if (this.widgetModulesHub) {
+      this.widgetModulesHub.classList.remove('active');
+      this.widgetModulesHub.setAttribute('aria-expanded', 'false');
+    }
+  }
+
+  // Backwards-compatible aliases
+  openModulesHub() {
+    this.openModulesHubDropdown();
+  }
+
+  closeModulesHub() {
+    this.closeModulesHubDropdown();
+  }
+
+  // Update indicators/badges for Modules Hub
+  updateModulesHubBadges() {
+    // 1. Refresh finance widget ring & data
+    this.updateFinanceWidget?.();
+
+    // 2. Refresh cycle widget day
+    this.updateCycleWidget?.();
+
+    // 3. Unclaimed achievements indicator on trigger button
+    const hasUnclaimed = this.hasUnclaimedAchievements ? this.hasUnclaimedAchievements() : false;
+    if (this.widgetModulesHubBadge) {
+      this.widgetModulesHubBadge.style.display = (hasUnclaimed && this.hasActiveModules()) ? 'block' : 'none';
+    }
+
+    // 4. Update adaptive height for modules hub dropdown
+    this.updateModulesHubHeight?.();
+
+    // 5. Update active/disabled trigger state
+    this.updateModulesHubState();
+  }
+
   // Close all open modals simultaneously (for ESC key or reset)
   closeAllModals() {
+    this.closeModulesHubDropdown?.();
+    this.closeModulesHub?.();
+    this.closeFinanceEntryModal?.();
+    this.closeFinanceCategoryModal?.();
+    this.closeFinanceDatePicker?.();
+    this.closeFinanceModal?.();
+    this.closeCycleModal?.();
     this.closeTaskModal();
     this.closeEditTabModal();
     this.closeNewTabModal();
     this.closeSettingsModal();
     this.closeCalendarModal();
-    this.closeAchievementsModal();
+    this.closeAchievementsModal?.();
+    this.closeTrophyModal?.();
+    this.closeStickerShopModal?.();
+    this.closeDayHistoryModal?.();
     this.closeConfirmModal();
     this.closeLightbox();
   }
@@ -10855,18 +11529,23 @@ class NotebookApp {
       if (this.currentTab === 'watch') {
         task.completedDate = new Date().toLocaleDateString('ru-RU');
       }
+      if (this.currentTab === 'buy') {
+        task.completedDate = todayStr;
+        task.completedAt = Date.now();
+      }
 
       // Record in day history
-      if (!this.dayHistory[targetDate]) {
-        this.dayHistory[targetDate] = [];
+      const historyDate = (this.currentTab === 'todo') ? targetDate : todayStr;
+      if (!this.dayHistory[historyDate]) {
+        this.dayHistory[historyDate] = [];
       }
       const activeTab = this.tabs.find(t => t.id === this.currentTab);
       const tabTitle = activeTab ? activeTab.title : this.currentTab;
 
-      const existingIdx = this.dayHistory[targetDate].findIndex(h => String(h.id) === String(task.id));
+      const existingIdx = this.dayHistory[historyDate].findIndex(h => String(h.id) === String(task.id));
       const taskSection = task.section || getTaskSection(task) || 'personal';
       if (existingIdx === -1) {
-        this.dayHistory[targetDate].push({
+        this.dayHistory[historyDate].push({
           id: task.id,
           tabId: this.currentTab,
           tabTitle: tabTitle,
@@ -10880,17 +11559,22 @@ class NotebookApp {
           completedAt: new Date().toISOString()
         });
       } else {
-        if (!this.dayHistory[targetDate][existingIdx].section) {
-          this.dayHistory[targetDate][existingIdx].section = taskSection;
+        if (!this.dayHistory[historyDate][existingIdx].section) {
+          this.dayHistory[historyDate][existingIdx].section = taskSection;
         }
       }
     } else {
       if (this.currentTab === 'watch') {
         delete task.completedDate;
       }
+      if (this.currentTab === 'buy') {
+        delete task.completedDate;
+        delete task.completedAt;
+      }
       // Remove from history if unchecked
-      if (this.dayHistory[targetDate]) {
-        this.dayHistory[targetDate] = this.dayHistory[targetDate].filter(h => String(h.id) !== String(task.id));
+      const historyDate = (this.currentTab === 'todo') ? targetDate : todayStr;
+      if (this.dayHistory[historyDate]) {
+        this.dayHistory[historyDate] = this.dayHistory[historyDate].filter(h => String(h.id) !== String(task.id));
       }
     }
 
@@ -14248,6 +14932,7 @@ class NotebookApp {
     if (typeId?.startsWith('food_')) return { id: typeId, img: `./assets/stickers/food/${typeId}.webp` };
     if (typeId?.startsWith('sweet_')) return { id: typeId, img: `./assets/stickers/sweets/${typeId}.webp` };
     if (typeId?.startsWith('reptile_')) return { id: typeId, img: `./assets/stickers/reptiles/${typeId}.webp` };
+    if (typeId?.startsWith('sport_')) return { id: typeId, img: `./assets/stickers/sport/${typeId}.webp` };
     return null;
   }
 
@@ -15314,8 +15999,9 @@ class NotebookApp {
 
   updateCycleWidget() {
     if (!this.widgetCycle) return;
-    if (!this.cycleTracker || !this.cycleTracker.isEnabled() || this.cycleTracker.getSettings().showInTopBar === false) {
+    if (!this.cycleTracker || !this.cycleTracker.isEnabled()) {
       this.widgetCycle.style.display = 'none';
+      this.updateModulesHubState?.();
       return;
     }
 
@@ -15333,6 +16019,7 @@ class NotebookApp {
       }
       this.widgetCycle.title = this.t('cycle_settings_title');
     }
+    this.updateModulesHubState?.();
   }
 
   openCycleModal() {
@@ -15703,6 +16390,2052 @@ class NotebookApp {
     triggerHaptic(20);
     this.closeCycleAddModal();
     this.refreshCycleUI();
+  }
+
+  /* ============================================================================
+   * 💰 FINANCE TRACKER (ДОХОДЫ И РАСХОДЫ) METHODS
+   * ============================================================================ */
+
+  initFinanceTrackerListeners() {
+    if (!this.financeTracker) return;
+
+    // Top Header Widget click
+    if (this.widgetFinance) {
+      this.widgetFinance.addEventListener('click', () => {
+        triggerHaptic(20);
+        this.closeModulesHubDropdown();
+        this.isFinanceArchiveMode = false;
+        this.openFinanceModal();
+      });
+    }
+
+    // Archive Day Paper Stamp click
+    if (this.notebookFinanceStamp) {
+      this.notebookFinanceStamp.addEventListener('click', () => {
+        triggerHaptic(20);
+        this.isFinanceArchiveMode = true;
+        this.openFinanceModal('day', 'overview');
+      });
+    }
+
+    // Main Modal Close & Safe Backdrop
+    if (this.financeCloseBtn) {
+      this.financeCloseBtn.addEventListener('click', () => this.closeFinanceModal());
+    }
+    this.bindSafeBackdrop(this.financeModalBackdrop, () => this.closeFinanceModal(), () => this._financeModalOpenedAt);
+
+    // Add Category Button in Main Modal Header
+    if (this.btnFinanceAddCategory) {
+      this.btnFinanceAddCategory.addEventListener('click', () => {
+        triggerHaptic(15);
+        this.openFinanceCategoryModal();
+      });
+    }
+
+    // Period selector pills (Сегодня / Неделя / Месяц / Все)
+    if (this.financePeriodPills) {
+      this.financePeriodPills.querySelectorAll('.finance-period-pill').forEach(pill => {
+        pill.addEventListener('click', () => {
+          triggerHaptic(15);
+          this.financePeriodPills.querySelectorAll('.finance-period-pill').forEach(p => p.classList.remove('active'));
+          pill.classList.add('active');
+          this.financeActivePeriod = pill.dataset.period || 'month';
+          this.renderFinanceModalContent();
+        });
+      });
+    }
+
+    // View Tabs (Кольцо / История / Категории)
+    if (this.financeViewTabs) {
+      this.financeViewTabs.querySelectorAll('.finance-view-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          triggerHaptic(15);
+          this.financeViewTabs.querySelectorAll('.finance-view-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          this.financeActiveTab = tab.dataset.tab || 'overview';
+          
+          if (this.financePaneOverview) {
+            this.financePaneOverview.classList.toggle('active', this.financeActiveTab === 'overview');
+            this.financePaneOverview.style.display = this.financeActiveTab === 'overview' ? 'flex' : 'none';
+          }
+          if (this.financePaneHistory) {
+            this.financePaneHistory.classList.toggle('active', this.financeActiveTab === 'history');
+            this.financePaneHistory.style.display = this.financeActiveTab === 'history' ? 'flex' : 'none';
+          }
+          if (this.financePaneCategories) {
+            this.financePaneCategories.classList.toggle('active', this.financeActiveTab === 'categories');
+            this.financePaneCategories.style.display = this.financeActiveTab === 'categories' ? 'flex' : 'none';
+          }
+
+          this.renderFinanceModalContent();
+        });
+      });
+    }
+
+    // 2 Big Round Action Buttons: [+] Income and [-] Expense
+    if (this.btnFinanceQuickIncome) {
+      this.btnFinanceQuickIncome.addEventListener('click', () => {
+        triggerHaptic(25);
+        this.openFinanceEntryModal('income');
+      });
+    }
+
+    if (this.btnFinanceQuickExpense) {
+      this.btnFinanceQuickExpense.addEventListener('click', () => {
+        triggerHaptic(25);
+        this.openFinanceEntryModal('expense');
+      });
+    }
+
+    // Archive Day Informational Actions: "История" button -> opens day transactions in read-only mode
+    if (this.btnFinanceArchiveHistory) {
+      this.btnFinanceArchiveHistory.addEventListener('click', () => {
+        triggerHaptic(15);
+        this.financeActiveTab = 'history';
+        if (this.financePaneOverview) {
+          this.financePaneOverview.classList.remove('active');
+          this.financePaneOverview.style.display = 'none';
+        }
+        if (this.financePaneHistory) {
+          this.financePaneHistory.classList.add('active');
+          this.financePaneHistory.style.display = 'flex';
+        }
+        this.renderFinanceModalContent();
+      });
+    }
+
+    // Archive Day Back Button from History -> back to Ring overview
+    if (this.btnFinanceArchiveBackToRing) {
+      this.btnFinanceArchiveBackToRing.addEventListener('click', () => {
+        triggerHaptic(15);
+        this.financeActiveTab = 'overview';
+        if (this.financePaneHistory) {
+          this.financePaneHistory.classList.remove('active');
+          this.financePaneHistory.style.display = 'none';
+        }
+        if (this.financePaneOverview) {
+          this.financePaneOverview.classList.add('active');
+          this.financePaneOverview.style.display = 'flex';
+        }
+        this.renderFinanceModalContent();
+      });
+    }
+
+    // Quick Entry Modal Listeners
+    if (this.financeEntryCloseBtn) {
+      this.financeEntryCloseBtn.addEventListener('click', () => this.closeFinanceEntryModal());
+    }
+    if (this.btnFinanceEntryBack) {
+      this.btnFinanceEntryBack.addEventListener('click', () => this.closeFinanceEntryModal());
+    }
+    if (this.btnFinanceEntrySave) {
+      this.btnFinanceEntrySave.addEventListener('click', () => this.saveFinanceEntry());
+    }
+    if (this.btnFinanceEntryDelete) {
+      this.btnFinanceEntryDelete.addEventListener('click', () => {
+        if (!this.financeEditingTxId) return;
+        const tx = this.financeTracker.getTransaction(this.financeEditingTxId);
+        if (!tx) return;
+        const cur = this.financeTracker.getCurrency();
+        const isExpense = tx.type === 'expense';
+        const sign = isExpense ? '-' : '+';
+        const cat = this.financeTracker.getCategory(tx.categoryId);
+        const catName = cat ? this.getFinanceCategoryName(cat) : (isExpense ? (this.t('finance_btn_expense') || 'Расход') : (this.t('finance_btn_income') || 'Доход'));
+        triggerHaptic(20);
+        const title = this.t('finance_delete_tx_title') || 'Удалить запись?';
+        const msg = (this.t('finance_delete_tx_confirm') || `Удалить ${isExpense ? 'расход' : 'доход'} ${sign}${this.financeTracker.formatMoney(tx.amount)} ${cur} (${catName})?`)
+          .replace('{catName}', catName)
+          .replace('{amount}', this.financeTracker.formatMoney(tx.amount))
+          .replace('{cur}', cur);
+        const confirmBtnText = this.t('delete') || 'Удалить';
+        const deletedToast = this.t('finance_toast_tx_deleted') || 'Запись удалена';
+        this.showConfirmModal({
+          title,
+          message: msg,
+          icon: '🗑️',
+          confirmText: confirmBtnText,
+          onConfirm: () => {
+            this.financeTracker.deleteTransaction(tx.id);
+            this.closeFinanceEntryModal();
+            this.renderFinanceModalContent();
+            this.updateFinanceWidget();
+            this.updateFinanceArchiveStamp();
+            this.syncWithNativeWidget?.();
+            this.showToast(deletedToast, '🗑️');
+          }
+        });
+      });
+    }
+    this.bindSafeBackdrop(this.financeEntryModalBackdrop, () => this.closeFinanceEntryModal(), () => this._financeEntryModalOpenedAt);
+
+    // Finance Date Picker Listeners
+    if (this.financeEntryDateBox) {
+      this.financeEntryDateBox.addEventListener('click', () => {
+        triggerHaptic(15);
+        this.openFinanceDatePicker();
+      });
+    }
+    if (this.financeEntryDateInput) {
+      this.financeEntryDateInput.addEventListener('click', (e) => {
+        e.stopPropagation();
+        triggerHaptic(15);
+        this.openFinanceDatePicker();
+      });
+    }
+
+    if (this.financeDatePickerCloseBtn) {
+      this.financeDatePickerCloseBtn.addEventListener('click', () => this.closeFinanceDatePicker());
+    }
+
+    if (this.financeDatePrevMonth) {
+      this.financeDatePrevMonth.addEventListener('click', () => {
+        triggerHaptic(10);
+        if (!this.financePickerDisplayedMonth) return;
+        let m = this.financePickerDisplayedMonth.month - 1;
+        let y = this.financePickerDisplayedMonth.year;
+        if (m < 0) { m = 11; y--; }
+        this.financePickerDisplayedMonth = { year: y, month: m };
+        this.renderFinanceDatePicker();
+      });
+    }
+
+    if (this.financeDateNextMonth) {
+      this.financeDateNextMonth.addEventListener('click', () => {
+        triggerHaptic(10);
+        if (!this.financePickerDisplayedMonth) return;
+        let m = this.financePickerDisplayedMonth.month + 1;
+        let y = this.financePickerDisplayedMonth.year;
+        if (m > 11) { m = 0; y++; }
+        this.financePickerDisplayedMonth = { year: y, month: m };
+        this.renderFinanceDatePicker();
+      });
+    }
+
+    if (this.btnFinanceDateToday) {
+      this.btnFinanceDateToday.addEventListener('click', () => {
+        triggerHaptic(15);
+        const todayStr = this.getTodayDateString();
+        this.confirmFinanceDatePicker(todayStr);
+      });
+    }
+
+    if (this.btnFinanceDateConfirm) {
+      this.btnFinanceDateConfirm.addEventListener('click', () => {
+        triggerHaptic(15);
+        this.confirmFinanceDatePicker(this.financePickerTempDate);
+      });
+    }
+
+    this.bindSafeBackdrop(this.financeDatePickerModalBackdrop, () => this.closeFinanceDatePicker(), () => this._financeDatePickerOpenedAt);
+
+    // Quick increment chips (+50, +100, +200, etc.)
+    if (this.financeQuickChips) {
+      this.financeQuickChips.querySelectorAll('.finance-chip-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          triggerHaptic(15);
+          const add = parseFloat(btn.dataset.add) || 0;
+          const current = parseFloat((this.financeEntryAmountInput.value || '').replace(',', '.')) || 0;
+          const sum = Math.round((current + add) * 100) / 100;
+          this.financeEntryAmountInput.value = sum.toString();
+          this.financeEntryAmountInput.focus();
+        });
+      });
+    }
+
+    // Keyboard Enter listeners for quick submission
+    if (this.financeEntryAmountInput) {
+      this.financeEntryAmountInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (this.financeEntryNoteInput && !this.financeEntryNoteInput.value) {
+            this.financeEntryNoteInput.focus();
+          } else {
+            this.saveFinanceEntry();
+          }
+        }
+      });
+    }
+    if (this.financeEntryNoteInput) {
+      this.financeEntryNoteInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          this.saveFinanceEntry();
+        }
+      });
+    }
+
+    // Category Creator / Editor Modal Listeners
+    if (this.financeCategoryCloseBtn) {
+      this.financeCategoryCloseBtn.addEventListener('click', () => this.closeFinanceCategoryModal());
+    }
+    if (this.btnFinanceCategoryCancel) {
+      this.btnFinanceCategoryCancel.addEventListener('click', () => this.closeFinanceCategoryModal());
+    }
+    if (this.btnFinanceCategorySave) {
+      this.btnFinanceCategorySave.addEventListener('click', () => this.saveFinanceCategory());
+    }
+    if (this.financeCatNameInput) {
+      this.financeCatNameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          this.saveFinanceCategory();
+        }
+      });
+    }
+    if (this.btnFinanceCategoryDelete) {
+      this.btnFinanceCategoryDelete.addEventListener('click', () => {
+        if (!this.financeEditingCatId) return;
+        const cat = this.financeTracker.getCategory(this.financeEditingCatId);
+        if (!cat) return;
+        const activeSameType = this.financeTracker.getCategories(cat.type, false);
+        if (activeSameType.length <= 1) {
+          triggerHaptic(20);
+          this.showToast(this.t('finance_cannot_delete_last_cat') || 'Нельзя удалить последнюю категорию этого типа', '⚠️');
+          return;
+        }
+        const catName = this.getFinanceCategoryName(cat);
+        triggerHaptic(20);
+        const title = this.t('finance_delete_cat_title') || 'Удалить категорию?';
+        const msg = (this.t('finance_delete_cat_msg') || `Вы действительно хотите удалить категорию «${catName}»? Прошлые записи в истории сохранятся.`).replace('{catName}', catName);
+        const confirmBtnText = this.t('delete') || 'Удалить';
+        const deletedToast = (this.t('finance_toast_cat_deleted') || 'Категория удалена') + ` «${catName}»`;
+        this.showConfirmModal({
+          title,
+          message: msg,
+          icon: '🗑️',
+          confirmText: confirmBtnText,
+          onConfirm: () => {
+            this.financeTracker.deleteCategory(cat.id);
+            this.closeFinanceCategoryModal();
+            this.renderFinanceModalContent();
+            this.updateFinanceWidget();
+            this.updateFinanceArchiveStamp();
+            this.syncWithNativeWidget?.();
+            this.showToast(deletedToast, '🗑️');
+          }
+        });
+      });
+    }
+    this.bindSafeBackdrop(this.financeCategoryModalBackdrop, () => this.closeFinanceCategoryModal(), () => this._financeCatModalOpenedAt);
+
+    // Category type buttons (Расход vs Доход)
+    if (this.btnCatTypeExpense) {
+      this.btnCatTypeExpense.addEventListener('click', () => {
+        triggerHaptic(15);
+        this.financeNewCatType = 'expense';
+        this.btnCatTypeExpense.classList.add('active');
+        if (this.btnCatTypeIncome) this.btnCatTypeIncome.classList.remove('active');
+      });
+    }
+    if (this.btnCatTypeIncome) {
+      this.btnCatTypeIncome.addEventListener('click', () => {
+        triggerHaptic(15);
+        this.financeNewCatType = 'income';
+        this.btnCatTypeIncome.classList.add('active');
+        if (this.btnCatTypeExpense) this.btnCatTypeExpense.classList.remove('active');
+      });
+    }
+
+    // Settings Toggle Listeners
+    if (this.toggleFinanceTracker) {
+      this.toggleFinanceTracker.onchange = (e) => {
+        const enabled = e.target.checked;
+        this.financeTracker.updateSettings({ enabled });
+        this.updateFinanceWidget();
+        this.updateFinanceArchiveStamp();
+        this.updateModulesHubState();
+        const lang = this.settings?.lang || 'ru';
+        const isEn = lang === 'en';
+        const isUk = lang === 'uk';
+        const msg = enabled
+          ? (this.t('finance_enabled_toast') || (isEn ? 'Finance tracking enabled! 💰' : (isUk ? 'Облік фінансів увімкнено! 💰' : 'Учет финансов включен! 💰')))
+          : (this.t('finance_disabled_toast') || (isEn ? 'Finance tracking disabled' : (isUk ? 'Облік фінансів вимкнено' : 'Учет финансов отключен')));
+        this.showToast(msg, enabled ? '💰' : null);
+        if (enabled && this.moduleCardFinance && !this.moduleCardFinance.classList.contains('expanded')) {
+          this.toggleModuleCard('moduleCardFinance', 'financeSubSettings', 'btnExpandFinanceModule');
+        }
+      };
+    }
+
+    if (this.toggleFinanceStamp) {
+      this.toggleFinanceStamp.onchange = (e) => {
+        this.financeTracker.updateSettings({ showArchiveStamp: e.target.checked });
+        this.updateFinanceArchiveStamp();
+      };
+    }
+
+    if (this.financeCurrencySelect) {
+      this.financeCurrencySelect.onchange = (e) => {
+        const [curr, sym] = e.target.value.split('|');
+        this.financeTracker.updateSettings({ currency: curr, currencySymbol: sym || curr });
+        this.updateFinanceWidget();
+        this.updateFinanceArchiveStamp();
+        this.renderFinanceModalContent();
+      };
+    }
+
+    if (this.financeInitialBalanceInput) {
+      const updateBalance = (e) => {
+        const val = parseFloat((e.target.value || '').replace(',', '.')) || 0;
+        this.financeTracker.updateSettings({ initialBalance: val });
+        this.renderFinanceModalContent();
+        this.syncWithNativeWidget?.();
+      };
+      this.financeInitialBalanceInput.onchange = updateBalance;
+      this.financeInitialBalanceInput.oninput = updateBalance;
+    }
+
+    if (this.btnOpenFinanceFromSettings) {
+      this.btnOpenFinanceFromSettings.addEventListener('click', () => {
+        triggerHaptic(20);
+        this.closeSettingsModal();
+        this.openFinanceModal();
+      });
+    }
+
+  }
+
+  // Toggle expand / collapse for settings module cards
+  toggleModuleCard(cardId, subSettingsId, btnExpandId) {
+    const card = document.getElementById(cardId);
+    const body = document.getElementById(subSettingsId);
+    const btn = document.getElementById(btnExpandId);
+    if (!card || !body) return;
+
+    const isExpanded = card.classList.toggle('expanded');
+    body.style.display = isExpanded ? 'flex' : 'none';
+    if (btn) {
+      btn.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+      const lang = this.settings?.lang || 'ru';
+      const isEn = lang === 'en';
+      const isUk = lang === 'uk';
+      const title = isExpanded
+        ? (isEn ? 'Collapse' : (isUk ? 'Згорнути' : 'Свернуть'))
+        : (isEn ? 'Expand' : (isUk ? 'Розгорнути' : 'Развернуть'));
+      btn.title = title;
+      btn.setAttribute('aria-label', title);
+    }
+    triggerHaptic(15);
+  }
+
+  // Collapse all settings sections & module cards (e.g. on opening settings)
+  collapseAllModuleCards() {
+    const items = [
+      { cardId: 'fontSettingsSection', subSettingsId: 'fontSettingsBody', btnExpandId: 'btnExpandFontSettings' },
+      { cardId: 'notifSettingsSection', subSettingsId: 'notifSettingsBody', btnExpandId: 'btnExpandNotifSettings' },
+      { cardId: 'backupSettingsSection', subSettingsId: 'backupSettingsBody', btnExpandId: 'btnExpandBackupSettings' },
+      { cardId: 'moduleCardCycle', subSettingsId: 'cycleSubSettings', btnExpandId: 'btnExpandCycleModule' },
+      { cardId: 'moduleCardFinance', subSettingsId: 'financeSubSettings', btnExpandId: 'btnExpandFinanceModule' }
+    ];
+    const lang = this.settings?.lang || 'ru';
+    const isEn = lang === 'en';
+    const isUk = lang === 'uk';
+    const expandTitle = isEn ? 'Expand' : (isUk ? 'Розгорнути' : 'Развернуть');
+
+    items.forEach(({ cardId, subSettingsId, btnExpandId }) => {
+      const card = document.getElementById(cardId);
+      const body = document.getElementById(subSettingsId);
+      const btn = document.getElementById(btnExpandId);
+      if (card) card.classList.remove('expanded');
+      if (body) body.style.display = 'none';
+      if (btn) {
+        btn.setAttribute('aria-expanded', 'false');
+        btn.title = expandTitle;
+        btn.setAttribute('aria-label', expandTitle);
+      }
+    });
+  }
+
+  // Alias for semantic clarity
+  collapseAllSettingsSections() {
+    this.collapseAllModuleCards();
+  }
+
+  toggleSettingsSection(cardId, subSettingsId, btnExpandId) {
+    this.toggleModuleCard(cardId, subSettingsId, btnExpandId);
+  }
+
+  getFinanceCategoryName(cat) {
+    if (!cat) return this.t('finance_category_other') || 'Другое';
+    if (cat.customName) return cat.customName;
+    if (cat.isCustom && cat.name) return cat.name;
+    if (!cat.id) return cat.name || '';
+    const key = 'finance_category_' + cat.id.replace('cat_', '');
+    const localized = this.t(key);
+    if (localized && localized !== key) {
+      return localized;
+    }
+    return cat.name || '';
+  }
+
+  updateFinanceWidget() {
+    if (!this.widgetFinance) return;
+    if (!this.financeTracker || !this.financeTracker.isEnabled()) {
+      this.widgetFinance.style.display = 'none';
+      this.updateModulesHubState?.();
+      return;
+    }
+
+    this.widgetFinance.style.display = 'flex';
+    const targetDate = this.selectedDate || this.getTodayDateString();
+    const stats = this.financeTracker.getStatsForPeriod('month', targetDate);
+
+    if (this.widgetFinanceSymbol) {
+      this.widgetFinanceSymbol.textContent = this.financeTracker.getCurrencySymbol() || '₴';
+    }
+
+    if (this.widgetFinanceRing) {
+      this.widgetFinanceRing.innerHTML = this.financeTracker.generateDonutSvg(stats.expenseBreakdown, {
+        size: 52,
+        strokeWidth: 4.8,
+        isWidget: true
+      });
+    }
+
+    const cur = this.financeTracker.getCurrency();
+    const spentText = stats.totalExpense > 0 
+      ? `-${this.financeTracker.formatMoney(stats.totalExpense)} ${cur}` 
+      : `0 ${cur}`;
+    this.widgetFinance.title = `${this.t('finance_title')}: ${spentText}`;
+    this.updateModulesHubState?.();
+  }
+
+  updateFinanceArchiveStamp() {
+    if (!this.notebookFinanceStamp) return;
+    if (!this.financeTracker || !this.financeTracker.isEnabled() || this.financeTracker.getSettings().showArchiveStamp === false) {
+      this.notebookFinanceStamp.style.display = 'none';
+      return;
+    }
+
+    const todayStr = this.getTodayDateString();
+    const isPastDay = this.selectedDate && this.selectedDate < todayStr;
+
+    // Show stamp exclusively on archive past days
+    if (!isPastDay) {
+      this.notebookFinanceStamp.style.display = 'none';
+      return;
+    }
+
+    const stats = this.financeTracker.getStatsForPeriod('day', this.selectedDate);
+    // Show only if expenses or transactions occurred on that day, keeping empty days clean
+    if (stats.transactionCount === 0 && stats.totalExpense === 0) {
+      this.notebookFinanceStamp.style.display = 'none';
+      return;
+    }
+
+    this.notebookFinanceStamp.innerHTML = this.financeTracker.generateArchiveStampSvg(stats, this.financeTracker.getCurrency());
+    this.notebookFinanceStamp.style.display = 'block';
+  }
+
+  openFinanceModal(initialPeriod = null, initialTab = null) {
+    this.dismissActiveKeyboard();
+    if (!this.financeModalBackdrop) return;
+    this._financeModalOpenedAt = Date.now();
+
+    const sheet = this.financeModalBackdrop.querySelector('.finance-sheet');
+    if (sheet) {
+      sheet.classList.toggle('is-archive-mode', !!this.isFinanceArchiveMode);
+    }
+
+    if (this.isFinanceArchiveMode) {
+      this.financeActivePeriod = initialPeriod || 'day';
+      this.financeActiveTab = initialTab || 'overview';
+    } else {
+      this.financeActivePeriod = initialPeriod || 'month';
+      this.financeActiveTab = initialTab || 'overview';
+    }
+
+    // Synchronize period pills
+    if (this.financePeriodPills) {
+      this.financePeriodPills.querySelectorAll('.finance-period-pill').forEach(p => {
+        p.classList.toggle('active', p.dataset.period === this.financeActivePeriod);
+      });
+    }
+
+    // Synchronize view tabs
+    if (this.financeViewTabs) {
+      this.financeViewTabs.querySelectorAll('.finance-view-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.tab === this.financeActiveTab);
+      });
+    }
+
+    // Synchronize tab panes
+    if (this.financePaneOverview) {
+      this.financePaneOverview.classList.toggle('active', this.financeActiveTab === 'overview');
+      this.financePaneOverview.style.display = this.financeActiveTab === 'overview' ? 'flex' : 'none';
+    }
+    if (this.financePaneHistory) {
+      this.financePaneHistory.classList.toggle('active', this.financeActiveTab === 'history');
+      this.financePaneHistory.style.display = this.financeActiveTab === 'history' ? 'flex' : 'none';
+    }
+    if (this.financePaneCategories) {
+      this.financePaneCategories.classList.toggle('active', this.financeActiveTab === 'categories');
+      this.financePaneCategories.style.display = this.financeActiveTab === 'categories' ? 'flex' : 'none';
+    }
+
+    this.financeModalBackdrop.classList.add('open');
+    this.financeModalBackdrop.setAttribute('aria-hidden', 'false');
+
+    this.renderFinanceModalContent();
+  }
+
+  closeFinanceModal() {
+    if (this.financeModalBackdrop) {
+      this.financeModalBackdrop.classList.remove('open');
+      this.financeModalBackdrop.setAttribute('aria-hidden', 'true');
+      const sheet = this.financeModalBackdrop.querySelector('.finance-sheet');
+      if (sheet) sheet.classList.remove('is-archive-mode');
+    }
+    if (this.financeHeaderDate) {
+      this.financeHeaderDate.textContent = '';
+      this.financeHeaderDate.style.display = 'none';
+    }
+    this.financeActivePeriod = 'month';
+    this.financeActiveTab = 'overview';
+    this.isFinanceArchiveMode = false;
+    this._clearFinanceDonutFocus?.();
+  }
+
+  renderFinanceModalContent() {
+    if (!this.financeTracker) return;
+    const cur = this.financeTracker.getCurrency();
+    const sym = this.financeTracker.getCurrencySymbol();
+    const targetDate = this.selectedDate || this.getTodayDateString();
+    const todayStr = this.getTodayDateString();
+
+    const sheet = this.financeModalBackdrop ? this.financeModalBackdrop.querySelector('.finance-sheet') : null;
+    if (sheet) {
+      sheet.classList.toggle('is-archive-mode', !!this.isFinanceArchiveMode);
+    }
+
+    // 1. Calculate and display Period Subtitle & Header Date
+    if (this.financeHeaderDate) {
+      if (this.isFinanceArchiveMode) {
+        this.financeHeaderDate.textContent = targetDate;
+        this.financeHeaderDate.style.display = 'inline-flex';
+      } else {
+        this.financeHeaderDate.textContent = '';
+        this.financeHeaderDate.style.display = 'none';
+      }
+    }
+
+    if (this.financePeriodSublabel) {
+      let sublabel = '';
+      if (this.isFinanceArchiveMode) {
+        sublabel = targetDate;
+      } else if (this.financeActivePeriod === 'day') {
+        const isToday = targetDate === todayStr;
+        const formatted = this.formatFriendlyDate ? this.formatFriendlyDate(targetDate) : targetDate;
+        sublabel = isToday ? `Сегодня, ${formatted}` : formatted;
+      } else if (this.financeActivePeriod === 'week') {
+        const stats = this.financeTracker.getStatsForPeriod('week', targetDate);
+        sublabel = `${stats.startDate} — ${stats.endDate}`;
+      } else if (this.financeActivePeriod === 'month') {
+        const [y, m] = targetDate.split('-');
+        const monthNamesRu = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+        const mIdx = parseInt(m, 10) - 1;
+        sublabel = `${monthNamesRu[mIdx] || m} ${y} г.`;
+      } else {
+        sublabel = this.t('finance_period_all_time') || 'За всё время';
+      }
+      this.financePeriodSublabel.textContent = sublabel;
+    }
+
+    // 2. Period Statistics & Overall Balance Card
+    const bal = this.financeTracker.getBalance();
+    const stats = this.financeTracker.getStatsForPeriod(this.isFinanceArchiveMode ? 'day' : this.financeActivePeriod, targetDate);
+
+    if (this.financeBalanceTotal) {
+      this.financeBalanceTotal.textContent = `${this.financeTracker.formatMoney(bal.currentBalance)} ${cur}`;
+    }
+    if (this.financeBalanceIncome) {
+      this.financeBalanceIncome.textContent = `+${this.financeTracker.formatMoney(stats.totalIncome)} ${cur}`;
+    }
+    if (this.financeBalanceExpense) {
+      this.financeBalanceExpense.textContent = `-${this.financeTracker.formatMoney(stats.totalExpense)} ${cur}`;
+    }
+
+    // 3. Tab 1: Overview (Donut Wheel + Categories Breakdown) - Always updated to keep sectors in sync!
+    if (this.financeDonutCenterVal) {
+      this.financeDonutCenterVal.textContent = this.financeTracker.formatMoney(stats.totalExpense);
+    }
+    if (this.financeDonutCenterSymbol) {
+      this.financeDonutCenterSymbol.textContent = sym;
+    }
+    if (this.financeDonutCenterSub) {
+      this.financeDonutCenterSub.textContent = (this.t('finance_expense_label') || 'расходы').toUpperCase();
+    }
+
+    if (this.financeDonutWrapper) {
+      const oldSvg = this.financeDonutWrapper.querySelector('.finance-donut-svg');
+      if (oldSvg) oldSvg.remove();
+      const donutHtml = this.financeTracker.generateDonutSvg(stats.expenseBreakdown, {
+        size: 220,
+        strokeWidth: 16,
+        showIcons: true
+      });
+      this.financeDonutWrapper.insertAdjacentHTML('afterbegin', donutHtml);
+
+      const svg = this.financeDonutWrapper.querySelector('.finance-donut-svg');
+      if (svg) {
+        this.setupFinanceDonutInteractions(svg, cur);
+      }
+    }
+
+    if (this.financeOverviewBreakdown) {
+      this.financeOverviewBreakdown.innerHTML = '';
+    }
+
+    // 4. Tab 2: History (Period-aware with full-width notebook rows & swipe-to-action)
+    if (this.financeHistoryHeaderBar) {
+      this.financeHistoryHeaderBar.style.display = this.isFinanceArchiveMode ? 'flex' : 'none';
+      if (this.financeArchiveHistoryTitle) {
+        this.financeArchiveHistoryTitle.textContent = `${targetDate}`;
+      }
+    }
+
+    if (this.financeActiveTab === 'history' && this.financeHistoryList) {
+      this.financeHistoryList.innerHTML = '';
+      const txs = this.financeTracker.getTransactions({
+        period: this.isFinanceArchiveMode ? 'day' : this.financeActivePeriod,
+        refDate: targetDate
+      });
+
+      if (txs.length === 0) {
+        this.financeHistoryList.innerHTML = `
+          <div style="text-align: center; color: #94a3b8; font-size: 13.5px; padding: 36px 16px; background: rgba(255,255,255,0.6); border: 1.5px dashed #e2e8f0; border-radius: 16px;">
+            ${this.t('finance_no_history') || 'Нет записей за этот период'}
+          </div>
+        `;
+      } else {
+        txs.forEach(t => {
+          const rawCat = this.financeTracker.getCategory(t.categoryId);
+          const catName = rawCat ? this.getFinanceCategoryName(rawCat) : (this.t('finance_category_other') || 'Другое');
+          const iconIdx = rawCat ? rawCat.iconIndex : 0;
+          const color = rawCat ? rawCat.color : '#94a3b8';
+          const isIncome = t.type === 'income';
+
+          const wrapper = document.createElement('div');
+          wrapper.className = 'finance-history-row-wrapper' + (this.isFinanceArchiveMode ? ' read-only' : '');
+          wrapper.dataset.id = t.id;
+
+          if (this.isFinanceArchiveMode) {
+            // Strictly read-only row: no swipe buttons, no edit modal
+            wrapper.innerHTML = `
+              <div class="finance-history-row">
+                <div class="finance-history-icon-box" style="border-color: ${color}55">
+                  <img src="assets/finance_icons/fin_icon_${iconIdx}.png" alt="${this.escapeHtml(catName)}">
+                </div>
+                <div class="finance-history-info">
+                  <span class="finance-history-cat">${this.escapeHtml(catName)}</span>
+                  ${t.note ? `<span class="finance-history-note" title="${this.escapeHtml(t.note)}">${this.escapeHtml(t.note)}</span>` : ''}
+                  <span class="finance-history-date">${t.date}</span>
+                </div>
+                <div class="finance-history-amount-box">
+                  <span class="finance-history-amount ${t.type}">
+                    ${isIncome ? '+' : '-'}${this.financeTracker.formatMoney(t.amount)} ${cur}
+                  </span>
+                </div>
+              </div>
+            `;
+          } else {
+            wrapper.innerHTML = `
+              <div class="finance-history-row">
+                <div class="finance-history-icon-box" style="border-color: ${color}55">
+                  <img src="assets/finance_icons/fin_icon_${iconIdx}.png" alt="${this.escapeHtml(catName)}">
+                </div>
+                <div class="finance-history-info">
+                  <span class="finance-history-cat">${this.escapeHtml(catName)}</span>
+                  ${t.note ? `<span class="finance-history-note" title="${this.escapeHtml(t.note)}">${this.escapeHtml(t.note)}</span>` : ''}
+                  <span class="finance-history-date">${t.date}</span>
+                </div>
+                <div class="finance-history-amount-box">
+                  <span class="finance-history-amount ${t.type}">
+                    ${isIncome ? '+' : '-'}${this.financeTracker.formatMoney(t.amount)} ${cur}
+                  </span>
+                </div>
+              </div>
+              <div class="finance-swipe-actions-right">
+                <button type="button" class="swipe-action-btn action-edit" data-action="edit" title="${this.t('finance_edit_tx_btn') || 'Редактировать'}" aria-label="Редактировать">
+                  <svg class="swipe-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                </button>
+                <button type="button" class="swipe-action-btn action-delete" data-action="delete" title="${this.t('delete') || 'Удалить'}" aria-label="Удалить">
+                  <svg class="swipe-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                  </svg>
+                </button>
+              </div>
+            `;
+
+            const editBtn = wrapper.querySelector('.swipe-action-btn.action-edit');
+            if (editBtn) {
+              editBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                triggerHaptic(15);
+                wrapper.classList.remove('open', 'swiping');
+                const r = wrapper.querySelector('.finance-history-row');
+                const a = wrapper.querySelector('.finance-swipe-actions-right');
+                if (r) r.style.transform = '';
+                if (a) a.style.transform = '';
+                this.openFinanceEntryModal(t.type, t);
+              });
+            }
+
+            const delBtn = wrapper.querySelector('.swipe-action-btn.action-delete');
+            if (delBtn) {
+              delBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                triggerHaptic(20);
+                const r = wrapper.querySelector('.finance-history-row');
+                const a = wrapper.querySelector('.finance-swipe-actions-right');
+                wrapper.classList.remove('open', 'swiping');
+                if (r) { r.style.transform = ''; r.style.transition = ''; }
+                if (a) { a.style.transform = ''; a.style.transition = ''; }
+
+                const cur = this.financeTracker.getCurrency();
+                const isExpense = t.type === 'expense';
+                const sign = isExpense ? '-' : '+';
+                const cat = this.financeTracker.getCategory(t.categoryId);
+                const catName = cat ? this.getFinanceCategoryName(cat) : (isExpense ? (this.t('finance_btn_expense') || 'Расход') : (this.t('finance_btn_income') || 'Доход'));
+
+                const title = this.t('finance_delete_tx_title') || 'Удалить запись?';
+                const msg = (this.t('finance_delete_tx_confirm') || `Удалить ${isExpense ? 'расход' : 'доход'} ${sign}${this.financeTracker.formatMoney(t.amount)} ${cur} (${catName})?`)
+                  .replace('{catName}', catName)
+                  .replace('{amount}', this.financeTracker.formatMoney(t.amount))
+                  .replace('{cur}', cur);
+                const confirmBtnText = this.t('delete') || 'Удалить';
+                const deletedToast = this.t('finance_toast_tx_deleted') || 'Запись удалена';
+
+                this.showConfirmModal({
+                  title,
+                  message: msg,
+                  icon: '🗑️',
+                  confirmText: confirmBtnText,
+                  onConfirm: () => {
+                    this.financeTracker.deleteTransaction(t.id);
+                    this.renderFinanceModalContent();
+                    this.updateFinanceWidget();
+                    this.updateFinanceArchiveStamp();
+                    this.syncWithNativeWidget?.();
+                    this.showToast(deletedToast, '🗑️');
+                  }
+                });
+              });
+            }
+          }
+
+          this.financeHistoryList.appendChild(wrapper);
+        });
+
+        if (!this.isFinanceArchiveMode) {
+          this.attachFinanceSwipeEvents();
+        }
+      }
+    }
+
+    // 5. Tab 3: Categories List (with Swipe to Edit & Delete)
+    if (this.financeActiveTab === 'categories' && this.financeCategoriesList) {
+      this.financeCategoriesList.innerHTML = '';
+      const cats = this.financeTracker.getCategories();
+      cats.forEach(c => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'finance-cat-row-wrapper';
+        wrapper.dataset.catId = c.id;
+        const localizedName = this.getFinanceCategoryName(c);
+
+        wrapper.innerHTML = `
+          <!-- Left-side action buttons (revealed on right swipe) -->
+          <div class="finance-swipe-actions-left">
+            <button type="button" class="swipe-action-btn action-edit" data-action="edit" title="${this.t('finance_edit_cat_btn') || 'Редактировать'}" aria-label="Редактировать">
+              <svg class="swipe-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+            </button>
+            <button type="button" class="swipe-action-btn action-delete" data-action="delete" title="${this.t('delete') || 'Удалить'}" aria-label="Удалить">
+              <svg class="swipe-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <line x1="10" y1="11" x2="10" y2="17"></line>
+                <line x1="14" y1="11" x2="14" y2="17"></line>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Sliding Foreground Category Item -->
+          <div class="finance-cat-item">
+            <div class="finance-cat-item-left">
+              <span class="finance-cat-swatch" style="background: ${c.color}"></span>
+              <img src="assets/finance_icons/fin_icon_${c.iconIndex}.png" class="finance-cat-icon-mini" alt="${this.escapeHtml(localizedName)}">
+              <span class="finance-cat-item-name">${this.escapeHtml(localizedName)}</span>
+            </div>
+            <div class="finance-cat-item-right">
+              <span class="finance-cat-item-badge ${c.type}">${c.type === 'income' ? this.t('finance_btn_income') : this.t('finance_btn_expense')}</span>
+            </div>
+          </div>
+
+          <!-- Right-side action buttons (revealed on left swipe) -->
+          <div class="finance-swipe-actions-right">
+            <button type="button" class="swipe-action-btn action-edit" data-action="edit" title="${this.t('finance_edit_cat_btn') || 'Редактировать'}" aria-label="Редактировать">
+              <svg class="swipe-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+            </button>
+            <button type="button" class="swipe-action-btn action-delete" data-action="delete" title="${this.t('delete') || 'Удалить'}" aria-label="Удалить">
+              <svg class="swipe-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <line x1="10" y1="11" x2="10" y2="17"></line>
+                <line x1="14" y1="11" x2="14" y2="17"></line>
+              </svg>
+            </button>
+          </div>
+        `;
+
+        wrapper.querySelectorAll('.swipe-action-btn.action-edit').forEach(b => {
+          b.addEventListener('click', (e) => {
+            e.stopPropagation();
+            triggerHaptic(15);
+            wrapper.classList.remove('open-left', 'open-right', 'swiping');
+            const row = wrapper.querySelector('.finance-cat-item');
+            if (row) row.style.transform = '';
+            this.openFinanceCategoryModal(c.id);
+          });
+        });
+
+        wrapper.querySelectorAll('.swipe-action-btn.action-delete').forEach(b => {
+          b.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            triggerHaptic(20);
+            wrapper.classList.remove('open-left', 'open-right', 'swiping');
+            const row = wrapper.querySelector('.finance-cat-item');
+            if (row) { row.style.transform = ''; row.style.transition = ''; }
+
+            const cat = c;
+            const activeSameType = this.financeTracker.getCategories(cat.type, false);
+            if (activeSameType.length <= 1) {
+              triggerHaptic(20);
+              this.showToast(this.t('finance_cannot_delete_last_cat') || 'Нельзя удалить последнюю категорию этого типа', '⚠️');
+              return;
+            }
+
+            const catName = this.getFinanceCategoryName(c);
+            const title = this.t('finance_delete_cat_title') || 'Удалить категорию?';
+            const msg = (this.t('finance_delete_cat_msg') || `Вы действительно хотите удалить категорию «${catName}»? Прошлые записи в истории сохранятся.`).replace('{catName}', catName);
+            const confirmBtnText = this.t('delete') || 'Удалить';
+            const deletedToast = (this.t('finance_toast_cat_deleted') || 'Категория удалена') + ` «${catName}»`;
+
+            this.showConfirmModal({
+              title,
+              message: msg,
+              icon: '🗑️',
+              confirmText: confirmBtnText,
+              onConfirm: () => {
+                this.financeTracker.deleteCategory(c.id);
+                this.renderFinanceModalContent();
+                this.updateFinanceWidget();
+                this.updateFinanceArchiveStamp();
+                this.syncWithNativeWidget?.();
+                this.showToast(deletedToast, '🗑️');
+              }
+            });
+          });
+        });
+
+        this.financeCategoriesList.appendChild(wrapper);
+      });
+
+      this.attachFinanceCategorySwipeEvents();
+    }
+  }
+
+  // Interactive donut categories: 2x badge scale, elevation above other badges, sector enlargement, focus blur reset
+  setupFinanceDonutInteractions(svg, cur) {
+    if (!svg) return;
+
+    this.financeActiveDonutCatId = null;
+
+    const sectors = Array.from(svg.querySelectorAll('.finance-donut-sector'));
+    const iconGroups = Array.from(svg.querySelectorAll('.finance-donut-icon-group'));
+
+    const setHighlight = (catId, shouldElevate = false) => {
+      const targetId = catId ? String(catId) : null;
+
+      sectors.forEach(sec => {
+        if (targetId && String(sec.dataset.catId) === targetId) {
+          sec.classList.add('is-focused');
+        } else {
+          sec.classList.remove('is-focused');
+        }
+      });
+
+      iconGroups.forEach(grp => {
+        if (targetId && String(grp.dataset.catId) === targetId) {
+          grp.classList.add('is-focused');
+          if (shouldElevate && grp.parentNode) {
+            // Elevate active/hovered badge above all other badges in SVG paint order
+            grp.parentNode.appendChild(grp);
+          }
+        } else {
+          grp.classList.remove('is-focused');
+        }
+      });
+    };
+
+    const clearFocus = () => {
+      this.financeActiveDonutCatId = null;
+      setHighlight(null);
+    };
+
+    this._clearFinanceDonutFocus = clearFocus;
+
+    if (!this._financeDonutDocClickBound) {
+      this._financeDonutDocClickBound = true;
+      document.addEventListener('pointerdown', (e) => {
+        if (!this.financeActiveDonutCatId) return;
+        if (e.target.closest && e.target.closest('.finance-donut-sector, .finance-donut-icon-group')) {
+          return;
+        }
+        if (this._clearFinanceDonutFocus) {
+          this._clearFinanceDonutFocus();
+        }
+      });
+    }
+
+    const interactiveElements = [...sectors, ...iconGroups];
+
+    interactiveElements.forEach(el => {
+      // Hover: mouse / stylus preview
+      el.addEventListener('pointerenter', (e) => {
+        if (e.pointerType === 'touch') return;
+        const catId = el.dataset.catId;
+        if (catId) {
+          setHighlight(catId, true);
+        }
+      });
+
+      // Hover exit: return to normal or restore locked selection
+      el.addEventListener('pointerleave', (e) => {
+        if (e.pointerType === 'touch') return;
+        if (this.financeActiveDonutCatId) {
+          setHighlight(this.financeActiveDonutCatId, false);
+        } else {
+          setHighlight(null);
+        }
+      });
+
+      // Click / Tap: toggle 2x scale, elevation and show toast
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        triggerHaptic(15);
+        const catId = el.dataset.catId;
+        if (!catId) return;
+
+        // If clicking already focused category, return sizes to original
+        if (this.financeActiveDonutCatId && String(this.financeActiveDonutCatId) === String(catId)) {
+          clearFocus();
+          return;
+        }
+
+        // Lock focus on this category
+        this.financeActiveDonutCatId = catId;
+        setHighlight(catId, true);
+
+        const cat = this.financeTracker.getCategory(catId);
+        const catName = cat ? this.getFinanceCategoryName(cat) : el.dataset.name;
+        const amt = el.dataset.amount;
+        const pct = el.dataset.percent;
+        this.showToast(`${catName}: ${this.financeTracker.formatMoney(parseFloat(amt))} ${cur} (${pct}%)`, '📊');
+      });
+    });
+  }
+
+  // Attach touch and drag swipe gestures for finance history rows (revealing Edit & Delete buttons)
+  attachFinanceSwipeEvents() {
+    if (!this.financeHistoryList) return;
+    const wrappers = this.financeHistoryList.querySelectorAll('.finance-history-row-wrapper');
+    let activeOpenWrapper = null;
+
+    const snapOpen = (w) => {
+      if (!w) return;
+      w.classList.add('open');
+      activeOpenWrapper = w;
+      const r = w.querySelector('.finance-history-row');
+      const a = w.querySelector('.finance-swipe-actions-right');
+      if (r) {
+        r.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+        r.style.transform = 'translate3d(-92px, 0, 0)';
+      }
+      if (a) {
+        a.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+        a.style.transform = 'translate3d(0px, 0, 0)';
+      }
+      setTimeout(() => {
+        if (w.classList.contains('open') && !w.classList.contains('swiping')) {
+          if (r) { r.style.transition = ''; r.style.transform = ''; }
+          if (a) { a.style.transition = ''; a.style.transform = ''; }
+        }
+      }, 240);
+    };
+
+    const closeWrapper = (w, animated = true) => {
+      if (!w) return;
+      const r = w.querySelector('.finance-history-row');
+      const a = w.querySelector('.finance-swipe-actions-right');
+      if (animated) {
+        if (r) {
+          r.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+          r.style.transform = 'translate3d(0, 0, 0)';
+        }
+        if (a) {
+          a.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+          a.style.transform = 'translate3d(100%, 0, 0)';
+        }
+        w.classList.remove('open', 'swiping');
+        setTimeout(() => {
+          if (!w.classList.contains('open') && !w.classList.contains('swiping')) {
+            if (r) { r.style.transition = ''; r.style.transform = ''; }
+            if (a) { a.style.transition = ''; a.style.transform = ''; }
+          }
+        }, 240);
+      } else {
+        w.classList.remove('open', 'swiping');
+        if (r) { r.style.transform = ''; r.style.transition = ''; }
+        if (a) { a.style.transform = ''; a.style.transition = ''; }
+      }
+      if (activeOpenWrapper === w) activeOpenWrapper = null;
+    };
+
+    const closeAllSwipes = (animated = true) => {
+      wrappers.forEach(w => {
+        if (w.classList.contains('open') || w.classList.contains('swiping')) {
+          closeWrapper(w, animated);
+        }
+      });
+      activeOpenWrapper = null;
+    };
+
+    // Close on outside tap
+    const outsideTapHandler = (e) => {
+      if (activeOpenWrapper && !activeOpenWrapper.contains(e.target)) {
+        closeAllSwipes(true);
+      }
+    };
+    if (this._financeSwipeOutsideHandler) {
+      document.removeEventListener('pointerdown', this._financeSwipeOutsideHandler);
+    }
+    this._financeSwipeOutsideHandler = outsideTapHandler;
+    document.addEventListener('pointerdown', this._financeSwipeOutsideHandler, { passive: true });
+
+    wrappers.forEach(wrapper => {
+      const row = wrapper.querySelector('.finance-history-row');
+      const actionsRight = wrapper.querySelector('.finance-swipe-actions-right');
+      if (!row) return;
+
+      let startX = 0;
+      let startY = 0;
+      let isDragging = false;
+      let isHorizontal = null;
+      let rafId = null;
+      const actionsWidth = 92;
+      const openThreshold = -30;
+
+      const handleStart = (clientX, clientY, target) => {
+        if (target && target.closest('.swipe-action-btn, button')) {
+          return false;
+        }
+        if (activeOpenWrapper && activeOpenWrapper !== wrapper) {
+          closeAllSwipes(true);
+        }
+        startX = clientX;
+        startY = clientY;
+        isDragging = false;
+        isHorizontal = null;
+        wrapper.classList.add('swiping');
+        if (row) row.style.transition = 'none';
+        if (actionsRight) actionsRight.style.transition = 'none';
+        return true;
+      };
+
+      const handleMove = (clientX, clientY, e) => {
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+
+        if (isHorizontal === null) {
+          if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
+            isHorizontal = Math.abs(dx) > Math.abs(dy);
+          }
+        }
+
+        if (!isHorizontal) return;
+
+        if (!isDragging) {
+          isDragging = true;
+          try { window.getSelection()?.removeAllRanges(); } catch (err) { }
+        }
+
+        if (e && e.cancelable) e.preventDefault();
+
+        const maxLeftSwipe = -actionsWidth;
+        let translateX = dx;
+        if (wrapper.classList.contains('open')) {
+          translateX = maxLeftSwipe + dx;
+          if (translateX > 0) {
+            translateX = translateX * 0.2;
+          } else if (translateX < maxLeftSwipe) {
+            translateX = maxLeftSwipe + (translateX - maxLeftSwipe) * 0.2;
+          }
+        } else {
+          if (translateX > 0) {
+            translateX = translateX * 0.2;
+          } else if (translateX < maxLeftSwipe) {
+            translateX = maxLeftSwipe + (translateX - maxLeftSwipe) * 0.25;
+          }
+        }
+
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => {
+          if (row) row.style.transform = `translate3d(${translateX}px, 0, 0)`;
+          if (wrapper.classList.contains('open')) {
+            const actionsOffset = Math.max(0, actionsWidth + translateX);
+            if (actionsRight) actionsRight.style.transform = `translate3d(${actionsOffset}px, 0, 0)`;
+          } else {
+            if (translateX < 0) {
+              const actionsOffset = Math.max(0, actionsWidth + translateX);
+              if (actionsRight) actionsRight.style.transform = `translate3d(${actionsOffset}px, 0, 0)`;
+            } else {
+              if (actionsRight) actionsRight.style.transform = 'translate3d(100%, 0, 0)';
+            }
+          }
+        });
+      };
+
+      const handleEnd = (clientX, target) => {
+        if (rafId) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+        }
+        wrapper.classList.remove('swiping');
+        if (row) row.style.transition = '';
+        if (actionsRight) actionsRight.style.transition = '';
+
+        const wasDragging = isDragging;
+        isDragging = false;
+
+        if (!wasDragging) {
+          if (wrapper.classList.contains('open') && (!target || !target.closest('.finance-swipe-actions-right'))) {
+            closeAllSwipes(true);
+          }
+          return;
+        }
+
+        const dx = clientX - startX;
+        if (wrapper.classList.contains('open')) {
+          if (dx > 25) {
+            closeWrapper(wrapper, true);
+            triggerHaptic(15);
+          } else {
+            snapOpen(wrapper);
+          }
+        } else {
+          if (dx < openThreshold) {
+            closeAllSwipes(true);
+            snapOpen(wrapper);
+            triggerHaptic(15);
+          } else {
+            closeWrapper(wrapper, true);
+          }
+        }
+      };
+
+      // Pointer events for desktop and mobile touch
+      if (window.PointerEvent) {
+        row.addEventListener('pointerdown', (e) => {
+          if (e.pointerType === 'mouse' && e.button !== 0) return;
+          if (!handleStart(e.clientX, e.clientY, e.target)) return;
+
+          const onPointerMove = (moveEvt) => handleMove(moveEvt.clientX, moveEvt.clientY, moveEvt);
+          const onPointerUp = (upEvt) => {
+            document.removeEventListener('pointermove', onPointerMove);
+            document.removeEventListener('pointerup', onPointerUp);
+            document.removeEventListener('pointercancel', onPointerUp);
+            handleEnd(upEvt.clientX, upEvt.target);
+          };
+
+          document.addEventListener('pointermove', onPointerMove, { passive: false });
+          document.addEventListener('pointerup', onPointerUp, { passive: true });
+          document.addEventListener('pointercancel', onPointerUp, { passive: true });
+        });
+      } else {
+        row.addEventListener('touchstart', (e) => {
+          const touch = e.touches[0];
+          if (!touch || !handleStart(touch.clientX, touch.clientY, e.target)) return;
+
+          const onTouchMove = (moveEvt) => {
+            const t = moveEvt.touches[0];
+            if (t) handleMove(t.clientX, t.clientY, moveEvt);
+          };
+          const onTouchEnd = (endEvt) => {
+            document.removeEventListener('touchmove', onTouchMove);
+            document.removeEventListener('touchend', onTouchEnd);
+            document.removeEventListener('touchcancel', onTouchEnd);
+            const t = endEvt.changedTouches[0];
+            handleEnd(t ? t.clientX : 0, endEvt.target);
+          };
+
+          document.addEventListener('touchmove', onTouchMove, { passive: false });
+          document.addEventListener('touchend', onTouchEnd, { passive: true });
+          document.addEventListener('touchcancel', onTouchEnd, { passive: true });
+        }, { passive: true });
+      }
+    });
+  }
+
+  // Attach touch and drag swipe gestures for finance category rows (revealing Edit & Delete buttons on swipe)
+  attachFinanceCategorySwipeEvents() {
+    if (!this.financeCategoriesList) return;
+    const wrappers = this.financeCategoriesList.querySelectorAll('.finance-cat-row-wrapper');
+    if (!wrappers.length) return;
+    let activeOpenWrapper = null;
+    const actionsWidth = 92;
+
+    const snapOpenLeft = (w) => {
+      if (!w) return;
+      w.classList.remove('open-right');
+      w.classList.add('open-left');
+      activeOpenWrapper = w;
+      const r = w.querySelector('.finance-cat-item');
+      const l = w.querySelector('.finance-swipe-actions-left');
+      const rt = w.querySelector('.finance-swipe-actions-right');
+      if (r) {
+        r.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+        r.style.transform = `translate3d(${actionsWidth}px, 0, 0)`;
+      }
+      if (l) {
+        l.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+        l.style.transform = 'translate3d(0px, 0, 0)';
+      }
+      if (rt) rt.style.transform = 'translate3d(100%, 0, 0)';
+    };
+
+    const snapOpenRight = (w) => {
+      if (!w) return;
+      w.classList.remove('open-left');
+      w.classList.add('open-right');
+      activeOpenWrapper = w;
+      const r = w.querySelector('.finance-cat-item');
+      const l = w.querySelector('.finance-swipe-actions-left');
+      const rt = w.querySelector('.finance-swipe-actions-right');
+      if (r) {
+        r.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+        r.style.transform = `translate3d(-${actionsWidth}px, 0, 0)`;
+      }
+      if (rt) {
+        rt.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+        rt.style.transform = 'translate3d(0px, 0, 0)';
+      }
+      if (l) l.style.transform = 'translate3d(-100%, 0, 0)';
+    };
+
+    const closeWrapper = (w, animated = true) => {
+      if (!w) return;
+      const r = w.querySelector('.finance-cat-item');
+      const l = w.querySelector('.finance-swipe-actions-left');
+      const rt = w.querySelector('.finance-swipe-actions-right');
+      if (animated) {
+        if (r) {
+          r.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+          r.style.transform = 'translate3d(0, 0, 0)';
+        }
+        if (l) {
+          l.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+          l.style.transform = 'translate3d(-100%, 0, 0)';
+        }
+        if (rt) {
+          rt.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+          rt.style.transform = 'translate3d(100%, 0, 0)';
+        }
+        w.classList.remove('open-left', 'open-right', 'swiping');
+        setTimeout(() => {
+          if (!w.classList.contains('open-left') && !w.classList.contains('open-right') && !w.classList.contains('swiping')) {
+            if (r) { r.style.transition = ''; r.style.transform = ''; }
+            if (l) { l.style.transition = ''; l.style.transform = ''; }
+            if (rt) { rt.style.transition = ''; rt.style.transform = ''; }
+          }
+        }, 240);
+      } else {
+        w.classList.remove('open-left', 'open-right', 'swiping');
+        if (r) { r.style.transform = ''; r.style.transition = ''; }
+        if (l) { l.style.transform = ''; l.style.transition = ''; }
+        if (rt) { rt.style.transform = ''; rt.style.transition = ''; }
+      }
+      if (activeOpenWrapper === w) activeOpenWrapper = null;
+    };
+
+    const closeAllSwipes = (animated = true) => {
+      wrappers.forEach(w => {
+        if (w.classList.contains('open-left') || w.classList.contains('open-right')) {
+          closeWrapper(w, animated);
+        }
+      });
+      activeOpenWrapper = null;
+    };
+
+    const outsideTapHandler = (e) => {
+      if (activeOpenWrapper && !e.target.closest('.finance-cat-row-wrapper')) {
+        closeAllSwipes(true);
+      }
+    };
+
+    if (this._financeCatSwipeOutsideHandler) {
+      document.removeEventListener('pointerdown', this._financeCatSwipeOutsideHandler);
+    }
+    this._financeCatSwipeOutsideHandler = outsideTapHandler;
+    document.addEventListener('pointerdown', this._financeCatSwipeOutsideHandler, { passive: true });
+
+    wrappers.forEach(wrapper => {
+      const row = wrapper.querySelector('.finance-cat-item');
+      const leftActions = wrapper.querySelector('.finance-swipe-actions-left');
+      const rightActions = wrapper.querySelector('.finance-swipe-actions-right');
+      if (!row) return;
+
+      let startX = 0;
+      let startY = 0;
+      let isDragging = false;
+      let isHorizontal = null;
+      let rafId = null;
+
+      const handleStart = (clientX, clientY, target) => {
+        if (target && target.closest('.swipe-action-btn, button')) return false;
+        if (activeOpenWrapper && activeOpenWrapper !== wrapper) {
+          closeAllSwipes(true);
+        }
+        startX = clientX;
+        startY = clientY;
+        isDragging = false;
+        isHorizontal = null;
+        wrapper.classList.add('swiping');
+        if (row) row.style.transition = 'none';
+        if (leftActions) leftActions.style.transition = 'none';
+        if (rightActions) rightActions.style.transition = 'none';
+        return true;
+      };
+
+      const handleMove = (clientX, clientY, e) => {
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+
+        if (isHorizontal === null) {
+          if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
+            isHorizontal = Math.abs(dx) > Math.abs(dy);
+          }
+        }
+        if (!isHorizontal) return;
+
+        if (!isDragging) {
+          isDragging = true;
+          try { window.getSelection()?.removeAllRanges(); } catch (err) { }
+        }
+        if (e && e.cancelable) e.preventDefault();
+
+        let translateX = dx;
+        if (wrapper.classList.contains('open-left')) {
+          translateX = actionsWidth + dx;
+        } else if (wrapper.classList.contains('open-right')) {
+          translateX = -actionsWidth + dx;
+        }
+
+        if (translateX > actionsWidth) {
+          translateX = actionsWidth + (translateX - actionsWidth) * 0.25;
+        } else if (translateX < -actionsWidth) {
+          translateX = -actionsWidth + (translateX + actionsWidth) * 0.25;
+        }
+
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => {
+          if (row) row.style.transform = `translate3d(${translateX}px, 0, 0)`;
+          if (translateX > 0) {
+            const leftOffset = Math.min(0, -actionsWidth + translateX);
+            if (leftActions) leftActions.style.transform = `translate3d(${leftOffset}px, 0, 0)`;
+            if (rightActions) rightActions.style.transform = 'translate3d(100%, 0, 0)';
+          } else {
+            const rightOffset = Math.max(0, actionsWidth + translateX);
+            if (rightActions) rightActions.style.transform = `translate3d(${rightOffset}px, 0, 0)`;
+            if (leftActions) leftActions.style.transform = 'translate3d(-100%, 0, 0)';
+          }
+        });
+      };
+
+      const handleEnd = (clientX, target) => {
+        if (rafId) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+        }
+        wrapper.classList.remove('swiping');
+        if (row) row.style.transition = '';
+        if (leftActions) leftActions.style.transition = '';
+        if (rightActions) rightActions.style.transition = '';
+
+        const wasDragging = isDragging;
+        isDragging = false;
+
+        if (!wasDragging) {
+          if (activeOpenWrapper && (!target || !target.closest('.swipe-action-btn'))) {
+            closeAllSwipes(true);
+          }
+          return;
+        }
+
+        const dx = clientX - startX;
+        if (wrapper.classList.contains('open-left')) {
+          if (dx < -25) {
+            closeWrapper(wrapper, true);
+            triggerHaptic(15);
+          } else {
+            snapOpenLeft(wrapper);
+          }
+        } else if (wrapper.classList.contains('open-right')) {
+          if (dx > 25) {
+            closeWrapper(wrapper, true);
+            triggerHaptic(15);
+          } else {
+            snapOpenRight(wrapper);
+          }
+        } else {
+          if (dx > 25) {
+            closeAllSwipes(true);
+            snapOpenLeft(wrapper);
+            triggerHaptic(15);
+          } else if (dx < -25) {
+            closeAllSwipes(true);
+            snapOpenRight(wrapper);
+            triggerHaptic(15);
+          } else {
+            closeWrapper(wrapper, true);
+          }
+        }
+      };
+
+      if (window.PointerEvent) {
+        row.addEventListener('pointerdown', (e) => {
+          if (e.pointerType === 'mouse' && e.button !== 0) return;
+          if (!handleStart(e.clientX, e.clientY, e.target)) return;
+          const onPointerMove = (moveEvt) => handleMove(moveEvt.clientX, moveEvt.clientY, moveEvt);
+          const onPointerUp = (upEvt) => {
+            document.removeEventListener('pointermove', onPointerMove);
+            document.removeEventListener('pointerup', onPointerUp);
+            document.removeEventListener('pointercancel', onPointerUp);
+            handleEnd(upEvt.clientX, upEvt.target);
+          };
+          document.addEventListener('pointermove', onPointerMove, { passive: false });
+          document.addEventListener('pointerup', onPointerUp, { passive: true });
+          document.addEventListener('pointercancel', onPointerUp, { passive: true });
+        });
+      } else {
+        row.addEventListener('touchstart', (e) => {
+          const touch = e.touches[0];
+          if (!touch || !handleStart(touch.clientX, touch.clientY, e.target)) return;
+          const onTouchMove = (moveEvt) => {
+            const t = moveEvt.touches[0];
+            if (t) handleMove(t.clientX, t.clientY, moveEvt);
+          };
+          const onTouchEnd = (endEvt) => {
+            document.removeEventListener('touchmove', onTouchMove);
+            document.removeEventListener('touchend', onTouchEnd);
+            document.removeEventListener('touchcancel', onTouchEnd);
+            const t = endEvt.changedTouches[0];
+            handleEnd(t ? t.clientX : 0, endEvt.target);
+          };
+          document.addEventListener('touchmove', onTouchMove, { passive: false });
+          document.addEventListener('touchend', onTouchEnd, { passive: true });
+          document.addEventListener('touchcancel', onTouchEnd, { passive: true });
+        }, { passive: true });
+      }
+    });
+  }
+
+  openFinanceEntryModal(type = 'expense', txToEdit = null) {
+    this.dismissActiveKeyboard();
+    if (!this.financeEntryModalBackdrop) return;
+    this.financeEntryType = type;
+    this.financeEditingTxId = txToEdit ? txToEdit.id : null;
+    this._financeEntryModalOpenedAt = Date.now();
+
+    if (this.financeEntryModalTitle) {
+      if (txToEdit) {
+        this.financeEntryModalTitle.textContent = this.t('finance_entry_title_edit') || 'Редактировать запись';
+      } else {
+        this.financeEntryModalTitle.textContent = type === 'expense' 
+          ? this.t('finance_entry_title_expense') 
+          : this.t('finance_entry_title_income');
+      }
+    }
+
+    if (this.financeEntryCurrencyBadge) {
+      this.financeEntryCurrencyBadge.textContent = this.financeTracker.getCurrency();
+    }
+
+    if (this.financeEntryAmountInput) {
+      this.financeEntryAmountInput.value = txToEdit ? txToEdit.amount : '';
+    }
+
+    if (this.financeEntryNoteInput) {
+      this.financeEntryNoteInput.value = txToEdit ? (txToEdit.note || '') : '';
+    }
+
+    // Set date in date picker
+    const targetDate = txToEdit ? txToEdit.date : (this.selectedDate || this.getTodayDateString());
+    if (this.financeEntryDateInput) {
+      this.financeEntryDateInput.value = targetDate;
+    }
+
+    if (this.btnFinanceEntryDelete) {
+      this.btnFinanceEntryDelete.style.display = txToEdit ? 'flex' : 'none';
+    }
+
+    // Populate category cards
+    const cats = this.financeTracker.getCategories(type);
+    if (txToEdit && txToEdit.categoryId && !cats.some(c => c.id === txToEdit.categoryId)) {
+      const deletedCat = this.financeTracker.getCategory(txToEdit.categoryId);
+      if (deletedCat) cats.unshift(deletedCat);
+    }
+    const selectedCatId = txToEdit ? txToEdit.categoryId : (cats[0]?.id || null);
+    this.financeSelectedCatId = selectedCatId;
+
+    if (this.financeEntryCatsGrid) {
+      this.financeEntryCatsGrid.innerHTML = '';
+      const dotsContainer = document.getElementById('financeCatsDots');
+      if (dotsContainer) {
+        dotsContainer.innerHTML = '';
+        dotsContainer.style.display = 'none';
+      }
+
+      const PAGE_SIZE = 9; // 3 columns x 3 rows
+      const totalPages = Math.ceil(cats.length / PAGE_SIZE) || 1;
+      let selectedPageIndex = 0;
+
+      for (let p = 0; p < totalPages; p++) {
+        const pageDiv = document.createElement('div');
+        pageDiv.className = 'finance-entry-cats-page';
+        pageDiv.dataset.page = p;
+
+        const pageCats = cats.slice(p * PAGE_SIZE, (p + 1) * PAGE_SIZE);
+        pageCats.forEach((c) => {
+          const isSelected = c.id === selectedCatId;
+          if (isSelected) selectedPageIndex = p;
+          const localizedName = this.getFinanceCategoryName(c);
+          const card = document.createElement('div');
+          card.className = `finance-cat-card ${isSelected ? 'selected' : ''}`;
+          card.dataset.catId = c.id;
+          card.style.setProperty('--cat-border-color', c.color);
+          card.innerHTML = `
+            <img src="assets/finance_icons/fin_icon_${c.iconIndex}.png" alt="${this.escapeHtml(localizedName)}">
+            <span>${this.escapeHtml(localizedName)}</span>
+          `;
+          card.addEventListener('click', () => {
+            triggerHaptic(15);
+            this.financeEntryCatsGrid.querySelectorAll('.finance-cat-card').forEach(cd => cd.classList.remove('selected'));
+            card.classList.add('selected');
+            this.financeSelectedCatId = c.id;
+          });
+          pageDiv.appendChild(card);
+        });
+
+        this.financeEntryCatsGrid.appendChild(pageDiv);
+      }
+
+      if (totalPages > 1 && dotsContainer) {
+        dotsContainer.style.display = 'flex';
+        for (let p = 0; p < totalPages; p++) {
+          const dot = document.createElement('span');
+          dot.className = `finance-cat-dot ${p === selectedPageIndex ? 'active' : ''}`;
+          dot.dataset.page = p;
+          dot.addEventListener('click', () => {
+            triggerHaptic(10);
+            const targetX = p * this.financeEntryCatsGrid.clientWidth;
+            this.financeEntryCatsGrid.scrollTo({ left: targetX, behavior: 'smooth' });
+          });
+          dotsContainer.appendChild(dot);
+        }
+
+        this.financeEntryCatsGrid.onscroll = () => {
+          const w = this.financeEntryCatsGrid.clientWidth || 1;
+          const curPage = Math.round(this.financeEntryCatsGrid.scrollLeft / w);
+          dotsContainer.querySelectorAll('.finance-cat-dot').forEach((d, idx) => {
+            d.classList.toggle('active', idx === curPage);
+          });
+        };
+
+        if (selectedPageIndex > 0) {
+          requestAnimationFrame(() => {
+            this.financeEntryCatsGrid.scrollLeft = selectedPageIndex * this.financeEntryCatsGrid.clientWidth;
+          });
+        }
+      } else {
+        this.financeEntryCatsGrid.onscroll = null;
+        this.financeEntryCatsGrid.scrollLeft = 0;
+      }
+    }
+
+    this.financeEntryModalBackdrop.classList.add('open');
+    this.financeEntryModalBackdrop.setAttribute('aria-hidden', 'false');
+    this.dismissActiveKeyboard();
+    if (document.activeElement && typeof document.activeElement.blur === 'function') {
+      document.activeElement.blur();
+    }
+  }
+
+  closeFinanceEntryModal() {
+    this.closeFinanceDatePicker();
+    this.financeEditingTxId = null;
+    if (this.financeEntryModalBackdrop) {
+      this.financeEntryModalBackdrop.classList.remove('open');
+      this.financeEntryModalBackdrop.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  saveFinanceEntry() {
+    if (!this.financeTracker || !this.financeEntryAmountInput) return;
+    const rawVal = (this.financeEntryAmountInput.value || '').replace(',', '.');
+    const amt = parseFloat(rawVal);
+    if (isNaN(amt) || amt <= 0) {
+      this.showToast(this.t('finance_toast_invalid_amount') || 'Введите корректную сумму', '⚠️');
+      this.financeEntryAmountInput.focus();
+      return;
+    }
+
+    const note = this.financeEntryNoteInput ? this.financeEntryNoteInput.value.trim() : '';
+    const dateStr = (this.financeEntryDateInput && this.financeEntryDateInput.value) 
+      ? this.financeEntryDateInput.value 
+      : (this.selectedDate || this.getTodayDateString());
+
+    const cur = this.financeTracker.getCurrency();
+    const sign = this.financeEntryType === 'expense' ? '-' : '+';
+    const typeWord = this.financeEntryType === 'expense' 
+      ? (this.t('finance_btn_expense') || 'Расход') 
+      : (this.t('finance_btn_income') || 'Доход');
+
+    if (this.financeEditingTxId) {
+      this.financeTracker.updateTransaction(this.financeEditingTxId, {
+        date: dateStr,
+        amount: amt,
+        categoryId: this.financeSelectedCatId,
+        type: this.financeEntryType,
+        note
+      });
+      triggerHaptic(20);
+      this.showToast(this.t('finance_tx_updated') || 'Запись обновлена! ✨', '💰');
+    } else {
+      this.financeTracker.addTransaction({
+        date: dateStr,
+        amount: amt,
+        categoryId: this.financeSelectedCatId,
+        type: this.financeEntryType,
+        note
+      });
+      triggerHaptic([20, 50, 20]);
+      this.showToast(`${typeWord}: ${sign}${this.financeTracker.formatMoney(amt)} ${cur}`, '💰');
+    }
+
+    this.financeEditingTxId = null;
+    this.closeFinanceEntryModal();
+    this.updateFinanceWidget();
+    this.updateFinanceArchiveStamp();
+    this.renderFinanceModalContent();
+    this.syncWithNativeWidget?.();
+  }
+
+  openFinanceDatePicker() {
+    this.dismissActiveKeyboard();
+    if (!this.financeDatePickerModalBackdrop) return;
+    this._financeDatePickerOpenedAt = Date.now();
+
+    let currentVal = (this.financeEntryDateInput && this.financeEntryDateInput.value) 
+      ? this.financeEntryDateInput.value.trim() 
+      : '';
+    if (!currentVal || !/^\d{4}-\d{2}-\d{2}$/.test(currentVal)) {
+      currentVal = this.selectedDate || this.getTodayDateString();
+    }
+
+    this.financePickerTempDate = currentVal;
+    const parts = currentVal.split('-').map(Number);
+    this.financePickerDisplayedMonth = {
+      year: parts[0],
+      month: parts[1] - 1
+    };
+
+    this.renderFinanceDatePicker();
+    this.financeDatePickerModalBackdrop.classList.add('open');
+    this.financeDatePickerModalBackdrop.setAttribute('aria-hidden', 'false');
+  }
+
+  closeFinanceDatePicker() {
+    if (this.financeDatePickerModalBackdrop) {
+      this.financeDatePickerModalBackdrop.classList.remove('open');
+      this.financeDatePickerModalBackdrop.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  confirmFinanceDatePicker(dateStr = null) {
+    const finalDate = dateStr || this.financePickerTempDate || this.getTodayDateString();
+    if (this.financeEntryDateInput) {
+      this.financeEntryDateInput.value = finalDate;
+    }
+    this.closeFinanceDatePicker();
+  }
+
+  renderFinanceDatePicker() {
+    if (!this.financeDatePickerDaysGrid || !this.financePickerDisplayedMonth) return;
+
+    const { year: currentYear, month: currentMonth } = this.financePickerDisplayedMonth;
+    const lang = (window.Plan4UI18n && Plan4UI18n.currentLang) ? Plan4UI18n.currentLang : 'ru';
+    const dict = (window.Plan4UI18n && Plan4UI18n.translations && Plan4UI18n.translations[lang])
+      ? Plan4UI18n.translations[lang]
+      : {};
+
+    const monthNames = dict.monthsNominative || ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+    if (this.financeDateMonthTitle) {
+      this.financeDateMonthTitle.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+    }
+
+    // Dynamic weekday names localization (Monday to Sunday)
+    if (this.financeDatePickerModalBackdrop) {
+      const weekdaysHeader = this.financeDatePickerModalBackdrop.querySelector('.calendar-weekdays');
+      if (weekdaysHeader) {
+        const daysShort = dict.weekdaysShort || ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+        weekdaysHeader.innerHTML = daysShort.map(d => `<span>${this.escapeHtml(d)}</span>`).join('');
+      }
+    }
+
+    this.financeDatePickerDaysGrid.innerHTML = '';
+
+    const todayStr = this.getTodayDateString();
+    const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+    const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
+    const daysInMonth = lastDayOfMonth.getDate();
+
+    // Monday is 0
+    let startDayOfWeek = (firstDayOfMonth.getDay() + 6) % 7;
+
+    // Previous month padding days
+    const prevMonthLastDay = new Date(currentYear, currentMonth, 0).getDate();
+    for (let i = startDayOfWeek - 1; i >= 0; i--) {
+      const pDay = prevMonthLastDay - i;
+      const cell = document.createElement('div');
+      cell.className = 'calendar-day-cell other-month';
+      cell.textContent = pDay;
+
+      const prevDate = new Date(currentYear, currentMonth - 1, pDay);
+      const pDateStr = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}-${String(pDay).padStart(2, '0')}`;
+      cell.onclick = () => {
+        triggerHaptic(15);
+        this.financePickerTempDate = pDateStr;
+        this.financePickerDisplayedMonth = {
+          year: prevDate.getFullYear(),
+          month: prevDate.getMonth()
+        };
+        this.renderFinanceDatePicker();
+      };
+      this.financeDatePickerDaysGrid.appendChild(cell);
+    }
+
+    // Days of current month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const cell = document.createElement('div');
+      const isToday = dateStr === todayStr;
+      const isSelected = dateStr === this.financePickerTempDate;
+
+      cell.className = `calendar-day-cell ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}`;
+      cell.textContent = day;
+
+      cell.onclick = () => {
+        triggerHaptic(15);
+        this.confirmFinanceDatePicker(dateStr);
+      };
+
+      this.financeDatePickerDaysGrid.appendChild(cell);
+    }
+
+    // Next month padding days to fill grid
+    const totalRendered = startDayOfWeek + daysInMonth;
+    const remaining = totalRendered % 7 === 0 ? 0 : 7 - (totalRendered % 7);
+    for (let i = 1; i <= remaining; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'calendar-day-cell other-month';
+      cell.textContent = i;
+
+      const nextDate = new Date(currentYear, currentMonth + 1, i);
+      const nDateStr = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+      cell.onclick = () => {
+        triggerHaptic(15);
+        this.financePickerTempDate = nDateStr;
+        this.financePickerDisplayedMonth = {
+          year: nextDate.getFullYear(),
+          month: nextDate.getMonth()
+        };
+        this.renderFinanceDatePicker();
+      };
+      this.financeDatePickerDaysGrid.appendChild(cell);
+    }
+  }
+
+  openFinanceCategoryModal(catId = null) {
+    this.dismissActiveKeyboard();
+    if (!this.financeCategoryModalBackdrop) return;
+    this._financeCatModalOpenedAt = Date.now();
+
+    this.financeEditingCatId = catId;
+    const cat = catId ? this.financeTracker.getCategory(catId) : null;
+
+    if (this.btnFinanceCategoryDelete) {
+      this.btnFinanceCategoryDelete.style.display = catId ? 'flex' : 'none';
+    }
+
+    if (this.financeCategoryModalTitle) {
+      this.financeCategoryModalTitle.textContent = cat 
+        ? this.t('finance_edit_category_title') 
+        : this.t('finance_new_category_title');
+    }
+
+    this.financeNewCatType = cat ? cat.type : 'expense';
+    const hasTransactions = catId ? this.financeTracker.data.transactions.some(t => t.categoryId === catId) : false;
+    const lockHint = this.t('finance_cat_type_locked_hint') || 'Тип нельзя изменить: по этой категории есть операции';
+
+    if (this.btnCatTypeExpense) {
+      this.btnCatTypeExpense.classList.toggle('active', this.financeNewCatType === 'expense');
+      this.btnCatTypeExpense.disabled = hasTransactions;
+      this.btnCatTypeExpense.classList.toggle('disabled', hasTransactions);
+      if (hasTransactions) {
+        this.btnCatTypeExpense.title = lockHint;
+      } else {
+        this.btnCatTypeExpense.removeAttribute('title');
+      }
+    }
+    if (this.btnCatTypeIncome) {
+      this.btnCatTypeIncome.classList.toggle('active', this.financeNewCatType === 'income');
+      this.btnCatTypeIncome.disabled = hasTransactions;
+      this.btnCatTypeIncome.classList.toggle('disabled', hasTransactions);
+      if (hasTransactions) {
+        this.btnCatTypeIncome.title = lockHint;
+      } else {
+        this.btnCatTypeIncome.removeAttribute('title');
+      }
+    }
+
+    if (this.financeCatNameInput) {
+      this.financeCatNameInput.value = cat ? this.getFinanceCategoryName(cat) : '';
+    }
+
+    this.financeNewCatColor = cat ? cat.color : '#22c55e';
+    this.financeNewCatIcon = cat ? cat.iconIndex : 0;
+
+    // 45 Rich & diverse colors palette (5 rows of 9 colors)
+    const colors = [
+      // Row 1: Almost white & light pastel tints
+      '#f8fafc', '#f1f5f9', '#fef3c7', '#fce7f3', '#ede9fe', '#e0f2fe', '#ccfbf1', '#dcfce7', '#fef08a',
+      // Row 2: Vibrant warm & fresh greens
+      '#ef4444', '#f87171', '#f97316', '#fb923c', '#f59e0b', '#eab308', '#84cc16', '#22c55e', '#10b981',
+      // Row 3: Cool greens, cyans & ocean blues
+      '#14b8a6', '#06b6d4', '#0ea5e9', '#38bdf8', '#3b82f6', '#2563eb', '#1d4ed8', '#4f46e5', '#6366f1',
+      // Row 4: Purples, pinks, deep berry & wine reds
+      '#8b5cf6', '#a855f7', '#c084fc', '#d946ef', '#ec4899', '#f43f5e', '#e11d48', '#9f1239', '#881337',
+      // Row 5: Earthy browns, warm neutrals, slate & dark grays
+      '#65a30d', '#b45309', '#7c2d12', '#573a24', '#64748b', '#475569', '#334155', '#1e293b', '#0f172a'
+    ];
+
+    if (this.financeColorPalette) {
+      this.financeColorPalette.innerHTML = '';
+      colors.forEach(clr => {
+        const dot = document.createElement('div');
+        dot.className = `finance-color-dot ${clr === this.financeNewCatColor ? 'selected' : ''}`;
+        dot.style.background = clr;
+        dot.addEventListener('click', () => {
+          triggerHaptic(15);
+          this.financeColorPalette.querySelectorAll('.finance-color-dot').forEach(d => d.classList.remove('selected'));
+          dot.classList.add('selected');
+          this.financeNewCatColor = clr;
+        });
+        this.financeColorPalette.appendChild(dot);
+      });
+    }
+
+    // 49 Sticker icons grid from Money.jpg
+    if (this.financeIconPickerGrid) {
+      this.financeIconPickerGrid.innerHTML = '';
+      for (let i = 0; i < 49; i++) {
+        const item = document.createElement('div');
+        item.className = `finance-icon-pick-item ${i === this.financeNewCatIcon ? 'selected' : ''}`;
+        item.innerHTML = `<img src="assets/finance_icons/fin_icon_${i}.png" alt="Icon ${i}">`;
+        item.addEventListener('click', () => {
+          triggerHaptic(15);
+          this.financeIconPickerGrid.querySelectorAll('.finance-icon-pick-item').forEach(it => it.classList.remove('selected'));
+          item.classList.add('selected');
+          this.financeNewCatIcon = i;
+        });
+        this.financeIconPickerGrid.appendChild(item);
+      }
+    }
+
+    this.financeCategoryModalBackdrop.classList.add('open');
+    this.financeCategoryModalBackdrop.setAttribute('aria-hidden', 'false');
+    this.dismissActiveKeyboard();
+    if (document.activeElement && typeof document.activeElement.blur === 'function') {
+      document.activeElement.blur();
+    }
+  }
+
+  closeFinanceCategoryModal() {
+    if (this.financeCategoryModalBackdrop) {
+      this.financeCategoryModalBackdrop.classList.remove('open');
+      this.financeCategoryModalBackdrop.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  saveFinanceCategory() {
+    if (!this.financeTracker || !this.financeCatNameInput) return;
+    const name = this.financeCatNameInput.value.trim();
+    if (!name) {
+      this.showToast(this.t('finance_toast_enter_cat_name') || 'Введите название категории', '⚠️');
+      this.financeCatNameInput.focus();
+      return;
+    }
+
+    if (this.financeEditingCatId) {
+      this.financeTracker.updateCategory(this.financeEditingCatId, {
+        name,
+        customName: name,
+        isCustom: true,
+        type: this.financeNewCatType,
+        color: this.financeNewCatColor,
+        iconIndex: this.financeNewCatIcon
+      });
+      this.showToast(this.t('finance_toast_cat_updated') || 'Категория обновлена! ✨', '🎨');
+    } else {
+      this.financeTracker.addCategory({
+        name,
+        customName: name,
+        isCustom: true,
+        type: this.financeNewCatType,
+        color: this.financeNewCatColor,
+        iconIndex: this.financeNewCatIcon
+      });
+      this.showToast(this.t('finance_toast_cat_added') || 'Категория добавлена! 🏷️', '🎉');
+    }
+
+    triggerHaptic(20);
+    this.closeFinanceCategoryModal();
+    this.renderFinanceModalContent();
+    this.updateFinanceWidget();
   }
 }
 

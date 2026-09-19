@@ -12,9 +12,12 @@ copy /Y "app.js" "www\app.js" >nul
 copy /Y "i18n.js" "www\i18n.js" >nul
 copy /Y "initial_habits.js" "www\initial_habits.js" >nul
 copy /Y "cycle_tracker.js" "www\cycle_tracker.js" >nul
+copy /Y "finance_tracker.js" "www\finance_tracker.js" >nul
 copy /Y "maine_quests.js" "www\maine_quests.js" >nul
 copy /Y "maine_quests_data.js" "www\maine_quests_data.js" >nul
 copy /Y "sw.js" "www\sw.js" >nul
+copy /Y "package.json" "www\package.json" >nul
+xcopy /E /I /Y "assets" "www\assets" >nul
 echo [OK] Файлы www синхронизированы.
 echo.
 echo 2. Синхронизация с Android проектом (Capacitor)...

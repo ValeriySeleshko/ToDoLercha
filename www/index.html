@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bad+Script&family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700;800;900&family=Marck+Script&family=Neucha&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&family=Roboto+Slab:wght@400;600;700;900&display=auto" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=0.5.1">
+  <link rel="stylesheet" href="style.css?v=0.7.1">
   <script>
     (function() {
       try {
@@ -62,34 +62,39 @@
         </button>
 
         <!-- Widget 3: Streak / Flame (🔥 15) -->
-        <button class="widget-circle" id="widgetStreak" title="Серия дней" aria-label="Серия дней">
+        <button class="widget-circle" id="widgetStreak" title="Серия дней и награды" aria-label="Серия дней">
           <span class="widget-flame-icon">🔥</span>
           <span class="widget-streak-num">15</span>
         </button>
 
-        <!-- Widget 4: Trophy / Achievement -->
-        <button class="widget-circle" id="widgetMedal" title="Достижения" aria-label="Достижения">
-          <svg class="trophy-icon" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
-            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
-            <path d="M4 22h16" />
-            <path d="M10 14.66V18c0 .55-.45 1-1 1H8c-.55 0-1 .45-1 1v2h10v-2c0-.55-.45-1-1-1h-1c-.55 0-1-.45-1-1v-3.34" />
-            <path d="M6 4h12v6a6 6 0 0 1-12 0V4z" fill="rgba(245, 158, 11, 0.22)" />
-            <circle cx="12" cy="7" r="1.5" fill="#f59e0b" />
-          </svg>
-        </button>
+        <!-- Widget 4: Modules Hub Trigger (✦) with Vertical Dropdown Menu -->
+        <div class="widget-modules-hub-wrapper" id="widgetModulesHubWrapper">
+          <button class="widget-circle widget-modules-hub" id="widgetModulesHub" title="Модули" aria-label="Модули" aria-haspopup="true" aria-expanded="false">
+            <span class="widget-modules-hub-icon">✦</span>
+            <span class="widget-modules-hub-badge" id="widgetModulesHubBadge" style="display: none;"></span>
+          </button>
 
-        <!-- Widget: Cycle Tracker (Optional / Women's health) -->
-        <button class="widget-circle widget-cycle" id="widgetCycle" title="Женский календарь" aria-label="Женский календарь" style="display: none;">
-          <span class="widget-cycle-icon">🍒</span>
-          <span class="widget-cycle-day" id="widgetCycleDay">--</span>
-        </button>
+          <!-- Vertical Dropdown Menu of Module Circles -->
+          <div class="modules-hub-dropdown" id="modulesHubDropdown" aria-hidden="true">
+            <!-- Finance Circle -->
+            <button class="widget-circle widget-finance" id="widgetFinance" title="Финансы" aria-label="Финансы">
+              <div class="widget-finance-ring-container" id="widgetFinanceRing"></div>
+              <span class="widget-finance-symbol" id="widgetFinanceSymbol">₴</span>
+            </button>
 
-        <!-- Widget 5: Settings Gear -->
-        <button class="widget-circle" id="widgetSettings" title="Настройки" aria-label="Настройки">
+            <!-- Cycle Tracker Circle -->
+            <button class="widget-circle widget-cycle" id="widgetCycle" title="Женский календарь" aria-label="Женский календарь">
+              <span class="widget-cycle-icon">🍒</span>
+              <span class="widget-cycle-day" id="widgetCycleDay">--</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Widget 5: Settings Gear (Far Right) -->
+        <button class="widget-circle" id="widgetSettings" title="Настройки" aria-label="Настройки" data-i18n-title="tooltip_settings">
           <svg class="gear-icon" viewBox="0 0 24 24" fill="none" stroke="#4a4e57" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3.2"></circle>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
           </svg>
         </button>
       </header>
@@ -196,6 +201,11 @@
 
         <!-- Stickers layer placed underneath tasks & inputs -->
         <div class="notebook-stickers-layer" id="notebookStickersLayer" aria-hidden="true"></div>
+
+        <!-- Archive Day Finance Stamp (Bottom-right of paper sheet) -->
+        <div class="notebook-finance-stamp" id="notebookFinanceStamp" role="button" tabindex="0" title="Финансовые растраты дня" aria-label="Финансы за день" style="display: none;">
+          <!-- Rendered dynamically by JS -->
+        </div>
 
         <!-- Notebook Content Tasks Layer -->
         <div class="notebook-content" id="notebookContent">
@@ -854,7 +864,7 @@
             </div>
 
             <!-- 2. Тема оформления -->
-            <div class="settings-section">
+            <div class="settings-section" id="themeSettingsSection">
               <div class="settings-section-title">🌓 <span data-i18n="settings_theme">Тема оформления</span></div>
               <div class="segmented-control" id="themeSelector">
                 <button type="button" class="segmented-btn active" data-theme="light" data-i18n="theme_light">☀️ Светлая</button>
@@ -872,230 +882,312 @@
             </div>
 
             <!-- 4. Шрифт и размер задач -->
-            <div class="settings-section">
-              <div class="settings-section-title">✍️ <span data-i18n="settings_font">Шрифт и оформление задач</span></div>
-              <div class="form-group" style="margin-bottom: 12px;">
-                <label for="fontFamilySelect" data-i18n="font_family_label">Шрифт блокнота</label>
-                <select id="fontFamilySelect" class="settings-select">
-                  <option value="'PT Serif', Georgia, serif">📖 PT Serif (Классический)</option>
-                  <option value="'Caveat', cursive, sans-serif">🖋️ Caveat (Рукописный)</option>
-                  <option value="'Marck Script', cursive">✍️ Marck Script (Каллиграфия)</option>
-                  <option value="'Neucha', cursive">📝 Neucha (Непринужденный)</option>
-                  <option value="'Bad Script', cursive">✒️ Bad Script (От руки)</option>
-                  <option value="'Inter', sans-serif">🔤 Inter (Современный)</option>
-                  <option value="'Roboto Slab', serif">📜 Roboto Slab (Винтажный)</option>
-                </select>
+            <div class="settings-section" id="fontSettingsSection">
+              <div class="settings-section-header" id="fontSettingsHeader">
+                <div class="settings-section-title">✍️ <span data-i18n="settings_font">Шрифт и оформление задач</span></div>
+                <button type="button" class="btn-section-expand" id="btnExpandFontSettings" title="Развернуть" aria-label="Развернуть" aria-expanded="false" data-i18n-title="module_expand" data-i18n-aria="module_expand">
+                  <svg class="section-expand-chevron" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </button>
               </div>
-
-              <div class="form-group" style="margin-bottom: 12px;">
-                <div class="pattern-size-header">
-                  <label for="fontSizeRange" data-i18n="font_size_label">Размер текста задач</label>
-                  <span class="pattern-size-val" id="fontSizeVal">15 px</span>
+              <div class="settings-section-body" id="fontSettingsBody" style="display: none;">
+                <div class="form-group" style="margin-bottom: 12px;">
+                  <label for="fontFamilySelect" data-i18n="font_family_label">Шрифт блокнота</label>
+                  <select id="fontFamilySelect" class="settings-select">
+                    <option value="'PT Serif', Georgia, serif">📖 PT Serif (Классический)</option>
+                    <option value="'Caveat', cursive, sans-serif">🖋️ Caveat (Рукописный)</option>
+                    <option value="'Marck Script', cursive">✍️ Marck Script (Каллиграфия)</option>
+                    <option value="'Neucha', cursive">📝 Neucha (Непринужденный)</option>
+                    <option value="'Bad Script', cursive">✒️ Bad Script (От руки)</option>
+                    <option value="'Inter', sans-serif">🔤 Inter (Современный)</option>
+                    <option value="'Roboto Slab', serif">📜 Roboto Slab (Винтажный)</option>
+                  </select>
                 </div>
-                <input type="range" id="fontSizeRange" min="13" max="22" step="1" value="15" class="range-slider">
-              </div>
 
-              <!-- Слайдер: Жирность обычных задач (400..600) -->
-              <div class="form-group" style="margin-bottom: 12px;">
-                <div class="pattern-size-header">
-                  <label for="taskWeightRange" data-i18n="settings_task_weight">Жирность обычных задач</label>
-                  <span class="pattern-size-val" id="taskWeightVal">500 (Средний)</span>
+                <div class="form-group" style="margin-bottom: 12px;">
+                  <div class="pattern-size-header">
+                    <label for="fontSizeRange" data-i18n="font_size_label">Размер текста задач</label>
+                    <span class="pattern-size-val" id="fontSizeVal">15 px</span>
+                  </div>
+                  <input type="range" id="fontSizeRange" min="13" max="22" step="1" value="15" class="range-slider">
                 </div>
-                <input type="range" id="taskWeightRange" min="400" max="600" step="50" value="500" class="range-slider">
-              </div>
 
-              <!-- Слайдер: Жирность приоритетных задач -->
-              <div class="form-group" style="margin-bottom: 12px;">
-                <div class="pattern-size-header">
-                  <label for="priorityWeightRange" data-i18n="settings_priority_weight">Жирность важных задач</label>
-                  <span class="pattern-size-val" id="priorityWeightVal">900 (Максимальный)</span>
+                <!-- Слайдер: Жирность обычных задач (400..600) -->
+                <div class="form-group" style="margin-bottom: 12px;">
+                  <div class="pattern-size-header">
+                    <label for="taskWeightRange" data-i18n="settings_task_weight">Жирность обычных задач</label>
+                    <span class="pattern-size-val" id="taskWeightVal">500 (Средний)</span>
+                  </div>
+                  <input type="range" id="taskWeightRange" min="400" max="600" step="50" value="500" class="range-slider">
                 </div>
-                <input type="range" id="priorityWeightRange" min="600" max="900" step="100" value="900" class="range-slider">
-              </div>
 
-              <!-- Предпросмотр -->
-              <div class="font-preview-box" id="fontPreviewBox">
-                <div class="preview-line-regular" id="previewRegularText">☕ Обычная задача: купить кофе</div>
-                <div class="preview-line-priority" id="previewPriorityText">⚡ Важная задача: сдать отчет шефу</div>
+                <!-- Слайдер: Жирность приоритетных задач -->
+                <div class="form-group" style="margin-bottom: 12px;">
+                  <div class="pattern-size-header">
+                    <label for="priorityWeightRange" data-i18n="settings_priority_weight">Жирность важных задач</label>
+                    <span class="pattern-size-val" id="priorityWeightVal">900 (Максимальный)</span>
+                  </div>
+                  <input type="range" id="priorityWeightRange" min="600" max="900" step="100" value="900" class="range-slider">
+                </div>
+
+                <!-- Предпросмотр -->
+                <div class="font-preview-box" id="fontPreviewBox">
+                  <div class="preview-line-regular" id="previewRegularText">☕ Обычная задача: купить кофе</div>
+                  <div class="preview-line-priority" id="previewPriorityText">⚡ Важная задача: сдать отчет шефу</div>
+                </div>
               </div>
             </div>
 
             <!-- 5. Оповещения и нотификации -->
-            <div class="settings-section">
-              <div class="settings-section-title">🔔 <span data-i18n="settings_notif">Оповещения и звуки</span></div>
-              <div class="setting-toggle-row">
-                <div class="setting-toggle-info">
-                  <div class="setting-toggle-label" data-i18n="notif_browser_label">Уведомления</div>
-                  <div class="setting-toggle-desc" data-i18n="notif_browser_desc">Системные напоминания на телефоне</div>
-                </div>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="toggleNotifications">
-                  <span class="toggle-slider"></span>
-                </label>
+            <div class="settings-section" id="notifSettingsSection">
+              <div class="settings-section-header" id="notifSettingsHeader">
+                <div class="settings-section-title">🔔 <span data-i18n="settings_notif">Оповещения и звуки</span></div>
+                <button type="button" class="btn-section-expand" id="btnExpandNotifSettings" title="Развернуть" aria-label="Развернуть" aria-expanded="false" data-i18n-title="module_expand" data-i18n-aria="module_expand">
+                  <svg class="section-expand-chevron" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </button>
               </div>
-
-              <!-- Утренний план -->
-              <div class="setting-toggle-row" style="margin-top: 10px;">
-                <div class="setting-toggle-info">
-                  <div class="setting-toggle-label" data-i18n="notif_morning_label">Утренний план ☀️</div>
-                  <div class="setting-toggle-desc" data-i18n="notif_morning_desc">Напоминание о делах в начале дня</div>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <input type="time" id="morningNotifTime" value="09:00" style="padding: 4px 8px; border-radius: 8px; border: 1px solid var(--border-color, #e2e8f0); font-family: var(--font-ui); font-size: 12px; background: var(--card-bg, #ffffff); color: var(--text-color, #1e293b); font-weight: 600;">
-                  <label class="toggle-switch">
-                    <input type="checkbox" id="toggleMorningNotif" checked>
-                    <span class="toggle-slider"></span>
-                  </label>
-                </div>
-              </div>
-
-              <!-- Вечерний обзор -->
-              <div class="setting-toggle-row" style="margin-top: 10px;">
-                <div class="setting-toggle-info">
-                  <div class="setting-toggle-label" data-i18n="notif_evening_label">Вечерний обзор 🌙</div>
-                  <div class="setting-toggle-desc" data-i18n="notif_evening_desc">Итоги дня и проверка дел</div>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <input type="time" id="eveningNotifTime" value="21:00" style="padding: 4px 8px; border-radius: 8px; border: 1px solid var(--border-color, #e2e8f0); font-family: var(--font-ui); font-size: 12px; background: var(--card-bg, #ffffff); color: var(--text-color, #1e293b); font-weight: 600;">
-                  <label class="toggle-switch">
-                    <input type="checkbox" id="toggleEveningNotif" checked>
-                    <span class="toggle-slider"></span>
-                  </label>
-                </div>
-              </div>
-
-              <!-- Забота о питомце -->
-              <div class="setting-toggle-row" style="margin-top: 10px;">
-                <div class="setting-toggle-info">
-                  <div class="setting-toggle-label" data-i18n="notif_pet_label">Забота о питомце 🐾</div>
-                  <div class="setting-toggle-desc" data-i18n="notif_pet_desc">Напоминание покормить Мейн-куна (15:00)</div>
-                </div>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="togglePetNotif" checked>
-                  <span class="toggle-slider"></span>
-                </label>
-              </div>
-
-              <div class="setting-toggle-row" style="margin-top: 10px;">
-                <div class="setting-toggle-info">
-                  <div class="setting-toggle-label" data-i18n="notif_haptics_label">Тактильный виброотклик</div>
-                  <div class="setting-toggle-desc" data-i18n="notif_haptics_desc">Вибрация при свайпах и тапах</div>
-                </div>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="toggleHaptics" checked>
-                  <span class="toggle-slider"></span>
-                </label>
-              </div>
-
-              <div class="setting-toggle-row" style="margin-top: 10px;">
-                <div class="setting-toggle-info">
-                  <div class="setting-toggle-label" data-i18n="notif_sound_label">Звуковые щелчки</div>
-                  <div class="setting-toggle-desc" data-i18n="notif_sound_desc">Приятный звук выполнения задачи</div>
-                </div>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="toggleSound" checked>
-                  <span class="toggle-slider"></span>
-                </label>
-              </div>
-
-              <button type="button" class="btn-secondary-block" id="btnTestNotification" style="margin-top: 12px;">
-                🔔 <span data-i18n="notif_test_btn">Проверить уведомление</span>
-              </button>
-            </div>
-
-            <!-- 5.5. Женский календарь и биоритмы -->
-            <div class="settings-section" id="cycleSettingsSection">
-              <div class="settings-section-title">🍒 <span data-i18n="cycle_settings_title">Женский календарь</span></div>
-              
-              <!-- Главный тумблер -->
-              <div class="setting-toggle-row">
-                <div class="setting-toggle-info">
-                  <div class="setting-toggle-label" data-i18n="cycle_toggle_enable">Включить женский календарь</div>
-                  <div class="setting-toggle-desc" data-i18n="cycle_toggle_enable_desc">Учет фаз цикла, энергии и бережное планирование дел</div>
-                </div>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="toggleCycleTracker">
-                  <span class="toggle-slider"></span>
-                </label>
-              </div>
-
-              <!-- Блок поднастроек (активен когда включен) -->
-              <div id="cycleSubSettings" style="display: none; margin-top: 12px; flex-direction: column; gap: 10px;">
+              <div class="settings-section-body" id="notifSettingsBody" style="display: none;">
                 <div class="setting-toggle-row">
                   <div class="setting-toggle-info">
-                    <div class="setting-toggle-label" data-i18n="cycle_toggle_irregular">Цикл нерегулярный (умный режим)</div>
-                    <div class="setting-toggle-desc" data-i18n="cycle_toggle_irregular_desc">Окно вероятности вместо жесткой даты и защита от ложных задержек</div>
+                    <div class="setting-toggle-label" data-i18n="notif_browser_label">Уведомления</div>
+                    <div class="setting-toggle-desc" data-i18n="notif_browser_desc">Системные напоминания на телефоне</div>
                   </div>
                   <label class="toggle-switch">
-                    <input type="checkbox" id="toggleCycleIrregular" checked>
+                    <input type="checkbox" id="toggleNotifications">
                     <span class="toggle-slider"></span>
                   </label>
                 </div>
 
-                <div class="form-group" style="margin-bottom: 4px;">
-                  <div class="pattern-size-header">
-                    <label for="cyclePeriodLengthRange" data-i18n="cycle_period_length_label">Длительность менструации</label>
-                    <span class="pattern-size-val" id="cyclePeriodLengthVal">5 дн.</span>
-                  </div>
-                  <input type="range" id="cyclePeriodLengthRange" min="3" max="8" step="1" value="5" class="range-slider">
-                </div>
-
-                <div class="form-group" style="margin-bottom: 4px;">
-                  <div class="pattern-size-header">
-                    <label for="cycleDefaultLengthRange" data-i18n="cycle_default_length_label">Длительность цикла</label>
-                    <span class="pattern-size-val" id="cycleDefaultLengthVal">28 дн.</span>
-                  </div>
-                  <input type="range" id="cycleDefaultLengthRange" min="20" max="45" step="1" value="28" class="range-slider">
-                </div>
-
-                <div class="setting-toggle-row">
+                <!-- Утренний план -->
+                <div class="setting-toggle-row" style="margin-top: 10px;">
                   <div class="setting-toggle-info">
-                    <div class="setting-toggle-label" data-i18n="cycle_toggle_widget">Виджет в шапке блокнота</div>
-                    <div class="setting-toggle-desc" data-i18n="cycle_toggle_widget_desc">Показывать день цикла и статус рядом с датой</div>
+                    <div class="setting-toggle-label" data-i18n="notif_morning_label">Утренний план ☀️</div>
+                    <div class="setting-toggle-desc" data-i18n="notif_morning_desc">Напоминание о делах в начале дня</div>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <input type="time" id="morningNotifTime" value="09:00" style="padding: 4px 8px; border-radius: 8px; border: 1px solid var(--border-color, #e2e8f0); font-family: var(--font-ui); font-size: 12px; background: var(--card-bg, #ffffff); color: var(--text-color, #1e293b); font-weight: 600;">
+                    <label class="toggle-switch">
+                      <input type="checkbox" id="toggleMorningNotif" checked>
+                      <span class="toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Вечерний обзор -->
+                <div class="setting-toggle-row" style="margin-top: 10px;">
+                  <div class="setting-toggle-info">
+                    <div class="setting-toggle-label" data-i18n="notif_evening_label">Вечерний обзор 🌙</div>
+                    <div class="setting-toggle-desc" data-i18n="notif_evening_desc">Итоги дня и проверка дел</div>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <input type="time" id="eveningNotifTime" value="21:00" style="padding: 4px 8px; border-radius: 8px; border: 1px solid var(--border-color, #e2e8f0); font-family: var(--font-ui); font-size: 12px; background: var(--card-bg, #ffffff); color: var(--text-color, #1e293b); font-weight: 600;">
+                    <label class="toggle-switch">
+                      <input type="checkbox" id="toggleEveningNotif" checked>
+                      <span class="toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Забота о питомце -->
+                <div class="setting-toggle-row" style="margin-top: 10px;">
+                  <div class="setting-toggle-info">
+                    <div class="setting-toggle-label" data-i18n="notif_pet_label">Забота о питомце 🐾</div>
+                    <div class="setting-toggle-desc" data-i18n="notif_pet_desc">Напоминание покормить Мейн-куна (15:00)</div>
                   </div>
                   <label class="toggle-switch">
-                    <input type="checkbox" id="toggleCycleWidget" checked>
+                    <input type="checkbox" id="togglePetNotif" checked>
                     <span class="toggle-slider"></span>
                   </label>
                 </div>
 
-                <button type="button" class="btn-primary-block" id="btnOpenCycleFromSettings" style="margin-top: 6px; background: linear-gradient(135deg, #ec4899, #db2777); color: #fff; font-weight: 700; border: none; border-radius: 10px; padding: 10px 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; box-shadow: 0 3px 10px rgba(219, 39, 119, 0.25);">
-                  <span data-i18n="cycle_open_btn">🍒 Открыть календарь цикла</span>
+                <div class="setting-toggle-row" style="margin-top: 10px;">
+                  <div class="setting-toggle-info">
+                    <div class="setting-toggle-label" data-i18n="notif_haptics_label">Тактильный виброотклик</div>
+                    <div class="setting-toggle-desc" data-i18n="notif_haptics_desc">Вибрация при свайпах и тапах</div>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="toggleHaptics" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+
+                <div class="setting-toggle-row" style="margin-top: 10px;">
+                  <div class="setting-toggle-info">
+                    <div class="setting-toggle-label" data-i18n="notif_sound_label">Звуковые щелчки</div>
+                    <div class="setting-toggle-desc" data-i18n="notif_sound_desc">Приятный звук выполнения задачи</div>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="toggleSound" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+
+                <button type="button" class="btn-secondary-block" id="btnTestNotification" style="margin-top: 12px;">
+                  🔔 <span data-i18n="notif_test_btn">Проверить уведомление</span>
                 </button>
               </div>
             </div>
 
-            <!-- 6. Google Диск и резервное копирование -->
-            <div class="settings-section">
-              <div class="settings-section-title">☁️ <span data-i18n="settings_backup">Google Диск и бэкап</span></div>
+            <!-- 5.5. Модули приложения -->
+            <div class="settings-section" id="modulesSettingsSection">
+              <div class="settings-section-title"><span class="settings-modules-title-icon">✦</span> <span data-i18n="settings_modules_title">Модули</span></div>
               
-              <div class="cloud-sync-card" id="cloudSyncCard">
-                <div class="cloud-sync-header">
-                  <div class="cloud-sync-title" style="display: flex; align-items: center; gap: 6px;">
-                    <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
-                    <span>Google Диск</span>
+              <div class="settings-modules-list">
+                <!-- Модуль: Женский календарь -->
+                <div class="settings-module-card" id="moduleCardCycle">
+                  <div class="settings-module-header" id="moduleHeaderCycle">
+                    <div class="settings-module-info">
+                      <div class="settings-module-name">🍒 <span data-i18n="cycle_settings_title">Женский календарь</span></div>
+                      <div class="settings-module-desc" data-i18n="cycle_toggle_enable_desc">Учет фаз цикла, энергии и бережное планирование дел</div>
+                    </div>
+                    <div class="settings-module-controls">
+                      <label class="toggle-switch" title="Включить / выключить модуль">
+                        <input type="checkbox" id="toggleCycleTracker">
+                        <span class="toggle-slider"></span>
+                      </label>
+                      <button type="button" class="btn-module-expand" id="btnExpandCycleModule" title="Развернуть" aria-label="Развернуть" aria-expanded="false">
+                        <svg class="module-expand-chevron" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      </button>
+                    </div>
                   </div>
-                  <span class="cloud-status-badge connected" id="cloudStatusBadge">Готов к сохранению</span>
+
+                  <!-- Разворачивающийся блок поднастроек и функций -->
+                  <div class="settings-module-body" id="cycleSubSettings" style="display: none;">
+                    <div class="setting-toggle-row">
+                      <div class="setting-toggle-info">
+                        <div class="setting-toggle-label" data-i18n="cycle_toggle_irregular">Цикл нерегулярный (умный режим)</div>
+                        <div class="setting-toggle-desc" data-i18n="cycle_toggle_irregular_desc">Окно вероятности вместо жесткой даты и защита от ложных задержек</div>
+                      </div>
+                      <label class="toggle-switch">
+                        <input type="checkbox" id="toggleCycleIrregular" checked>
+                        <span class="toggle-slider"></span>
+                      </label>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 4px;">
+                      <div class="pattern-size-header">
+                        <label for="cyclePeriodLengthRange" data-i18n="cycle_period_length_label">Длительность менструации</label>
+                        <span class="pattern-size-val" id="cyclePeriodLengthVal">5 дн.</span>
+                      </div>
+                      <input type="range" id="cyclePeriodLengthRange" min="3" max="8" step="1" value="5" class="range-slider">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 4px;">
+                      <div class="pattern-size-header">
+                        <label for="cycleDefaultLengthRange" data-i18n="cycle_default_length_label">Длительность цикла</label>
+                        <span class="pattern-size-val" id="cycleDefaultLengthVal">28 дн.</span>
+                      </div>
+                      <input type="range" id="cycleDefaultLengthRange" min="20" max="45" step="1" value="28" class="range-slider">
+                    </div>
+
+                    <button type="button" class="btn-primary-block" id="btnOpenCycleFromSettings" style="margin-top: 6px; background: linear-gradient(135deg, #ec4899, #db2777); color: #fff; font-weight: 700; border: none; border-radius: 10px; padding: 10px 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; box-shadow: 0 3px 10px rgba(219, 39, 119, 0.25);">
+                      <span data-i18n="cycle_open_btn">🍒 Открыть календарь цикла</span>
+                    </button>
+                  </div>
                 </div>
 
-                <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
-                  <div style="font-size: 11.5px; color: #64748b; line-height: 1.35;" id="cloudLastSyncText">
-                    Сохранение базы дел в файл <b>Plan4U_Database.json</b> прямо на вашем Google Диске:
+                <!-- Модуль: Финансы -->
+                <div class="settings-module-card" id="moduleCardFinance">
+                  <div class="settings-module-header" id="moduleHeaderFinance">
+                    <div class="settings-module-info">
+                      <div class="settings-module-name">💰 <span data-i18n="finance_settings_title">Финансы (доходы и расходы)</span></div>
+                      <div class="settings-module-desc" data-i18n="finance_toggle_enable_desc">Учет доходов, расходов и баланса с секторным кругом</div>
+                    </div>
+                    <div class="settings-module-controls">
+                      <label class="toggle-switch" title="Включить / выключить модуль">
+                        <input type="checkbox" id="toggleFinanceTracker">
+                        <span class="toggle-slider"></span>
+                      </label>
+                      <button type="button" class="btn-module-expand" id="btnExpandFinanceModule" title="Развернуть" aria-label="Развернуть" aria-expanded="false">
+                        <svg class="module-expand-chevron" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      </button>
+                    </div>
                   </div>
 
-                  <button type="button" class="btn-primary-block" id="btnSaveToGoogleDrive" style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: #ffffff; font-weight: 700; border: none; border-radius: 10px; padding: 11px 12px; cursor: pointer; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.25); display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px;">
-                    <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#ffffff" d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
-                    <span>📁 Сохранить на Google Диск</span>
-                  </button>
+                  <!-- Разворачивающийся блок поднастроек и функций -->
+                  <div class="settings-module-body" id="financeSubSettings" style="display: none;">
+                    <div class="setting-toggle-row">
+                      <div class="setting-toggle-info">
+                        <div class="setting-toggle-label" data-i18n="finance_toggle_stamp">Печать расходов в архивных днях</div>
+                        <div class="setting-toggle-desc" data-i18n="finance_toggle_stamp_desc">Полупрозрачное кольцо расходов внизу листа бумаги</div>
+                      </div>
+                      <label class="toggle-switch">
+                        <input type="checkbox" id="toggleFinanceStamp" checked>
+                        <span class="toggle-slider"></span>
+                      </label>
+                    </div>
 
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px;">
-                    <label class="btn-backup-action" style="flex-direction: row; justify-content: center; gap: 6px; padding: 9px 6px; font-size: 12px; cursor: pointer;">
-                      <span>📥 Загрузить с Диска</span>
-                      <input type="file" id="importBackupFile" accept=".json" style="display: none;">
-                    </label>
-                    <button type="button" class="btn-backup-action" id="btnDownloadLocalBackup" style="flex-direction: row; justify-content: center; gap: 6px; padding: 9px 6px; font-size: 12px;">
-                      <span>💾 Копия на телефон</span>
+                    <div class="form-group" style="margin-bottom: 4px;">
+                      <label for="financeCurrencySelect" data-i18n="finance_currency_label">Основная валюта</label>
+                      <select id="financeCurrencySelect" class="settings-select" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border-color, #e2e8f0); background: var(--card-bg, #fff); color: var(--text-color, #1e293b); font-weight: 600;">
+                        <option value="грн|₴">Гривна (грн / ₴)</option>
+                        <option value="usd|$">Доллар (USD / $)</option>
+                        <option value="eur|€">Евро (EUR / €)</option>
+                        <option value="rub|₽">Рубль (руб / ₽)</option>
+                        <option value="kzt|₸">Тенге (KZT / ₸)</option>
+                      </select>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 4px;">
+                      <label for="financeInitialBalanceInput" data-i18n="finance_initial_balance_label">Начальный баланс (опционально)</label>
+                      <input type="number" id="financeInitialBalanceInput" step="any" placeholder="0" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border-color, #e2e8f0); background: var(--card-bg, #fff); color: var(--text-color, #1e293b); font-weight: 600;">
+                    </div>
+
+                    <button type="button" class="btn-primary-block" id="btnOpenFinanceFromSettings" style="margin-top: 6px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-weight: 700; border: none; border-radius: 10px; padding: 10px 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; box-shadow: 0 3px 10px rgba(16, 185, 129, 0.25);">
+                      <span data-i18n="finance_open_btn">💰 Открыть окно финансов</span>
                     </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 6. Google Диск и резервное копирование -->
+            <div class="settings-section" id="backupSettingsSection">
+              <div class="settings-section-header" id="backupSettingsHeader">
+                <div class="settings-section-title">☁️ <span data-i18n="settings_backup">Google Диск и бэкап</span></div>
+                <button type="button" class="btn-section-expand" id="btnExpandBackupSettings" title="Развернуть" aria-label="Развернуть" aria-expanded="false" data-i18n-title="module_expand" data-i18n-aria="module_expand">
+                  <svg class="section-expand-chevron" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </button>
+              </div>
+              
+              <div class="settings-section-body" id="backupSettingsBody" style="display: none;">
+                <div class="cloud-sync-card" id="cloudSyncCard">
+                  <div class="cloud-sync-header">
+                    <div class="cloud-sync-title" style="display: flex; align-items: center; gap: 6px;">
+                      <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                      <span>Google Диск</span>
+                    </div>
+                    <span class="cloud-status-badge connected" id="cloudStatusBadge">Готов к сохранению</span>
+                  </div>
+
+                  <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+                    <div style="font-size: 11.5px; color: #64748b; line-height: 1.35;" id="cloudLastSyncText">
+                      Сохранение базы дел в файл <b>Plan4U_Database.json</b> прямо на вашем Google Диске:
+                    </div>
+
+                    <button type="button" class="btn-primary-block" id="btnSaveToGoogleDrive" style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: #ffffff; font-weight: 700; border: none; border-radius: 10px; padding: 11px 12px; cursor: pointer; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.25); display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px;">
+                      <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#ffffff" d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+                      <span>📁 Сохранить на Google Диск</span>
+                    </button>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px;">
+                      <label class="btn-backup-action" style="flex-direction: row; justify-content: center; gap: 6px; padding: 9px 6px; font-size: 12px; cursor: pointer;">
+                        <span>📥 Загрузить с Диска</span>
+                        <input type="file" id="importBackupFile" accept=".json" style="display: none;">
+                      </label>
+                      <button type="button" class="btn-backup-action" id="btnDownloadLocalBackup" style="flex-direction: row; justify-content: center; gap: 6px; padding: 9px 6px; font-size: 12px;">
+                        <span>💾 Копия на телефон</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1103,7 +1195,7 @@
           </div>
 
           <div style="text-align: center; font-size: 11px; color: #94a3b8; margin-top: 12px; font-weight: 600; letter-spacing: 0.3px;" data-i18n="app_version_footer">
-            Plan4U • Версия 0.3.6
+            Plan4U • Версия 0.3.8
           </div>
           <div style="margin-top: 8px; text-align: center;">
             <button type="button" id="btnForceCacheReset" style="background: none; border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 8px; font-size: 11px; color: #64748b; padding: 5px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">🔄 Сбросить кэш и обновить</button>
@@ -1379,6 +1471,295 @@
         </div>
       </div>
 
+      <!-- Finance Tracker Main Modal -->
+      <div class="modal-backdrop" id="financeModalBackdrop" aria-hidden="true">
+        <div class="modal-sheet modal-sheet-scrollable finance-sheet" role="dialog" aria-modal="true" aria-labelledby="financeModalTitle">
+          <div class="modal-header">
+            <div class="finance-header-title-box">
+              <h2 id="financeModalTitle">💰 <span data-i18n="finance_title">Финансы</span></h2>
+              <button type="button" class="btn-finance-add-cat" id="btnFinanceAddCategory" title="Добавить категорию" data-i18n-title="finance_add_category_btn" aria-label="Добавить категорию" data-i18n-aria="finance_add_category_btn">
+                <svg class="plus-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--primary-magenta)" stroke-width="5.2" stroke-linecap="round">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span class="btn-finance-add-cat-text" data-i18n="finance_add_category_word">Категория</span>
+              </button>
+            </div>
+            <div class="finance-header-right">
+              <span class="finance-header-date" id="financeHeaderDate"></span>
+              <button type="button" class="modal-close-btn" id="financeCloseBtn" aria-label="Закрыть">&times;</button>
+            </div>
+          </div>
+
+          <!-- Top Period Selector & Tabs -->
+          <div class="finance-modal-nav">
+            <div class="finance-period-pills" id="financePeriodPills" role="tablist">
+              <button type="button" class="finance-period-pill" data-period="day" data-i18n="finance_period_today">Сегодня</button>
+              <button type="button" class="finance-period-pill" data-period="week" data-i18n="finance_period_week">Неделя</button>
+              <button type="button" class="finance-period-pill active" data-period="month" data-i18n="finance_period_month">Месяц</button>
+              <button type="button" class="finance-period-pill" data-period="all" data-i18n="finance_period_all">Все</button>
+            </div>
+
+            <div class="finance-view-tabs" id="financeViewTabs">
+              <button type="button" class="finance-view-tab active" data-tab="overview" data-i18n="finance_tab_overview">Кольцо</button>
+              <button type="button" class="finance-view-tab" data-tab="history" data-i18n="finance_tab_history">История</button>
+              <button type="button" class="finance-view-tab" data-tab="categories" data-i18n="finance_tab_categories">Категории</button>
+            </div>
+            <div class="finance-period-sublabel" id="financePeriodSublabel"></div>
+          </div>
+
+          <!-- Tab 1: Overview (Donut Wheel + Categories Breakdown + Balance + +/- Buttons) -->
+          <div class="finance-tab-pane active" id="financePaneOverview">
+            <!-- Donut Wheel Section with Category Callouts -->
+            <div class="finance-donut-section">
+              <div class="finance-donut-wrapper" id="financeDonutWrapper">
+                <!-- SVG Donut Chart injected here -->
+                <div class="finance-donut-center" id="financeDonutCenter">
+                  <span class="finance-donut-center-symbol" id="financeDonutCenterSymbol">₴</span>
+                  <span class="finance-donut-center-val" id="financeDonutCenterVal">0</span>
+                  <span class="finance-donut-center-sub" id="financeDonutCenterSub">расходы</span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Current Balance Card -->
+            <div class="finance-balance-card">
+              <div class="finance-balance-main">
+                <span class="finance-balance-title" data-i18n="finance_balance_label">Текущий баланс</span>
+                <span class="finance-balance-amount" id="financeBalanceTotal">0 грн</span>
+              </div>
+              <div class="finance-balance-details">
+                <div class="finance-balance-stat income">
+                  <span class="finance-stat-bullet">▲</span>
+                  <span class="finance-stat-name" data-i18n="finance_income_label">Доходы:</span>
+                  <span class="finance-stat-val" id="financeBalanceIncome">+0 грн</span>
+                </div>
+                <div class="finance-balance-divider"></div>
+                <div class="finance-balance-stat expense">
+                  <span class="finance-stat-bullet">▼</span>
+                  <span class="finance-stat-name" data-i18n="finance_expense_label">Расходы:</span>
+                  <span class="finance-stat-val" id="financeBalanceExpense">-0 грн</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2 Big Round Action Buttons: [+] and [-] -->
+            <div class="finance-quick-actions">
+              <button type="button" class="btn-finance-action btn-finance-income" id="btnFinanceQuickIncome" title="Внести доход" aria-label="Добавить доход">
+                <span class="finance-action-icon">+</span>
+              </button>
+              <button type="button" class="btn-finance-action btn-finance-expense" id="btnFinanceQuickExpense" title="Внести расход" aria-label="Добавить расход">
+                <span class="finance-action-icon">−</span>
+              </button>
+            </div>
+
+            <!-- Archive Informational Actions: 1 Button "История" -->
+            <div class="finance-archive-actions" id="financeArchiveActions" style="display: none;">
+              <button type="button" class="btn-finance-archive-history" id="btnFinanceArchiveHistory">
+                <span class="btn-finance-archive-history-icon">📜</span>
+                <span data-i18n="finance_archive_history_btn">История</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Tab 2: History (List of transactions) -->
+          <div class="finance-tab-pane" id="financePaneHistory" style="display: none;">
+            <div class="finance-history-header-bar" id="financeHistoryHeaderBar" style="display: none;">
+              <button type="button" class="btn-finance-archive-back" id="btnFinanceArchiveBackToRing">
+                <span class="back-arrow">‹</span> <span data-i18n="finance_back_to_ring">Кольцо</span>
+              </button>
+              <span class="finance-history-header-title" id="financeArchiveHistoryTitle">История за день</span>
+            </div>
+            <div class="finance-history-list" id="financeHistoryList">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Tab 3: Categories Management -->
+          <div class="finance-tab-pane" id="financePaneCategories" style="display: none;">
+            <div class="finance-categories-list" id="financeCategoriesList">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Transaction Entry Modal (+ / -) -->
+      <div class="modal-backdrop" id="financeEntryModalBackdrop" aria-hidden="true">
+        <div class="modal-sheet modal-sheet-scrollable finance-entry-sheet" role="dialog" aria-modal="true">
+          <div class="modal-header">
+            <h2 id="financeEntryModalTitle">Введите сумму растраты</h2>
+            <div class="finance-entry-header-actions">
+              <button type="button" class="finance-entry-delete-btn" id="btnFinanceEntryDelete" title="Удалить запись" style="display: none;" aria-label="Удалить">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  <line x1="10" y1="11" x2="10" y2="17"></line>
+                  <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+              </button>
+              <button type="button" class="modal-close-btn" id="financeEntryCloseBtn" aria-label="Закрыть">&times;</button>
+            </div>
+          </div>
+
+          <div class="finance-entry-content">
+            <!-- Category Selection Grid -->
+            <div class="finance-entry-cats-title" data-i18n="finance_choose_category">Выберите категорию:</div>
+            <div class="finance-entry-cats-carousel-wrap">
+              <div class="finance-entry-cats-carousel" id="financeEntryCatsGrid">
+                <!-- Rendered dynamically with 3x3 category pages -->
+              </div>
+              <div class="finance-cats-dots" id="financeCatsDots" style="display: none;"></div>
+            </div>
+
+            <!-- Amount Input Display -->
+            <div class="finance-entry-amount-block">
+              <div class="finance-entry-amount-wrapper">
+                <input type="number" id="financeEntryAmountInput" class="finance-entry-amount-input" placeholder="0" step="any" min="0" autocomplete="off" inputmode="decimal">
+                <span class="finance-entry-currency-badge" id="financeEntryCurrencyBadge">грн</span>
+              </div>
+              
+              <!-- Quick increment chips (+50, +100, +200, +500, +1000) -->
+              <div class="finance-quick-chips" id="financeQuickChips">
+                <button type="button" class="finance-chip-btn" data-add="50">+50</button>
+                <button type="button" class="finance-chip-btn" data-add="100">+100</button>
+                <button type="button" class="finance-chip-btn" data-add="200">+200</button>
+                <button type="button" class="finance-chip-btn" data-add="500">+500</button>
+                <button type="button" class="finance-chip-btn" data-add="1000">+1000</button>
+              </div>
+            </div>
+
+            <!-- Date and Optional Note -->
+            <div class="finance-entry-row-meta">
+              <div class="finance-entry-date-box" id="financeEntryDateBox" title="Выбрать дату" role="button" tabindex="0">
+                <span class="finance-entry-date-icon">📅</span>
+                <input type="text" id="financeEntryDateInput" class="finance-entry-date-input" readonly aria-label="Дата операции">
+              </div>
+              <div class="finance-entry-note-box">
+                <input type="text" id="financeEntryNoteInput" class="finance-entry-note-input" placeholder="Заметка (например: супермаркет)" data-i18n-placeholder="finance_note_placeholder" maxlength="80">
+              </div>
+            </div>
+
+            <!-- Action Buttons: Back [↩] and Save [✓] -->
+            <div class="finance-entry-bottom-bar">
+              <button type="button" class="btn-finance-entry-back" id="btnFinanceEntryBack" title="Назад" aria-label="Назад">
+                <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 14 4 9 9 4"></polyline>
+                  <path d="M20 20v-7a4 4 0 0 0-4-4H4"></path>
+                </svg>
+                <span data-i18n="finance_btn_back">Назад</span>
+              </button>
+              <button type="button" class="btn-finance-entry-save" id="btnFinanceEntrySave" title="Сохранить" aria-label="Сохранить">
+                <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span data-i18n="finance_btn_save">Сохранить</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Category Creation & Edit Submenu Modal -->
+      <div class="modal-backdrop" id="financeCategoryModalBackdrop" aria-hidden="true">
+        <div class="modal-sheet modal-sheet-scrollable finance-cat-edit-sheet" role="dialog" aria-modal="true">
+          <div class="modal-header">
+            <h2 id="financeCategoryModalTitle" data-i18n="finance_new_category_title">Новая категория</h2>
+            <button type="button" class="modal-close-btn" id="financeCategoryCloseBtn" aria-label="Закрыть">&times;</button>
+          </div>
+
+          <form id="financeCategoryForm" class="modal-form" onsubmit="return false;">
+            <input type="hidden" id="financeEditCatId" value="">
+
+            <!-- Type: Expense / Income -->
+            <div class="form-group">
+              <label data-i18n="finance_category_type">Тип</label>
+              <div class="finance-cat-type-selector">
+                <button type="button" class="finance-cat-type-btn active" id="btnCatTypeExpense" data-type="expense" data-i18n="finance_btn_expense">Расход</button>
+                <button type="button" class="finance-cat-type-btn" id="btnCatTypeIncome" data-type="income" data-i18n="finance_btn_income">Доход</button>
+              </div>
+            </div>
+
+            <!-- Name -->
+            <div class="form-group">
+              <label for="financeCatNameInput" data-i18n="finance_category_name">Название категории</label>
+              <input type="text" id="financeCatNameInput" required placeholder="Например: Кафе, Бензин, Подарки..." maxlength="30">
+            </div>
+
+            <!-- Sector Color Picker -->
+            <div class="form-group">
+              <label data-i18n="finance_category_color">Цвет сектора</label>
+              <div class="finance-color-palette" id="financeColorPalette">
+                <!-- Color dots rendered by JS -->
+              </div>
+            </div>
+
+            <!-- Sticker Icon Picker (49 icons from Money.jpg) -->
+            <div class="form-group">
+              <label data-i18n="finance_category_icon">Стикер-иконка (из Money.jpg)</label>
+              <div class="finance-icon-picker-grid" id="financeIconPickerGrid">
+                <!-- 49 icons rendered by JS -->
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="modal-actions" style="margin-top: 14px;">
+              <button type="button" class="btn-cancel" id="btnFinanceCategoryCancel" data-i18n="cycle_btn_cancel">Отмена</button>
+              <button type="button" class="btn-submit" id="btnFinanceCategorySave" data-i18n="cycle_btn_save">Сохранить</button>
+            </div>
+            <button type="button" class="finance-cat-delete-btn" id="btnFinanceCategoryDelete" style="display: none;">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <line x1="10" y1="11" x2="10" y2="17"></line>
+                <line x1="14" y1="11" x2="14" y2="17"></line>
+              </svg>
+              <span data-i18n="finance_delete_category">Удалить категорию</span>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Finance Custom Calendar Date Picker Modal (Notebook Theme) -->
+      <div class="modal-backdrop finance-datepicker-backdrop" id="financeDatePickerModalBackdrop" aria-hidden="true">
+        <div class="modal-sheet finance-datepicker-sheet" role="dialog" aria-modal="true" aria-labelledby="financeDatePickerTitle">
+          <div class="modal-header">
+            <h2 id="financeDatePickerTitle">📅 <span data-i18n="finance_date_picker_title">Дата операции</span></h2>
+            <button type="button" class="modal-close-btn" id="financeDatePickerCloseBtn" aria-label="Закрыть">&times;</button>
+          </div>
+
+          <div class="finance-datepicker-content">
+            <div class="calendar-month-nav">
+              <button type="button" class="calendar-nav-btn" id="financeDatePrevMonth" title="Предыдущий месяц" aria-label="Предыдущий месяц">◀</button>
+              <span class="calendar-month-title" id="financeDateMonthTitle">Сентябрь 2026</span>
+              <button type="button" class="calendar-nav-btn" id="financeDateNextMonth" title="Следующий месяц" aria-label="Следующий месяц">▶</button>
+            </div>
+
+            <div class="calendar-weekdays">
+              <span>Пн</span>
+              <span>Вт</span>
+              <span>Ср</span>
+              <span>Чт</span>
+              <span>Пт</span>
+              <span>Сб</span>
+              <span>Вс</span>
+            </div>
+
+            <div class="calendar-days-grid" id="financeDatePickerDaysGrid">
+              <!-- Rendered via JS in notebook calendar style -->
+            </div>
+
+            <div class="finance-datepicker-actions">
+              <button type="button" class="btn-cancel" id="btnFinanceDateToday" data-i18n="finance_date_today_btn">Сегодня</button>
+              <button type="button" class="btn-submit" id="btnFinanceDateConfirm" data-i18n="finance_date_confirm_btn">Выбрать</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+
       <!-- Achievements Modal -->
       <div class="modal-backdrop" id="achievementsModalBackdrop" aria-hidden="true">
         <div class="modal-sheet modal-sheet-scrollable achievements-sheet">
@@ -1635,6 +2016,7 @@
             <button type="button" class="sticker-cat-btn" data-category="food" data-i18n="cat_food">🍔 Еда</button>
             <button type="button" class="sticker-cat-btn" data-category="sweets" data-i18n="cat_sweets">🍰 Сладости</button>
             <button type="button" class="sticker-cat-btn" data-category="reptiles" data-i18n="cat_reptiles">🐸 Рептилии</button>
+            <button type="button" class="sticker-cat-btn" data-category="sport" data-i18n="cat_sport">⚽ Спорт</button>
           </div>
 
           <!-- Stickers Grid -->
@@ -1678,12 +2060,13 @@
     </main>
   </div>
 
-  <script src="i18n.js?v=0.5.1"></script>
-  <script src="maine_quests_data.js?v=0.5.1"></script>
-  <script src="maine_quests.js?v=0.5.1"></script>
-  <script src="initial_habits.js?v=0.5.1"></script>
-  <script src="cycle_tracker.js?v=0.5.1"></script>
-  <script src="app.js?v=0.5.1"></script>
+  <script src="i18n.js?v=0.7.1"></script>
+  <script src="maine_quests_data.js?v=0.7.1"></script>
+  <script src="maine_quests.js?v=0.7.1"></script>
+  <script src="initial_habits.js?v=0.7.1"></script>
+  <script src="cycle_tracker.js?v=0.7.1"></script>
+  <script src="finance_tracker.js?v=0.7.1"></script>
+  <script src="app.js?v=0.7.1"></script>
   <script>
     if ('serviceWorker' in navigator) {
       if (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || window.Capacitor) {
@@ -1702,7 +2085,7 @@
           }
         });
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js?v=0.5.1').then(reg => {
+          navigator.serviceWorker.register('./sw.js?v=0.7.1').then(reg => {
             reg.update();
           }).catch(err => {
             console.log('SW registration skipped:', err);
