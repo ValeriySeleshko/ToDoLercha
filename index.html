@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bad+Script&family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700;800;900&family=Marck+Script&family=Neucha&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&family=Roboto+Slab:wght@400;600;700;900&display=auto" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=0.7.1">
+  <link rel="stylesheet" href="style.css?v=0.7.39">
   <script>
     (function() {
       try {
@@ -86,6 +86,12 @@
             <button class="widget-circle widget-cycle" id="widgetCycle" title="Женский календарь" aria-label="Женский календарь">
               <span class="widget-cycle-icon">🍒</span>
               <span class="widget-cycle-day" id="widgetCycleDay">--</span>
+            </button>
+
+            <!-- Joy Tracker Circle -->
+            <button class="widget-circle widget-joy" id="widgetJoy" title="Заметить радость" aria-label="Заметить радость" data-i18n-title="tooltip_joy">
+              <span class="widget-joy-icon">☀️</span>
+              <span class="widget-joy-badge" id="widgetJoyBadge"></span>
             </button>
           </div>
         </div>
@@ -207,6 +213,11 @@
           <!-- Rendered dynamically by JS -->
         </div>
 
+        <!-- Joy of the Day Paper Sticker Wrapper -->
+        <div class="notebook-joy-wrapper" id="notebookJoyWrapper" style="display: none;">
+          <!-- Rendered dynamically by renderJoyOnSheet() -->
+        </div>
+
         <!-- Notebook Content Tasks Layer -->
         <div class="notebook-content" id="notebookContent">
           <!-- Populated dynamically by JavaScript -->
@@ -234,6 +245,13 @@
       <div class="fab-stickers-wrapper">
         <button class="fab-stickers-btn" id="fabStickersBtn" title="Стикеры и декор" aria-label="Стикеры и декор">
           <span class="fab-stickers-icon">✨</span>
+        </button>
+      </div>
+
+      <!-- Floating Joy of the Day Button (Round, Bottom on line with +, Stickers and Cat) -->
+      <div class="fab-joy-wrapper" id="fabJoyWrapper" style="display: none;">
+        <button class="fab-joy-btn" id="fabJoyBtn" type="button" title="Заметить радость дня" aria-label="Заметить радость дня">
+          <span class="fab-joy-icon">☀️</span>
         </button>
       </div>
 
@@ -700,7 +718,7 @@
             <!-- Stepper Controls [-] [input] [+] -->
             <div class="habit-stepper-controls">
               <button type="button" class="habit-step-btn" id="habitStepMinusBtn" title="Уменьшить">−</button>
-              <input type="number" step="any" class="habit-step-input" id="habitStepInput" value="0">
+              <input type="number" step="any" class="habit-step-input" id="habitStepInput" placeholder="0" value="0">
               <button type="button" class="habit-step-btn" id="habitStepPlusBtn" title="Увеличить">+</button>
             </div>
 
@@ -1140,8 +1158,54 @@
                       <input type="number" id="financeInitialBalanceInput" step="any" placeholder="0" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border-color, #e2e8f0); background: var(--card-bg, #fff); color: var(--text-color, #1e293b); font-weight: 600;">
                     </div>
 
-                    <button type="button" class="btn-primary-block" id="btnOpenFinanceFromSettings" style="margin-top: 6px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-weight: 700; border: none; border-radius: 10px; padding: 10px 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; box-shadow: 0 3px 10px rgba(16, 185, 129, 0.25);">
+                    <button type="button" class="btn-primary-block" id="btnOpenFinanceFromSettings" style="margin-top: 8px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-weight: 700; border: none; border-radius: 10px; padding: 10px 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; box-shadow: 0 3px 10px rgba(16, 185, 129, 0.25);">
                       <span data-i18n="finance_open_btn">💰 Открыть окно финансов</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Модуль: Заметить радость -->
+                <div class="settings-module-card" id="moduleCardJoy">
+                  <div class="settings-module-header" id="moduleHeaderJoy">
+                    <div class="settings-module-info">
+                      <div class="settings-module-name">☀️ <span data-i18n="joy_settings_title">Заметить радость</span></div>
+                      <div class="settings-module-desc" data-i18n="joy_toggle_enable_desc">Вечерние теплые записи, архив добрых моментов и стикеры</div>
+                    </div>
+                    <div class="settings-module-controls">
+                      <label class="toggle-switch" title="Включить / выключить модуль">
+                        <input type="checkbox" id="toggleJoyTracker" checked>
+                        <span class="toggle-slider"></span>
+                      </label>
+                      <button type="button" class="btn-module-expand" id="btnExpandJoyModule" title="Развернуть" aria-label="Развернуть" aria-expanded="false">
+                        <svg class="module-expand-chevron" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Разворачивающийся блок поднастроек и функций -->
+                  <div class="settings-module-body" id="joySubSettings" style="display: none;">
+                    <div class="form-group" style="margin-bottom: 8px;">
+                      <div class="pattern-size-header">
+                        <label for="joyReminderTimeInput" data-i18n="joy_reminder_time_label">Время вечернего напоминания</label>
+                        <input type="time" id="joyReminderTimeInput" value="21:00" class="settings-time-input" style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border-color, #e2e8f0); background: var(--card-bg, #fff); color: var(--text-color, #1e293b); font-weight: 600;">
+                      </div>
+                    </div>
+
+                    <div class="setting-toggle-row">
+                      <div class="setting-toggle-info">
+                        <div class="setting-toggle-label" data-i18n="joy_toggle_sheet">Показывать стикер на листе дня</div>
+                        <div class="setting-toggle-desc" data-i18n="joy_toggle_sheet_desc">Крафтовый бумажный стикер с записью внизу списка задач</div>
+                      </div>
+                      <label class="toggle-switch">
+                        <input type="checkbox" id="toggleJoySheet" checked>
+                        <span class="toggle-slider"></span>
+                      </label>
+                    </div>
+
+                    <button type="button" class="btn-primary-block" id="btnOpenJoyJarFromSettings" style="margin-top: 6px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; font-weight: 700; border: none; border-radius: 10px; padding: 10px 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; box-shadow: 0 3px 10px rgba(245, 158, 11, 0.25);">
+                      <span data-i18n="joy_open_jar_btn">🫙 Открыть банку радости</span>
                     </button>
                   </div>
                 </div>
@@ -1195,7 +1259,7 @@
           </div>
 
           <div style="text-align: center; font-size: 11px; color: #94a3b8; margin-top: 12px; font-weight: 600; letter-spacing: 0.3px;" data-i18n="app_version_footer">
-            Plan4U • Версия 0.3.8
+            Plan4U • Версия 0.3.13
           </div>
           <div style="margin-top: 8px; text-align: center;">
             <button type="button" id="btnForceCacheReset" style="background: none; border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 8px; font-size: 11px; color: #64748b; padding: 5px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">🔄 Сбросить кэш и обновить</button>
@@ -1209,7 +1273,7 @@
 
       <!-- Calendar Modal -->
       <div class="modal-backdrop" id="calendarModalBackdrop" aria-hidden="true">
-        <div class="modal-sheet modal-sheet-scrollable">
+        <div class="modal-sheet modal-sheet-scrollable calendar-modal-sheet">
           <div class="modal-header">
             <h2>📅 Календарь блокнота</h2>
             <button class="modal-close-btn" id="calendarCloseBtn" aria-label="Закрыть">&times;</button>
@@ -1512,6 +1576,14 @@
           <div class="finance-tab-pane active" id="financePaneOverview">
             <!-- Donut Wheel Section with Category Callouts -->
             <div class="finance-donut-section">
+              <!-- Selected Category Badge (Top-Right Callout) -->
+              <div class="finance-selected-category-badge" id="financeSelectedCategoryBadge" aria-live="polite">
+                <div class="finance-selected-cat-icon-wrap" id="financeSelectedCatIconWrap">
+                  <img id="financeSelectedCatIcon" src="assets/finance_icons/fin_icon_0.png" alt="">
+                </div>
+                <span class="finance-selected-cat-name" id="financeSelectedCatName"></span>
+              </div>
+
               <div class="finance-donut-wrapper" id="financeDonutWrapper">
                 <!-- SVG Donut Chart injected here -->
                 <div class="finance-donut-center" id="financeDonutCenter">
@@ -1571,6 +1643,13 @@
               </button>
               <span class="finance-history-header-title" id="financeArchiveHistoryTitle">История за день</span>
             </div>
+            <!-- Category Filter Horizontal Strip (Icons Only) -->
+            <div class="finance-cat-filter-wrap" id="financeCatFilterWrap">
+              <div class="finance-cat-filter-scroll" id="financeCatFilterScroll" role="tablist" aria-label="Фильтр категорий">
+                <!-- Dynamically populated: All categories as icons only -->
+              </div>
+            </div>
+
             <div class="finance-history-list" id="financeHistoryList">
               <!-- Dynamically populated -->
             </div>
@@ -1620,8 +1699,10 @@
                 <span class="finance-entry-currency-badge" id="financeEntryCurrencyBadge">грн</span>
               </div>
               
-              <!-- Quick increment chips (+50, +100, +200, +500, +1000) -->
+              <!-- Quick increment chips (+10, +20, +50, +100, +200, +500, +1000) -->
               <div class="finance-quick-chips" id="financeQuickChips">
+                <button type="button" class="finance-chip-btn" data-add="10">+10</button>
+                <button type="button" class="finance-chip-btn" data-add="20">+20</button>
                 <button type="button" class="finance-chip-btn" data-add="50">+50</button>
                 <button type="button" class="finance-chip-btn" data-add="100">+100</button>
                 <button type="button" class="finance-chip-btn" data-add="200">+200</button>
@@ -1758,7 +1839,143 @@
         </div>
       </div>
 
+      <!-- Joy Tracker Modal (Вечернее окно радости) -->
+      <div class="modal-backdrop" id="joyModalBackdrop" aria-hidden="true">
+        <div class="modal-sheet modal-sheet-scrollable joy-modal-sheet" role="dialog" aria-modal="true" aria-labelledby="joyModalTitle">
+          <div class="modal-header">
+            <h2 id="joyModalTitle" data-i18n="joy_modal_title">За что я благодарен сегодня?</h2>
+            <div class="joy-modal-header-actions">
+              <button type="button" class="btn-joy-modal-jar" id="btnJoyModalOpenJar" title="Банка радости" aria-label="Банка радости">
+                <span class="btn-joy-modal-jar-icon">🫙</span>
+              </button>
+              <button type="button" class="modal-close-btn" id="joyModalCloseBtn" aria-label="Закрыть">&times;</button>
+            </div>
+          </div>
 
+          <div class="joy-modal-content">
+            <!-- Mood Selector -->
+            <div class="joy-form-group">
+              <label class="joy-section-label" data-i18n="joy_mood_title">Настроение дня</label>
+              <div class="joy-mood-selector" id="joyMoodSelector">
+                <button type="button" class="joy-mood-chip active" data-mood="m_great" title="Отлично">
+                  <span class="joy-mood-emoji">☀️</span>
+                  <span class="joy-mood-name" data-i18n="joy_mood_great">Отлично</span>
+                </button>
+                <button type="button" class="joy-mood-chip" data-mood="m_cozy" title="Уютно">
+                  <span class="joy-mood-emoji">🌸</span>
+                  <span class="joy-mood-name" data-i18n="joy_mood_cozy">Уютно</span>
+                </button>
+                <button type="button" class="joy-mood-chip" data-mood="m_calm" title="Спокойно">
+                  <span class="joy-mood-emoji">💫</span>
+                  <span class="joy-mood-name" data-i18n="joy_mood_calm">Спокойно</span>
+                </button>
+                <button type="button" class="joy-mood-chip" data-mood="m_ok" title="В норме">
+                  <span class="joy-mood-emoji">🌿</span>
+                  <span class="joy-mood-name" data-i18n="joy_mood_ok">В норме</span>
+                </button>
+                <button type="button" class="joy-mood-chip" data-mood="m_tired" title="Держусь">
+                  <span class="joy-mood-emoji">🌧️</span>
+                  <span class="joy-mood-name" data-i18n="joy_mood_tired">Держусь</span>
+                </button>
+                <button type="button" class="joy-mood-chip" data-mood="m_joy" title="Радостно">
+                  <span class="joy-mood-emoji">🎉</span>
+                  <span class="joy-mood-name" data-i18n="joy_mood_joy">Радостно</span>
+                </button>
+                <button type="button" class="joy-mood-chip" data-mood="m_inspired" title="Подъём">
+                  <span class="joy-mood-emoji">✨</span>
+                  <span class="joy-mood-name" data-i18n="joy_mood_inspired">Подъём</span>
+                </button>
+                <button type="button" class="joy-mood-chip" data-mood="m_grateful" title="Тепло">
+                  <span class="joy-mood-emoji">💖</span>
+                  <span class="joy-mood-name" data-i18n="joy_mood_grateful">Тепло</span>
+                </button>
+                <button type="button" class="joy-mood-chip" data-mood="m_dreamy" title="Мечты">
+                  <span class="joy-mood-emoji">🌙</span>
+                  <span class="joy-mood-name" data-i18n="joy_mood_dreamy">Мечты</span>
+                </button>
+                <button type="button" class="joy-mood-chip" data-mood="m_sad" title="Грустно">
+                  <span class="joy-mood-emoji">🍂</span>
+                  <span class="joy-mood-name" data-i18n="joy_mood_sad">Грустно</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Joy Textarea Container with craft paper style -->
+            <div class="joy-form-group">
+              <div class="joy-textarea-wrapper" id="joyTextareaWrapper">
+                <textarea id="joyTextInput" class="joy-text-input" rows="4" maxlength="100" placeholder="Напишите, что сегодня подняло настроение или согрело душу..." data-i18n-placeholder="joy_text_placeholder" autocomplete="off"></textarea>
+                <div class="joy-char-counter"><span id="joyCharCount">0</span>/100</div>
+              </div>
+            </div>
+
+            <!-- "Не знаю, что написать" button & prompt helper box -->
+            <div class="joy-helper-row">
+              <button type="button" class="btn-joy-prompt-help" id="btnJoyPromptHelp">
+                <span data-i18n="joy_help_prompt_btn">💡 Не знаю, что написать</span>
+              </button>
+            </div>
+            <div class="joy-prompt-box" id="joyPromptBox" style="display: none;">
+              <span class="joy-prompt-icon">✨</span>
+              <span class="joy-prompt-text" id="joyPromptText"></span>
+            </div>
+
+            <!-- Paper Sticker Selection / Preview -->
+            <div class="joy-sticker-choice-row">
+              <div class="joy-sticker-preview-thumb-wrap">
+                <img id="joyModalStickerThumb" class="joy-modal-sticker-thumb" src="./assets/stickers/paper/paper_01.png?v=8" alt="Стикер">
+                <span class="joy-sticker-label">Стикер дня</span>
+              </div>
+              <button type="button" class="btn-joy-change-sticker" id="btnJoyChangeSticker">
+                🎨 <span data-i18n="joy_change_sticker">Сменить стикер</span>
+              </button>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="joy-modal-actions">
+              <button type="button" class="btn-joy-remind-later" id="btnJoyRemindLater" data-i18n="joy_remind_later_btn">Напомнить позже</button>
+              <button type="button" class="btn-joy-save" id="btnJoySave">
+                <span data-i18n="joy_save_btn">Сохранить радость ✨</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Joy Jar Modal (Банка радости) -->
+      <div class="modal-backdrop" id="joyJarModalBackdrop" aria-hidden="true">
+        <div class="modal-sheet modal-sheet-scrollable joy-jar-sheet" role="dialog" aria-modal="true" aria-labelledby="joyJarModalTitle">
+          <div class="modal-header">
+            <div class="joy-jar-header-title">
+              <h2 id="joyJarModalTitle">🫙 <span data-i18n="joy_jar_title">Банка радости</span></h2>
+              <span class="joy-jar-badge" id="joyJarTotalBadge">0</span>
+            </div>
+            <button type="button" class="modal-close-btn" id="joyJarCloseBtn" aria-label="Закрыть">&times;</button>
+          </div>
+
+          <div class="joy-jar-content">
+            <!-- Desk container with sticker pile -->
+            <div class="joy-jar-desk" id="joyJarDesk">
+              <!-- Rendered dynamically by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Joy Sticker Picker Modal (Сетка из 25 стикеров) -->
+      <div class="modal-backdrop" id="joyStickerPickerBackdrop" aria-hidden="true">
+        <div class="modal-sheet modal-sheet-scrollable joy-sticker-picker-sheet" role="dialog" aria-modal="true" aria-labelledby="joyStickerPickerTitle">
+          <div class="modal-header">
+            <div>
+              <h2 id="joyStickerPickerTitle" data-i18n="joy_sticker_picker_title">Выберите бумажный стикер</h2>
+              <div class="joy-sticker-picker-desc" data-i18n="joy_sticker_picker_hint">25 авторских бумажных стикеров из блокнота</div>
+            </div>
+            <button type="button" class="modal-close-btn" id="joyStickerPickerCloseBtn" aria-label="Закрыть">&times;</button>
+          </div>
+          <div class="joy-sticker-picker-grid" id="joyStickerPickerGrid">
+            <!-- 25 paper sticker items rendered via JS -->
+          </div>
+        </div>
+      </div>
 
       <!-- Achievements Modal -->
       <div class="modal-backdrop" id="achievementsModalBackdrop" aria-hidden="true">
@@ -2060,13 +2277,14 @@
     </main>
   </div>
 
-  <script src="i18n.js?v=0.7.1"></script>
+  <script src="i18n.js?v=0.7.7"></script>
   <script src="maine_quests_data.js?v=0.7.1"></script>
   <script src="maine_quests.js?v=0.7.1"></script>
   <script src="initial_habits.js?v=0.7.1"></script>
   <script src="cycle_tracker.js?v=0.7.1"></script>
-  <script src="finance_tracker.js?v=0.7.1"></script>
-  <script src="app.js?v=0.7.1"></script>
+  <script src="finance_tracker.js?v=0.7.3"></script>
+  <script src="joy_tracker.js?v=0.8.15"></script>
+  <script src="app.js?v=0.7.41"></script>
   <script>
     if ('serviceWorker' in navigator) {
       if (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || window.Capacitor) {
@@ -2085,7 +2303,7 @@
           }
         });
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js?v=0.7.1').then(reg => {
+          navigator.serviceWorker.register('./sw.js?v=0.8.45').then(reg => {
             reg.update();
           }).catch(err => {
             console.log('SW registration skipped:', err);

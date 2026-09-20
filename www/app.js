@@ -1704,6 +1704,7 @@ class NotebookApp {
     this.watchArchiveCollapsed = false;
 
     this.settings = this.loadSettings();
+    this.financeHistoryCategoryFilter = null;
     this.tabs = this.loadTabs();
     this.currentTab = this.tabs.length > 0 ? this.tabs[0].id : 'todo';
     this.tasks = this.loadTasks();
@@ -1749,7 +1750,9 @@ class NotebookApp {
     this.updateCycleWidget();
     this.updateFinanceWidget();
     this.updateFinanceArchiveStamp();
+    this.updateJoyUI();
     this.updateModulesHubState();
+    this.checkEveningJoyTrigger();
     this.cleanLegacyLocalStorageKeys();
     this.syncFromNativeWidget().finally(() => {
       this.syncWithNativeWidget();
@@ -1819,8 +1822,7 @@ class NotebookApp {
         }
 
         if (savedTasks && typeof savedTasks === 'object') {
-          if (savedTasks.buy) this.tasks.buy = savedTasks.buy;
-          if (savedTasks.watch) this.tasks.watch = savedTasks.watch;
+          this.tasks = { ...this.tasks, ...savedTasks };
           hasRestored = true;
         }
 
@@ -1886,6 +1888,40 @@ class NotebookApp {
           this.updateWorkloadWidget();
           this.syncWithNativeWidget();
         }
+      }
+
+      // Always verify custom tab sections and restore from disk or autobackup if needed
+      try {
+        const [diskSections, autoBackup] = await Promise.all([
+          Plan4UStorage.loadFile('sections.json', null),
+          Plan4UStorage.loadFile('backups/plan4u_autobackup_latest.json', null)
+        ]);
+        let sectionsUpdated = false;
+        const backupSecs = autoBackup?.sections || autoBackup?.tabSections;
+
+        [diskSections, backupSecs].forEach(source => {
+          if (source && typeof source === 'object') {
+            Object.keys(source).forEach(tabId => {
+              if (!this.tabSections) this.tabSections = {};
+              if (!this.tabSections[tabId] || (this.tabSections[tabId].length <= 1 && source[tabId].length > 1)) {
+                this.tabSections[tabId] = source[tabId];
+                sectionsUpdated = true;
+              }
+            });
+          }
+        });
+
+        if (typeof this.recoverMissingTabSections === 'function') {
+          const recovered = this.recoverMissingTabSections();
+          if (recovered) sectionsUpdated = true;
+        }
+
+        if (sectionsUpdated) {
+          this.saveSections();
+          this.render();
+        }
+      } catch (secHydrateErr) {
+        console.warn('Storage sections hydration check:', secHydrateErr);
       }
     } catch (e) {
       console.warn('Storage hydration error:', e);
@@ -5966,33 +6002,10 @@ class NotebookApp {
   // Safe one-time cleanup of legacy keys from previous notebook versions
   cleanLegacyLocalStorageKeys() {
     try {
-      const legacyMigrationKey = 'plan4u_legacy_cleanup_done_v1';
-      if (localStorage.getItem(legacyMigrationKey)) return;
-
-      const legacyKeys = [
-        'todo_notebook_app_settings',
-        'todo_notebook_tasks',
-        'todo_notebook_daily_tasks',
-        'todo_notebook_tab_list',
-        'todo_notebook_tab_sections',
-        'todo_notebook_day_history',
-        'todo_notebook_achievements',
-        'todo_notebook_stickers',
-        'todo_notebook_pet_companion',
-        'todo_notebook_autocomplete_history',
-        'todo_notebook_flag_defer',
-        'todo_notebook_flag_backup'
-      ];
-
-      legacyKeys.forEach(k => {
-        try {
-          localStorage.removeItem(k);
-        } catch (e) {}
-      });
-
-      localStorage.setItem(legacyMigrationKey, 'true');
+      // Intentionally keep essential storage keys active as fallback and backwards compatibility!
+      localStorage.removeItem('plan4u_legacy_cleanup_done_v1');
     } catch (e) {
-      console.warn('Legacy storage cleanup error:', e);
+      console.warn('Legacy storage cleanup check:', e);
     }
   }
 
@@ -6200,6 +6213,52 @@ class NotebookApp {
     this.moduleCardFinance = document.getElementById('moduleCardFinance');
     this.moduleHeaderCycle = document.getElementById('moduleHeaderCycle');
     this.moduleHeaderFinance = document.getElementById('moduleHeaderFinance');
+    this.moduleCardJoy = document.getElementById('moduleCardJoy');
+    this.moduleHeaderJoy = document.getElementById('moduleHeaderJoy');
+    this.btnExpandJoyModule = document.getElementById('btnExpandJoyModule');
+
+    // Joy Tracker Elements & Instance
+    this.joyTracker = (typeof Plan4UJoyTracker !== 'undefined') ? new Plan4UJoyTracker() : (window.Plan4UJoyTracker ? new window.Plan4UJoyTracker() : null);
+    this.widgetJoy = document.getElementById('widgetJoy');
+    this.widgetJoyBadge = document.getElementById('widgetJoyBadge');
+    this.notebookJoyWrapper = document.getElementById('notebookJoyWrapper');
+    this.toggleJoyTracker = document.getElementById('toggleJoyTracker');
+    this.joySubSettings = document.getElementById('joySubSettings');
+    this.joyReminderTimeInput = document.getElementById('joyReminderTimeInput');
+    this.toggleJoySheet = document.getElementById('toggleJoySheet');
+    this.btnOpenJoyJarFromSettings = document.getElementById('btnOpenJoyJarFromSettings');
+
+    // Joy Modal Elements
+    this.joyModalBackdrop = document.getElementById('joyModalBackdrop');
+    this.joyModalCloseBtn = document.getElementById('joyModalCloseBtn');
+    this.joyModalTitle = document.getElementById('joyModalTitle');
+    this.joyMoodSelector = document.getElementById('joyMoodSelector');
+    this.joyTextInput = document.getElementById('joyTextInput');
+    this.joyCharCount = document.getElementById('joyCharCount');
+    this.btnJoyPromptHelp = document.getElementById('btnJoyPromptHelp');
+    this.joyPromptBox = document.getElementById('joyPromptBox');
+    this.joyPromptText = document.getElementById('joyPromptText');
+    this.joyModalStickerThumb = document.getElementById('joyModalStickerThumb');
+    this.btnJoyChangeSticker = document.getElementById('btnJoyChangeSticker');
+    this.btnJoyRemindLater = document.getElementById('btnJoyRemindLater');
+    this.btnJoySave = document.getElementById('btnJoySave');
+    this.btnJoyModalOpenJar = document.getElementById('btnJoyModalOpenJar');
+
+    // Joy Jar Modal Elements
+    this.joyJarModalBackdrop = document.getElementById('joyJarModalBackdrop');
+    this.joyJarCloseBtn = document.getElementById('joyJarCloseBtn');
+    this.joyJarTotalBadge = document.getElementById('joyJarTotalBadge');
+    this.joyJarDesk = document.getElementById('joyJarDesk');
+
+    // Joy Sticker Picker Elements
+    this.joyStickerPickerBackdrop = document.getElementById('joyStickerPickerBackdrop');
+    this.joyStickerPickerCloseBtn = document.getElementById('joyStickerPickerCloseBtn');
+    this.joyStickerPickerGrid = document.getElementById('joyStickerPickerGrid');
+
+    this.currentJoyEditingDate = null;
+    this.currentJoySelectedMood = 'm_great';
+    this.currentJoySelectedStickerId = 'paper_01';
+    this.joyPickerTargetDate = null;
 
     // Finance Tracker Elements & Instance
     this.financeTracker = (window.Plan4UFinanceTracker && window.Plan4UFinanceTracker.FinanceTracker) ? new window.Plan4UFinanceTracker.FinanceTracker() : null;
@@ -6220,6 +6279,10 @@ class NotebookApp {
     this.financeDonutCenterVal = document.getElementById('financeDonutCenterVal');
     this.financeDonutCenterSub = document.getElementById('financeDonutCenterSub');
     this.financeOverviewBreakdown = document.getElementById('financeOverviewBreakdown');
+    this.financeSelectedCategoryBadge = document.getElementById('financeSelectedCategoryBadge');
+    this.financeSelectedCatIconWrap = document.getElementById('financeSelectedCatIconWrap');
+    this.financeSelectedCatIcon = document.getElementById('financeSelectedCatIcon');
+    this.financeSelectedCatName = document.getElementById('financeSelectedCatName');
     this.financeBalanceTotal = document.getElementById('financeBalanceTotal');
     this.financeBalanceIncome = document.getElementById('financeBalanceIncome');
     this.financeBalanceExpense = document.getElementById('financeBalanceExpense');
@@ -6232,6 +6295,8 @@ class NotebookApp {
     this.financeArchiveHistoryTitle = document.getElementById('financeArchiveHistoryTitle');
     this.isFinanceArchiveMode = false;
     this.financeHistoryList = document.getElementById('financeHistoryList');
+    this.financeCatFilterWrap = document.getElementById('financeCatFilterWrap');
+    this.financeCatFilterScroll = document.getElementById('financeCatFilterScroll');
     this.financeCategoriesList = document.getElementById('financeCategoriesList');
     this.financeEntryModalBackdrop = document.getElementById('financeEntryModalBackdrop');
     this.financeEntryModalTitle = document.getElementById('financeEntryModalTitle');
@@ -7222,6 +7287,9 @@ class NotebookApp {
     // Initialize Finance Tracker Event Listeners
     this.initFinanceTrackerListeners();
 
+    // Initialize Joy Tracker Event Listeners
+    this.initJoyTrackerListeners();
+
     if (this.btnCycleStartToday) {
       this.btnCycleStartToday.addEventListener('click', () => {
         triggerHaptic([20, 40, 20]);
@@ -7654,7 +7722,8 @@ class NotebookApp {
 
     const commitInput = () => {
       if (!this.currentStepperHabitId || !this.currentStepperDate || !inputEl) return;
-      const rawVal = parseFloat(inputEl.value);
+      const str = (inputEl.value || '').trim();
+      const rawVal = str === '' ? 0 : parseFloat(str);
       const val = isNaN(rawVal) ? 0 : Math.max(0, rawVal);
       this.setHabitStepperValue(val);
     };
@@ -7695,12 +7764,30 @@ class NotebookApp {
       });
     }
 
+    // Auto-clear 0 on focus so user can type their number immediately without backspacing
+    inputEl?.addEventListener('focus', () => {
+      const currentValStr = (inputEl.value || '').trim();
+      if (currentValStr === '0' || currentValStr === '0.0' || currentValStr === '0.00' || parseFloat(currentValStr) === 0) {
+        inputEl.value = '';
+      } else {
+        try { inputEl.select(); } catch (_) {}
+      }
+    });
+
+    inputEl?.addEventListener('blur', () => {
+      if ((inputEl.value || '').trim() === '' || isNaN(parseFloat(inputEl.value))) {
+        const cur = getHabitCurrent();
+        inputEl.value = cur.toString();
+      }
+    });
+
     // Live preview while typing
     inputEl?.addEventListener('input', () => {
       if (!this.currentStepperHabitId) return;
       const habit = (this.habits || []).find(h => h.id === this.currentStepperHabitId);
       const tgt = Number(habit?.target?.value) || 1;
-      const rawVal = parseFloat(inputEl.value);
+      const str = (inputEl.value || '').trim();
+      const rawVal = str === '' ? 0 : parseFloat(str);
       const val = isNaN(rawVal) ? 0 : Math.max(0, rawVal);
 
       const curValEl = document.getElementById('habitStepperCurrentVal');
@@ -8376,7 +8463,9 @@ class NotebookApp {
 
   initSections() {
     try {
-      const stored = localStorage.getItem('todo_notebook_tab_sections');
+      const stored = localStorage.getItem('plan4u_tab_sections') || 
+                     localStorage.getItem('todo_notebook_tab_sections') ||
+                     localStorage.getItem('plan4u_sections.json');
       if (stored) {
         this.tabSections = JSON.parse(stored);
       }
@@ -8387,6 +8476,86 @@ class NotebookApp {
     if (!this.tabSections) {
       this.tabSections = JSON.parse(JSON.stringify(DEFAULT_SECTIONS));
     }
+
+    this.recoverMissingTabSections();
+  }
+
+  // Automatic recovery of custom tab sections from tasks or backups
+  recoverMissingTabSections() {
+    if (!this.tabSections || typeof this.tabSections !== 'object') {
+      this.tabSections = JSON.parse(JSON.stringify(DEFAULT_SECTIONS));
+    }
+
+    const tabs = this.tabs || [];
+    let modified = false;
+
+    tabs.forEach(tab => {
+      const tabId = tab.id;
+      if (DEFAULT_SECTIONS[tabId]) {
+        if (!this.tabSections[tabId] || this.tabSections[tabId].length === 0) {
+          this.tabSections[tabId] = JSON.parse(JSON.stringify(DEFAULT_SECTIONS[tabId]));
+          modified = true;
+        }
+        return;
+      }
+
+      const existingSections = this.tabSections[tabId] || [];
+      const tasksInTab = (this.tasks && this.tasks[tabId]) || [];
+
+      // Collect all unique section IDs referenced by tasks
+      const referencedSecIds = [];
+      tasksInTab.forEach(t => {
+        const sid = t.section || (typeof getTaskSection === 'function' ? getTaskSection(t) : null);
+        if (sid && !referencedSecIds.includes(sid)) {
+          referencedSecIds.push(sid);
+        }
+      });
+
+      const existingSecIdSet = new Set(existingSections.map(s => s.id));
+      const missingSecIds = referencedSecIds.filter(sid => !existingSecIdSet.has(sid));
+
+      if (missingSecIds.length > 0) {
+        const reconstructed = [...existingSections];
+        missingSecIds.forEach((sid) => {
+          let secName = '';
+          const taskWithSec = tasksInTab.find(t => (t.section || (typeof getTaskSection === 'function' ? getTaskSection(t) : null)) === sid);
+          if (taskWithSec && taskWithSec.sectionName) {
+            secName = taskWithSec.sectionName;
+          } else if (sid && !sid.startsWith('sec_') && sid !== 'main' && sid !== 'personal' && sid.length > 1) {
+            secName = sid;
+          } else {
+            secName = `Блок ${reconstructed.length + 1}`;
+          }
+
+          reconstructed.push({
+            id: sid,
+            name: secName,
+            icon: '📋'
+          });
+          existingSecIdSet.add(sid);
+        });
+
+        // Filter out unused dummy 'main' section if real sections were restored
+        const hasTasksInMain = tasksInTab.some(t => (t.section || (typeof getTaskSection === 'function' ? getTaskSection(t) : null)) === 'main');
+        this.tabSections[tabId] = reconstructed.filter(s => {
+          if (s.id === 'main' && !hasTasksInMain && reconstructed.length > 1) {
+            return false;
+          }
+          return true;
+        });
+        modified = true;
+      } else if (!this.tabSections[tabId] || this.tabSections[tabId].length === 0) {
+        this.tabSections[tabId] = [
+          { id: 'sec_' + Date.now().toString(36), name: 'Планы', icon: '📋' }
+        ];
+        modified = true;
+      }
+    });
+
+    if (modified) {
+      this.saveSections();
+    }
+    return modified;
   }
 
   getTabSections(tabId) {
@@ -8395,9 +8564,25 @@ class NotebookApp {
       if (DEFAULT_SECTIONS[tabId]) {
         this.tabSections[tabId] = JSON.parse(JSON.stringify(DEFAULT_SECTIONS[tabId]));
       } else {
-        this.tabSections[tabId] = [
-          { id: 'main', name: 'Основное', icon: '📋' }
-        ];
+        // Check if tasks in this tab reference any sections
+        const tasksInTab = (this.tasks && this.tasks[tabId]) || [];
+        const uniqueSecs = [];
+        tasksInTab.forEach(t => {
+          const sid = t.section || (typeof getTaskSection === 'function' ? getTaskSection(t) : null);
+          if (sid && !uniqueSecs.includes(sid)) uniqueSecs.push(sid);
+        });
+
+        if (uniqueSecs.length > 0) {
+          this.tabSections[tabId] = uniqueSecs.map((sid, idx) => ({
+            id: sid,
+            name: (sid && !sid.startsWith('sec_') && sid !== 'main' && sid !== 'personal' && sid.length > 1) ? sid : `Блок ${idx + 1}`,
+            icon: '📋'
+          }));
+        } else {
+          this.tabSections[tabId] = [
+            { id: 'sec_' + Date.now().toString(36), name: 'Планы', icon: '📋' }
+          ];
+        }
       }
       this.saveSections();
     }
@@ -8406,7 +8591,9 @@ class NotebookApp {
 
   saveSections() {
     try {
-      localStorage.setItem('todo_notebook_tab_sections', JSON.stringify(this.tabSections));
+      const json = JSON.stringify(this.tabSections);
+      localStorage.setItem('plan4u_tab_sections', json);
+      localStorage.setItem('todo_notebook_tab_sections', json);
       if (window.Plan4UStorage) {
         Plan4UStorage.saveFile('sections.json', this.tabSections);
       }
@@ -8965,6 +9152,7 @@ class NotebookApp {
     this._settingsModalOpenedAt = Date.now();
     this.settingsModalBackdrop.classList.add('open');
     this.settingsModalBackdrop.setAttribute('aria-hidden', 'false');
+    if (typeof this.updateJoyDemoBadges === 'function') this.updateJoyDemoBadges();
 
     [40, 100, 200].forEach(delay => {
       setTimeout(() => {
@@ -9875,7 +10063,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.3.8',
+      appVersion: '0.3.13',
       email: this.cloudEmail,
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
@@ -10151,7 +10339,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.3.8',
+      appVersion: '0.3.13',
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
       sections: this.tabSections || {},
@@ -10592,6 +10780,7 @@ class NotebookApp {
     this.updateCycleWidget();
     this.updateFinanceWidget();
     this.updateFinanceArchiveStamp();
+    this.updateJoyUI();
     this.renderTabs();
     this.syncWithNativeWidget?.();
   }
@@ -10775,6 +10964,11 @@ class NotebookApp {
         cell.appendChild(dot);
       }
 
+      // Joy gratitude note indicator
+      if (this.joyTracker && this.joyTracker.hasEntry(dateStr)) {
+        cell.classList.add('has-joy');
+      }
+
       // Habit status badge (top-left circle: checkmark if completed, empty ring if missed)
       const habitStatus = this.getHabitsDayStatus(dateStr);
       if (habitStatus.hasHabits) {
@@ -10867,19 +11061,31 @@ class NotebookApp {
         habitInfoText = ` • ${habitsWord}: ${selectedHabitStatus.completedCount}/${selectedHabitStatus.scheduledCount} ${habitDoneMark}`;
       }
 
+      const joyEntry = this.joyTracker ? this.joyTracker.getEntry(this.tempSelectedDate) : null;
+      let joyInfoText = '';
+      if (joyEntry && joyEntry.text) {
+        const joyMoods = this.joyTracker.getMoods();
+        const mObj = joyMoods.find(m => m.id === joyEntry.mood) || joyMoods[0];
+        const joyWord = lang === 'en' ? 'Joy note' : (lang === 'uk' ? 'Запис радості' : 'Запись радости');
+        joyInfoText = ` • ☀️ ${mObj.icon} ${joyWord}`;
+      }
+
       if (this.calendarInfoStats) {
         if (selectedDayTasks.length > 0) {
           const tasksWord = lang === 'en' ? 'Tasks' : (lang === 'uk' ? 'Завдань на день' : 'Задач на день');
           const doneWord = lang === 'en' ? 'Completed' : (lang === 'uk' ? 'Виконано' : 'Выполнено');
           const histWord = lang === 'en' ? 'In history' : (lang === 'uk' ? 'В історії' : 'В истории');
-          this.calendarInfoStats.textContent = `${tasksWord}: ${selectedDayTasks.length} • ${doneWord}: ${completedToday}${historyList.length > 0 ? ` • ${histWord}: ${historyList.length}` : ''}${habitInfoText}`;
+          this.calendarInfoStats.textContent = `${tasksWord}: ${selectedDayTasks.length} • ${doneWord}: ${completedToday}${historyList.length > 0 ? ` • ${histWord}: ${historyList.length}` : ''}${habitInfoText}${joyInfoText}`;
         } else if (historyList.length > 0) {
           const histText = lang === 'en' ? `In history for this day: ${historyList.length} completed tasks` : (lang === 'uk' ? `В історії цього дня: ${historyList.length} виконаних справ` : `В истории этого дня: ${historyList.length} выполненных дел`);
-          this.calendarInfoStats.textContent = `${histText}${habitInfoText}`;
+          this.calendarInfoStats.textContent = `${histText}${habitInfoText}${joyInfoText}`;
         } else if (habitInfoText) {
           const habitsWord = window.Plan4UI18n ? Plan4UI18n.t('habit_cal_info_label', {}, lang) : 'Привычки';
           const habitsOnlyText = `${habitsWord}: ${selectedHabitStatus.completedCount}/${selectedHabitStatus.scheduledCount} ${selectedHabitStatus.isCompleted ? '✓' : ''}`;
-          this.calendarInfoStats.textContent = habitsOnlyText;
+          this.calendarInfoStats.textContent = `${habitsOnlyText}${joyInfoText}`;
+        } else if (joyInfoText) {
+          const joyWord = lang === 'en' ? 'Joy note saved on paper sticker' : (lang === 'uk' ? 'Запис радості збережено на стікері' : 'Запись радости сохранена на стикере');
+          this.calendarInfoStats.textContent = `☀️ ${joyWord}!`;
         } else {
           const emptyText = isTempToday
             ? (lang === 'en' ? 'Click "Open this day" to plan tasks' : (lang === 'uk' ? 'Натисніть «Відкрити цей день», щоб планувати справи' : 'Нажмите «Открыть этот день», чтобы планировать задачи'))
@@ -11202,7 +11408,8 @@ class NotebookApp {
   hasActiveModules() {
     const cycleEnabled = !!(this.cycleTracker && typeof this.cycleTracker.isEnabled === 'function' && this.cycleTracker.isEnabled());
     const financeEnabled = !!(this.financeTracker && typeof this.financeTracker.isEnabled === 'function' && this.financeTracker.isEnabled());
-    return cycleEnabled || financeEnabled;
+    const joyEnabled = !!(this.joyTracker && typeof this.joyTracker.isEnabled === 'function' && this.joyTracker.isEnabled());
+    return cycleEnabled || financeEnabled || joyEnabled;
   }
 
   isModulesHubDisabled() {
@@ -11298,6 +11505,9 @@ class NotebookApp {
     // 2. Refresh cycle widget day
     this.updateCycleWidget?.();
 
+    // 2.5. Refresh joy widget
+    this.updateJoyWidget?.();
+
     // 3. Unclaimed achievements indicator on trigger button
     const hasUnclaimed = this.hasUnclaimedAchievements ? this.hasUnclaimedAchievements() : false;
     if (this.widgetModulesHubBadge) {
@@ -11320,6 +11530,9 @@ class NotebookApp {
     this.closeFinanceDatePicker?.();
     this.closeFinanceModal?.();
     this.closeCycleModal?.();
+    this.closeJoyModal?.();
+    this.closeJoyJarModal?.();
+    this.closeJoyStickerPicker?.();
     this.closeTaskModal();
     this.closeEditTabModal();
     this.closeNewTabModal();
@@ -12347,6 +12560,27 @@ class NotebookApp {
       `;
     } else {
       // 4) Любая новая вкладка
+      const tabSections = this.getTabSections(tabId);
+      let sectionBlockHtml = '';
+      if (tabSections && tabSections.length > 0) {
+        const sectionOptions = tabSections.map(s => {
+          const title = (s.key && this.t(s.key)) ? this.t(s.key) : `${s.icon ? s.icon + ' ' : ''}${s.name}`;
+          return `<option value="${s.id}">${this.escapeHtml(title)}</option>`;
+        }).join('');
+        sectionBlockHtml = `
+          <div class="form-section-card">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label for="taskSectionSelect">📁 ${this.settings.lang === 'en' ? 'Notebook section' : (this.settings.lang === 'uk' ? 'Розділ блокнота' : 'Раздел блокнота')}</label>
+              <div style="margin-top: 5px;">
+                <select id="taskSectionSelect" class="section-select-field">
+                  ${sectionOptions}
+                </select>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
       html = `
         <div class="form-section-card">
           <div class="form-group" style="margin-bottom: 0;">
@@ -12357,6 +12591,8 @@ class NotebookApp {
             </div>
           </div>
         </div>
+
+        ${sectionBlockHtml}
 
         ${renderPrioritySelector('спокойно')}
 
@@ -12658,13 +12894,13 @@ class NotebookApp {
         if (task.photo && typeof Plan4UStorage !== 'undefined') {
           Plan4UStorage.savePhoto(task.photo);
         }
+        const secSelect = (this.dynamicFormFields ? this.dynamicFormFields.querySelector('#taskSectionSelect') : null) || document.getElementById('taskSectionSelect');
+        if (secSelect && secSelect.value) {
+          task.section = secSelect.value;
+        }
         if (targetTab === 'todo') {
           const timeInput = (this.dynamicFormFields ? this.dynamicFormFields.querySelector('#taskTimeInput') : null) || document.getElementById('taskTimeInput');
           task.time = timeInput ? (timeInput.value.trim() || null) : null;
-          const secSelect = (this.dynamicFormFields ? this.dynamicFormFields.querySelector('#taskSectionSelect') : null) || document.getElementById('taskSectionSelect');
-          if (secSelect && secSelect.value) {
-            task.section = secSelect.value;
-          }
           if (task.time) {
             this.scheduleTaskNotification(task);
           }
@@ -12707,11 +12943,21 @@ class NotebookApp {
       Plan4UStorage.savePhoto(newTask.photo);
     }
 
+    const secSelect = (this.dynamicFormFields ? this.dynamicFormFields.querySelector('#taskSectionSelect') : null) || document.getElementById('taskSectionSelect');
+    if (secSelect && secSelect.value) {
+      newTask.section = secSelect.value;
+    } else if (this._activeSectionForNewTask) {
+      newTask.section = this._activeSectionForNewTask;
+    } else if (targetTab === 'todo') {
+      newTask.section = 'personal';
+    } else {
+      const curTabSecs = this.getTabSections(targetTab);
+      newTask.section = (curTabSecs && curTabSecs[0]) ? curTabSecs[0].id : 'main';
+    }
+
     if (targetTab === 'todo') {
       const timeInput = (this.dynamicFormFields ? this.dynamicFormFields.querySelector('#taskTimeInput') : null) || document.getElementById('taskTimeInput');
       newTask.time = timeInput ? (timeInput.value.trim() || null) : null;
-      const secSelect = (this.dynamicFormFields ? this.dynamicFormFields.querySelector('#taskSectionSelect') : null) || document.getElementById('taskSectionSelect');
-      newTask.section = (secSelect && secSelect.value) ? secSelect.value : (this._activeSectionForNewTask || 'personal');
       if (newTask.time) {
         this.scheduleTaskNotification(newTask);
       }
@@ -13343,6 +13589,9 @@ class NotebookApp {
       petAnchor.style.setProperty('display', isPastDay ? 'none' : 'flex', 'important');
     }
 
+    // 3.1 Manage Joy FAB button visibility (hidden on past archive days or if Joy is disabled)
+    this.updateJoyBottomFab?.();
+
     // 4. Manage Floating Return to Today & Day Navigation Bar (visible in past and future days)
     const returnWrapper = document.getElementById('pastDayReturnWrapper');
     if (returnWrapper) {
@@ -13626,6 +13875,9 @@ class NotebookApp {
 
     // Render notebook customizable stickers layer
     this.renderStickers();
+
+    // Render joy of the day paper note on sheet
+    this.renderJoyOnSheet?.();
 
     this.updateWorkloadWidget();
 
@@ -14933,6 +15185,7 @@ class NotebookApp {
     if (typeId?.startsWith('sweet_')) return { id: typeId, img: `./assets/stickers/sweets/${typeId}.webp` };
     if (typeId?.startsWith('reptile_')) return { id: typeId, img: `./assets/stickers/reptiles/${typeId}.webp` };
     if (typeId?.startsWith('sport_')) return { id: typeId, img: `./assets/stickers/sport/${typeId}.webp` };
+    if (typeId?.startsWith('paper_')) return { id: typeId, img: `./assets/stickers/paper/${typeId}.png` };
     return null;
   }
 
@@ -16628,17 +16881,35 @@ class NotebookApp {
 
     this.bindSafeBackdrop(this.financeDatePickerModalBackdrop, () => this.closeFinanceDatePicker(), () => this._financeDatePickerOpenedAt);
 
-    // Quick increment chips (+50, +100, +200, etc.)
+    // Quick increment chips (+10, +20, +50, +100, +200, etc.)
     if (this.financeQuickChips) {
       this.financeQuickChips.querySelectorAll('.finance-chip-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
+          if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
           triggerHaptic(15);
           const add = parseFloat(btn.dataset.add) || 0;
           const current = parseFloat((this.financeEntryAmountInput.value || '').replace(',', '.')) || 0;
           const sum = Math.round((current + add) * 100) / 100;
           this.financeEntryAmountInput.value = sum.toString();
-          this.financeEntryAmountInput.focus();
+          this.dismissActiveKeyboard();
+          if (document.activeElement && typeof document.activeElement.blur === 'function') {
+            document.activeElement.blur();
+          }
         });
+      });
+    }
+
+    if (this.financeEntryAmountInput) {
+      this.financeEntryAmountInput.addEventListener('focus', () => {
+        const valStr = (this.financeEntryAmountInput.value || '').trim();
+        if (valStr === '0' || valStr === '0.0' || parseFloat(valStr) === 0) {
+          this.financeEntryAmountInput.value = '';
+        } else {
+          try { this.financeEntryAmountInput.select(); } catch (_) {}
+        }
       });
     }
 
@@ -16993,6 +17264,7 @@ class NotebookApp {
     this.financeActivePeriod = 'month';
     this.financeActiveTab = 'overview';
     this.isFinanceArchiveMode = false;
+    this.financeActiveDonutCatId = null;
     this._clearFinanceDonutFocus?.();
   }
 
@@ -17078,7 +17350,7 @@ class NotebookApp {
 
       const svg = this.financeDonutWrapper.querySelector('.finance-donut-svg');
       if (svg) {
-        this.setupFinanceDonutInteractions(svg, cur);
+        this.setupFinanceDonutInteractions(svg, cur, stats);
       }
     }
 
@@ -17096,17 +17368,45 @@ class NotebookApp {
 
     if (this.financeActiveTab === 'history' && this.financeHistoryList) {
       this.financeHistoryList.innerHTML = '';
-      const txs = this.financeTracker.getTransactions({
+      let txs = this.financeTracker.getTransactions({
         period: this.isFinanceArchiveMode ? 'day' : this.financeActivePeriod,
         refDate: targetDate
       });
 
+      // Render category filter horizontal strip (icons only)
+      this.renderFinanceCategoryFilterBar();
+
+      // Apply category filter if active
+      if (this.financeHistoryCategoryFilter) {
+        txs = txs.filter(t => t && t.categoryId === this.financeHistoryCategoryFilter);
+      }
+
       if (txs.length === 0) {
-        this.financeHistoryList.innerHTML = `
-          <div style="text-align: center; color: #94a3b8; font-size: 13.5px; padding: 36px 16px; background: rgba(255,255,255,0.6); border: 1.5px dashed #e2e8f0; border-radius: 16px;">
-            ${this.t('finance_no_history') || 'Нет записей за этот период'}
-          </div>
-        `;
+        if (this.financeHistoryCategoryFilter) {
+          const filterCat = this.financeTracker.getCategory(this.financeHistoryCategoryFilter);
+          const filterCatName = filterCat ? this.getFinanceCategoryName(filterCat) : '';
+          this.financeHistoryList.innerHTML = `
+            <div class="finance-history-empty-filter">
+              <span style="font-size: 28px;">🔍</span>
+              <div class="empty-text">Нет операций в категории «${this.escapeHtml(filterCatName)}» за этот период</div>
+              <button type="button" class="btn-reset-cat-filter" id="btnResetFinanceCatFilter">Показать все операции</button>
+            </div>
+          `;
+          const resetBtn = this.financeHistoryList.querySelector('#btnResetFinanceCatFilter');
+          if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+              triggerHaptic(15);
+              this.financeHistoryCategoryFilter = null;
+              this.renderFinanceModalContent();
+            });
+          }
+        } else {
+          this.financeHistoryList.innerHTML = `
+            <div style="text-align: center; color: #94a3b8; font-size: 13.5px; padding: 36px 16px; background: rgba(255,255,255,0.6); border: 1.5px dashed #e2e8f0; border-radius: 16px;">
+              ${this.t('finance_no_history') || 'Нет записей за этот период'}
+            </div>
+          `;
+        }
       } else {
         txs.forEach(t => {
           const rawCat = this.financeTracker.getCategory(t.categoryId);
@@ -17249,6 +17549,12 @@ class NotebookApp {
         wrapper.className = 'finance-cat-row-wrapper';
         wrapper.dataset.catId = c.id;
         const localizedName = this.getFinanceCategoryName(c);
+        const isIncome = c.type === 'income';
+        const expAmt = stats.expenseBreakdown?.find(i => i.categoryId === c.id)?.amount || 0;
+        const incAmt = stats.incomeBreakdown?.find(i => i.categoryId === c.id)?.amount || 0;
+        const amount = isIncome ? (incAmt || expAmt) : (expAmt || incAmt);
+        const sign = amount > 0 ? (isIncome ? '+' : '-') : '';
+        const formattedAmount = `${sign}${this.financeTracker.formatMoney(amount)} ${cur}`;
 
         wrapper.innerHTML = `
           <!-- Left-side action buttons (revealed on right swipe) -->
@@ -17277,6 +17583,7 @@ class NotebookApp {
               <span class="finance-cat-item-name">${this.escapeHtml(localizedName)}</span>
             </div>
             <div class="finance-cat-item-right">
+              <span class="finance-cat-item-amount ${c.type}${amount > 0 ? ' has-val' : ' zero'}">${formattedAmount}</span>
               <span class="finance-cat-item-badge ${c.type}">${c.type === 'income' ? this.t('finance_btn_income') : this.t('finance_btn_expense')}</span>
             </div>
           </div>
@@ -17358,14 +17665,244 @@ class NotebookApp {
     }
   }
 
-  // Interactive donut categories: 2x badge scale, elevation above other badges, sector enlargement, focus blur reset
-  setupFinanceDonutInteractions(svg, cur) {
-    if (!svg) return;
+  // Smooth mouse, wheel, and touch scrolling for horizontal category filter strip
+  initFinanceCatFilterScroll() {
+    const slider = this.financeCatFilterScroll;
+    if (!slider || this._financeCatFilterScrollInitialized) return;
+    this._financeCatFilterScrollInitialized = true;
 
-    this.financeActiveDonutCatId = null;
+    let isDown = false;
+    let startX = 0;
+    let scrollStart = 0;
+    let hasMoved = false;
+
+    // Mouse drag-to-scroll
+    const onMouseDown = (e) => {
+      if (e.button !== 0) return;
+      isDown = true;
+      hasMoved = false;
+      this._financeCatFilterDragging = false;
+      startX = e.pageX;
+      scrollStart = slider.scrollLeft;
+      slider.style.scrollBehavior = 'auto';
+    };
+
+    slider.addEventListener('mousedown', onMouseDown);
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDown) return;
+      const dx = e.pageX - startX;
+      if (Math.abs(dx) > 4) {
+        hasMoved = true;
+        this._financeCatFilterDragging = true;
+        slider.classList.add('is-dragging');
+      }
+      if (hasMoved) {
+        slider.scrollLeft = scrollStart - dx;
+      }
+    });
+
+    const onMouseUp = () => {
+      if (isDown) {
+        isDown = false;
+        slider.style.scrollBehavior = '';
+        slider.classList.remove('is-dragging');
+        if (hasMoved) {
+          setTimeout(() => {
+            this._financeCatFilterDragging = false;
+          }, 80);
+        } else {
+          this._financeCatFilterDragging = false;
+        }
+      }
+    };
+
+    window.addEventListener('mouseup', onMouseUp);
+
+    // Touch gesture tracking (prevents accidental category click when swiping on touch screen)
+    slider.addEventListener('touchstart', (e) => {
+      if (!e.touches || e.touches.length === 0) return;
+      startX = e.touches[0].pageX;
+      hasMoved = false;
+      this._financeCatFilterDragging = false;
+    }, { passive: true });
+
+    slider.addEventListener('touchmove', (e) => {
+      if (!e.touches || e.touches.length === 0) return;
+      const dx = e.touches[0].pageX - startX;
+      if (Math.abs(dx) > 8) {
+        hasMoved = true;
+        this._financeCatFilterDragging = true;
+      }
+    }, { passive: true });
+
+    slider.addEventListener('touchend', () => {
+      if (hasMoved) {
+        setTimeout(() => {
+          this._financeCatFilterDragging = false;
+        }, 100);
+      } else {
+        this._financeCatFilterDragging = false;
+      }
+    }, { passive: true });
+
+    // Suppress category selection if user dragged/swiped the strip
+    slider.addEventListener('click', (e) => {
+      if (this._financeCatFilterDragging) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    }, true);
+
+    // Horizontal mouse wheel on desktop & trackpad
+    slider.addEventListener('wheel', (e) => {
+      const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      if (delta !== 0) {
+        slider.scrollLeft += delta;
+        e.preventDefault();
+      }
+    }, { passive: false });
+  }
+
+  // Render Horizontal Category Filter Strip in History tab (Icons Only)
+  renderFinanceCategoryFilterBar() {
+    if (!this.financeCatFilterScroll) return;
+    this.initFinanceCatFilterScroll();
+
+    const prevScrollLeft = this.financeCatFilterScroll.scrollLeft;
+    this.financeCatFilterScroll.innerHTML = '';
+
+    const categories = this.financeTracker.getCategories() || [];
+
+    // 1. "All" button
+    const allBtn = document.createElement('button');
+    allBtn.type = 'button';
+    allBtn.className = 'finance-cat-filter-btn filter-all' + (!this.financeHistoryCategoryFilter ? ' active' : '');
+    allBtn.dataset.catId = 'all';
+    allBtn.title = this.t('all') || 'Все';
+    allBtn.setAttribute('aria-label', this.t('all') || 'Все');
+    allBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+        <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+        <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
+        <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
+      </svg>
+    `;
+    allBtn.addEventListener('click', (e) => {
+      if (this._financeCatFilterDragging) return;
+      e.stopPropagation();
+      triggerHaptic(15);
+      if (this.financeHistoryCategoryFilter !== null) {
+        this.financeHistoryCategoryFilter = null;
+        this.renderFinanceModalContent();
+      }
+    });
+    this.financeCatFilterScroll.appendChild(allBtn);
+
+    // 2. Each category button (ONLY icon, no text)
+    categories.forEach(cat => {
+      const isSelected = this.financeHistoryCategoryFilter === cat.id;
+      const catBtn = document.createElement('button');
+      catBtn.type = 'button';
+      catBtn.className = 'finance-cat-filter-btn' + (isSelected ? ' active' : '');
+      catBtn.dataset.catId = String(cat.id);
+      const catName = this.getFinanceCategoryName(cat);
+      catBtn.title = catName;
+      catBtn.setAttribute('aria-label', catName);
+      catBtn.style.setProperty('--cat-border-color', cat.color);
+
+      catBtn.innerHTML = `
+        <img src="assets/finance_icons/fin_icon_${cat.iconIndex}.png" alt="${this.escapeHtml(catName)}">
+      `;
+
+      catBtn.addEventListener('click', (e) => {
+        if (this._financeCatFilterDragging) return;
+        e.stopPropagation();
+        triggerHaptic(15);
+        if (this.financeHistoryCategoryFilter === cat.id) {
+          // Toggle off
+          this.financeHistoryCategoryFilter = null;
+        } else {
+          this.financeHistoryCategoryFilter = cat.id;
+          this._shouldCenterCatFilterId = cat.id;
+        }
+        this.renderFinanceModalContent();
+      });
+
+      this.financeCatFilterScroll.appendChild(catBtn);
+    });
+
+    // Center active button smoothly if selected, or preserve scroll position
+    if (this._shouldCenterCatFilterId) {
+      const targetId = this._shouldCenterCatFilterId;
+      this._shouldCenterCatFilterId = null;
+      const targetBtn = this.financeCatFilterScroll.querySelector(`.finance-cat-filter-btn[data-cat-id="${targetId}"]`);
+      if (targetBtn) {
+        targetBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+    } else {
+      this.financeCatFilterScroll.scrollLeft = prevScrollLeft;
+    }
+  }
+
+  setupFinanceDonutInteractions(svg, cur, stats = null) {
+    if (!svg) return;
 
     const sectors = Array.from(svg.querySelectorAll('.finance-donut-sector'));
     const iconGroups = Array.from(svg.querySelectorAll('.finance-donut-icon-group'));
+    const defaultSub = (this.t('finance_expense_label') || 'расходы').toUpperCase();
+    const totalExpense = (stats && typeof stats.totalExpense === 'number')
+      ? stats.totalExpense
+      : sectors.reduce((sum, s) => sum + (parseFloat(s.dataset.amount) || 0), 0);
+
+    const updateCenter = (val, sub, color = null) => {
+      if (this.financeDonutCenterVal) {
+        this.financeDonutCenterVal.textContent = val;
+      }
+      if (this.financeDonutCenterSub) {
+        this.financeDonutCenterSub.textContent = sub;
+        this.financeDonutCenterSub.style.color = color || '';
+      }
+    };
+
+    const updateSelectedBadge = (catId) => {
+      if (!catId) {
+        if (this.financeSelectedCategoryBadge) {
+          this.financeSelectedCategoryBadge.classList.remove('visible');
+        }
+        updateCenter(this.financeTracker.formatMoney(totalExpense), defaultSub, '');
+        return;
+      }
+
+      const cat = this.financeTracker.getCategory(catId);
+      const targetEl = iconGroups.find(g => String(g.dataset.catId) === String(catId)) ||
+                       sectors.find(s => String(s.dataset.catId) === String(catId));
+
+      const catName = cat ? this.getFinanceCategoryName(cat) : (targetEl?.dataset?.name || '');
+      const catColor = cat ? cat.color : (targetEl?.getAttribute?.('stroke') || '#3b82f6');
+      const iconIdx = cat ? (cat.iconIndex ?? 0) : 0;
+      const amt = targetEl?.dataset?.amount;
+      const pct = targetEl?.dataset?.percent;
+
+      if (this.financeSelectedCatName) {
+        this.financeSelectedCatName.textContent = catName;
+      }
+      if (this.financeSelectedCatIcon) {
+        this.financeSelectedCatIcon.src = `assets/finance_icons/fin_icon_${iconIdx}.png`;
+        this.financeSelectedCatIcon.alt = catName;
+      }
+      if (this.financeSelectedCatIconWrap) {
+        this.financeSelectedCatIconWrap.style.borderColor = catColor;
+      }
+      if (this.financeSelectedCategoryBadge) {
+        this.financeSelectedCategoryBadge.classList.add('visible');
+      }
+
+      const statsItem = stats?.expenseBreakdown?.find(b => String(b.categoryId) === String(catId));
+      const catAmount = statsItem ? statsItem.amount : ((amt !== undefined && amt !== null) ? parseFloat(amt) : 0);
+      updateCenter(this.financeTracker.formatMoney(catAmount), (catName || defaultSub).toUpperCase(), catColor);
+    };
 
     const setHighlight = (catId, shouldElevate = false) => {
       const targetId = catId ? String(catId) : null;
@@ -17389,12 +17926,27 @@ class NotebookApp {
           grp.classList.remove('is-focused');
         }
       });
+
+      updateSelectedBadge(targetId);
     };
 
     const clearFocus = () => {
       this.financeActiveDonutCatId = null;
       setHighlight(null);
     };
+
+    // Restore existing selection if valid
+    if (this.financeActiveDonutCatId) {
+      const exists = sectors.some(s => String(s.dataset.catId) === String(this.financeActiveDonutCatId));
+      if (exists) {
+        setHighlight(this.financeActiveDonutCatId, true);
+      } else {
+        this.financeActiveDonutCatId = null;
+        setHighlight(null);
+      }
+    } else {
+      setHighlight(null);
+    }
 
     this._clearFinanceDonutFocus = clearFocus;
 
@@ -18369,13 +18921,31 @@ class NotebookApp {
       });
     }
 
-    // 49 Sticker icons grid from Money.jpg
+    // 98 Sticker icons grid (49 base icons + 49 new icons from Finance.jpg)
     if (this.financeIconPickerGrid) {
       this.financeIconPickerGrid.innerHTML = '';
-      for (let i = 0; i < 49; i++) {
+      const totalFinanceIcons = 98;
+      let selectedItemEl = null;
+      for (let i = 0; i < totalFinanceIcons; i++) {
         const item = document.createElement('div');
-        item.className = `finance-icon-pick-item ${i === this.financeNewCatIcon ? 'selected' : ''}`;
-        item.innerHTML = `<img src="assets/finance_icons/fin_icon_${i}.png" alt="Icon ${i}">`;
+        const isSelected = i === this.financeNewCatIcon;
+        item.className = `finance-icon-pick-item ${isSelected ? 'selected' : ''}`;
+        item.dataset.iconIdx = String(i);
+
+        const img = document.createElement('img');
+        img.src = `assets/finance_icons/fin_icon_${i}.png`;
+        img.alt = `Icon ${i}`;
+        img.onerror = function() {
+          if (!this.dataset.retried) {
+            this.dataset.retried = '1';
+            setTimeout(() => {
+              this.src = `assets/finance_icons/fin_icon_${i}.png?r=${Date.now()}`;
+            }, 350);
+          }
+        };
+        item.appendChild(img);
+
+        if (isSelected) selectedItemEl = item;
         item.addEventListener('click', () => {
           triggerHaptic(15);
           this.financeIconPickerGrid.querySelectorAll('.finance-icon-pick-item').forEach(it => it.classList.remove('selected'));
@@ -18383,6 +18953,11 @@ class NotebookApp {
           this.financeNewCatIcon = i;
         });
         this.financeIconPickerGrid.appendChild(item);
+      }
+      if (selectedItemEl) {
+        setTimeout(() => {
+          selectedItemEl.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        }, 50);
       }
     }
 
@@ -18436,6 +19011,1130 @@ class NotebookApp {
     this.closeFinanceCategoryModal();
     this.renderFinanceModalContent();
     this.updateFinanceWidget();
+  }
+
+  /* ============================================================================
+   * ☀️ JOY TRACKER (ЗАМЕТИТЬ РАДОСТЬ) METHODS
+   * ============================================================================ */
+
+  formatDateReadable(dateStr) {
+    if (!dateStr) return '';
+    try {
+      const parts = dateStr.split('-');
+      if (parts.length < 3) return dateStr;
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10);
+      const d = parseInt(parts[2], 10);
+      const dt = new Date(y, m - 1, d);
+      const lang = (this.currentLang || this.settings?.lang || 'ru') === 'en' ? 'en-US' : ((this.currentLang || this.settings?.lang) === 'uk' ? 'uk-UA' : 'ru-RU');
+      return dt.toLocaleDateString(lang, { day: 'numeric', month: 'long', year: 'numeric' });
+    } catch {
+      return dateStr;
+    }
+  }
+
+  confirmAction(msg, onConfirm) {
+    if (typeof this.showConfirmModal === 'function') {
+      this.showConfirmModal({
+        title: this.t('delete') || 'Удаление',
+        message: msg,
+        icon: '🗑️',
+        confirmText: this.t('delete') || 'Удалить',
+        onConfirm: () => {
+          this.closeConfirmModal();
+          if (typeof onConfirm === 'function') onConfirm();
+        }
+      });
+    } else if (window.confirm(msg)) {
+      onConfirm();
+    }
+  }
+
+  initJoyTrackerListeners() {
+    if (!this.joyTracker) return;
+
+    // Top Header Widget click
+    if (this.widgetJoy) {
+      this.widgetJoy.addEventListener('click', () => {
+        triggerHaptic(20);
+        this.closeModulesHubDropdown();
+        const todayStr = this.getTodayDateString();
+        const targetDate = this.selectedDate || todayStr;
+        const hasEntry = this.joyTracker.hasEntry(targetDate);
+        this.openJoyModal(targetDate, hasEntry);
+      });
+    }
+
+    // Bottom Joy FAB Button click
+    this.fabJoyBtn = document.getElementById('fabJoyBtn');
+    this.fabJoyWrapper = document.getElementById('fabJoyWrapper');
+    if (this.fabJoyBtn) {
+      this.fabJoyBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        triggerHaptic(20);
+        const todayStr = this.getTodayDateString();
+        this.openJoyModal(todayStr);
+      });
+    }
+
+    this.updateJoyBottomFab();
+
+    // Settings Toggle
+    if (this.toggleJoyTracker) {
+      this.toggleJoyTracker.checked = this.joyTracker.isEnabled();
+      this.toggleJoyTracker.addEventListener('change', (e) => {
+        const enabled = e.target.checked;
+        this.joyTracker.setEnabled(enabled);
+        this.updateModulesHubState();
+        this.updateJoyUI();
+        triggerHaptic(15);
+        this.showToast(enabled ? (this.t('joy_toggle_enable') || 'Модуль радости включен! ☀️') : (this.t('joy_settings_title') || 'Модуль радости отключен'), '☀️');
+      });
+    }
+
+    // Settings Expand
+    if (this.btnExpandJoyModule) {
+      this.btnExpandJoyModule.addEventListener('click', () => {
+        if (!this.joySubSettings) return;
+        const isExp = this.joySubSettings.style.display !== 'none';
+        this.joySubSettings.style.display = isExp ? 'none' : 'block';
+        this.btnExpandJoyModule.setAttribute('aria-expanded', isExp ? 'false' : 'true');
+        this.btnExpandJoyModule.classList.toggle('expanded', !isExp);
+        triggerHaptic(10);
+      });
+    }
+
+    // Settings Reminder Time
+    if (this.joyReminderTimeInput) {
+      this.joyReminderTimeInput.value = this.joyTracker.getSettings().reminderTime || '21:00';
+      this.joyReminderTimeInput.addEventListener('change', (e) => {
+        this.joyTracker.updateSettings({ reminderTime: e.target.value });
+      });
+    }
+
+    // Settings Show On Sheet
+    if (this.toggleJoySheet) {
+      this.toggleJoySheet.checked = this.joyTracker.getSettings().showOnSheet !== false;
+      this.toggleJoySheet.addEventListener('change', (e) => {
+        this.joyTracker.updateSettings({ showOnSheet: e.target.checked });
+        this.renderJoyOnSheet();
+      });
+    }
+
+    // Settings Open Joy Jar
+    if (this.btnOpenJoyJarFromSettings) {
+      this.btnOpenJoyJarFromSettings.addEventListener('click', () => {
+        this.closeSettingsModal();
+        this.openJoyJarModal();
+      });
+    }
+
+    // Joy Modal Close & Safe Backdrop
+    if (this.joyModalCloseBtn) {
+      this.joyModalCloseBtn.addEventListener('click', () => this.closeJoyModal());
+    }
+    this.bindSafeBackdrop(this.joyModalBackdrop, () => this.closeJoyModal(), () => this._joyModalOpenedAt);
+
+    // Joy Modal Open Jar button (🫙)
+    this.btnJoyModalOpenJar = document.getElementById('btnJoyModalOpenJar');
+    if (this.btnJoyModalOpenJar) {
+      this.btnJoyModalOpenJar.addEventListener('click', () => {
+        triggerHaptic(15);
+        this.closeJoyModal();
+        this.openJoyJarModal();
+      });
+    }
+
+    // Mood Selector in Modal
+    if (this.joyMoodSelector) {
+      this.joyMoodSelector.addEventListener('click', (e) => {
+        const chip = e.target.closest('.joy-mood-chip');
+        if (!chip) return;
+        triggerHaptic(15);
+        this.joyMoodSelector.querySelectorAll('.joy-mood-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        this.currentJoySelectedMood = chip.dataset.mood || 'm_great';
+      });
+    }
+
+    // Textarea character count & input
+    if (this.joyTextInput) {
+      this.joyTextInput.addEventListener('input', () => {
+        if (this.joyCharCount) {
+          this.joyCharCount.textContent = this.joyTextInput.value.length;
+        }
+      });
+    }
+
+    // Helper prompt button ("💡 Не знаю, что написать")
+    if (this.btnJoyPromptHelp) {
+      let lastPromptIdx = -1;
+      this.btnJoyPromptHelp.addEventListener('click', () => {
+        triggerHaptic(15);
+        const keys = this.joyTracker.getPromptKeys();
+        if (!keys.length) return;
+        let nextIdx;
+        if (keys.length > 1) {
+          do {
+            nextIdx = Math.floor(Math.random() * keys.length);
+          } while (nextIdx === lastPromptIdx);
+        } else {
+          nextIdx = 0;
+        }
+        lastPromptIdx = nextIdx;
+        const promptKey = keys[nextIdx];
+        if (this.joyPromptBox && this.joyPromptText) {
+          this.joyPromptBox.style.display = 'flex';
+          this.joyPromptText.textContent = this.t(promptKey) || 'Что хорошего сегодня произошло?';
+        }
+      });
+    }
+
+    // Sticker preview button ("🎨 Сменить стикер") in Modal
+    if (this.btnJoyChangeSticker) {
+      this.btnJoyChangeSticker.addEventListener('click', () => {
+        triggerHaptic(15);
+        this.openJoyStickerPicker(null);
+      });
+    }
+
+    // Remind later button
+    if (this.btnJoyRemindLater) {
+      this.btnJoyRemindLater.addEventListener('click', () => {
+        triggerHaptic(15);
+        const dateStr = this.currentJoyEditingDate || this.getTodayDateString();
+        this.joyTracker.dismissToday(dateStr);
+        this.closeJoyModal();
+      });
+    }
+
+    // Save Joy button
+    if (this.btnJoySave) {
+      this.btnJoySave.addEventListener('click', () => {
+        this.saveJoyModalEntry();
+      });
+    }
+
+    // Joy Jar Modal Listeners
+    if (this.joyJarCloseBtn) {
+      this.joyJarCloseBtn.addEventListener('click', () => this.closeJoyJarModal());
+    }
+    this.bindSafeBackdrop(this.joyJarModalBackdrop, () => this.closeJoyJarModal(), () => this._joyJarOpenedAt);
+
+
+    // Joy Jar Spotlight Close
+    if (this.joySpotlightClose) {
+      this.joySpotlightClose.addEventListener('click', () => {
+        if (this.joySpotlightBox) this.joySpotlightBox.style.display = 'none';
+      });
+    }
+
+    // Sticker Picker Close & Safe Backdrop
+    if (this.joyStickerPickerCloseBtn) {
+      this.joyStickerPickerCloseBtn.addEventListener('click', () => this.closeJoyStickerPicker());
+    }
+    this.bindSafeBackdrop(this.joyStickerPickerBackdrop, () => this.closeJoyStickerPicker(), () => this._joyStickerPickerOpenedAt);
+
+    // Sticker Picker Grid selection delegation
+    if (this.joyStickerPickerGrid) {
+      this.joyStickerPickerGrid.addEventListener('click', (e) => {
+        const item = e.target.closest('.joy-picker-sticker-item');
+        if (!item) return;
+        const stickerId = item.dataset.stickerId;
+        if (!stickerId) return;
+        triggerHaptic(20);
+
+        if (this.joyPickerTargetDate) {
+          // Changed directly from sheet (e.g. via long-press)
+          this.joyTracker.updateSticker(this.joyPickerTargetDate, stickerId);
+          this.renderJoyOnSheet();
+          this.showToast(this.t('joy_change_sticker') + ' ✓', '🎨');
+          this.closeJoyStickerPicker();
+        } else {
+          // Changed from modal form
+          this.currentJoySelectedStickerId = stickerId;
+          if (this.joyModalStickerThumb) {
+            this.joyModalStickerThumb.src = this.joyTracker.getStickerImagePath(stickerId);
+          }
+          this.closeJoyStickerPicker();
+        }
+      });
+    }
+
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => {
+        document.querySelectorAll('.notebook-joy-text').forEach(el => this.fitJoyStickerElement?.(el));
+      }).catch(() => {});
+    }
+    window.addEventListener('resize', () => {
+      document.querySelectorAll('.notebook-joy-text').forEach(el => this.fitJoyStickerElement?.(el));
+    }, { passive: true });
+  }
+
+  getAdaptiveJoyFontSize(text) {
+    if (!text) return 22;
+    const str = String(text).trim();
+    const len = str.length;
+    if (len === 0) return 22;
+
+    const lines = str.split(/\r?\n/);
+    const lineCount = lines.length;
+    const words = str.split(/\s+/);
+    let maxWordLen = 0;
+    for (const w of words) {
+      if (w.length > maxWordLen) maxWordLen = w.length;
+    }
+
+    let size = 25;
+    if (len <= 14) {
+      size = 25;
+    } else if (len <= 26) {
+      size = 21.5;
+    } else if (len <= 44) {
+      size = 17.5;
+    } else if (len <= 65) {
+      size = 15.5;
+    } else if (len <= 95) {
+      size = 13.5;
+    } else if (len <= 135) {
+      size = 12;
+    } else if (len <= 185) {
+      size = 10.5;
+    } else if (len <= 240) {
+      size = 9.5;
+    } else {
+      size = 8.5;
+    }
+
+    if (lineCount >= 6 && size > 11) size = 11;
+    else if (lineCount >= 5 && size > 13) size = 13;
+    else if (lineCount >= 4 && size > 15) size = 15;
+    else if (lineCount >= 3 && size > 17.5) size = 17.5;
+
+    if (maxWordLen >= 14 && size > 12) size = 12;
+    else if (maxWordLen >= 11 && size > 14.5) size = 14.5;
+    else if (maxWordLen >= 9 && size > 17) size = 17;
+
+    return Math.max(8.5, Math.min(26, size));
+  }
+
+  fitJoyStickerElement(el) {
+    if (!el) return;
+    if (el.clientHeight === 0 || el.clientWidth === 0) return;
+
+    let currentSize = parseFloat(window.getComputedStyle(el).fontSize);
+    if (!currentSize || isNaN(currentSize)) {
+      const styleVal = el.style.fontSize || el.style.getPropertyValue('--joy-font-size');
+      currentSize = parseFloat(styleVal) || 16;
+    }
+
+    const minSize = 8.5;
+    let attempts = 0;
+    while ((el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1) && currentSize > minSize && attempts < 25) {
+      currentSize -= 0.5;
+      el.style.setProperty('--joy-font-size', `${currentSize}px`);
+      el.style.fontSize = `${currentSize}px`;
+      attempts++;
+    }
+  }
+
+  updateJoyUI() {
+    this.updateJoyWidget();
+    this.renderJoyOnSheet();
+    this.updateJoyBottomFab();
+  }
+
+  updateJoyBottomFab() {
+    const isJoyEnabled = !!(this.joyTracker && this.joyTracker.isEnabled());
+    const appFrame = document.querySelector('.app-frame');
+    const todayStr = this.getTodayDateString();
+    const isPastDay = !!(this.selectedDate && this.selectedDate < todayStr);
+    const hasTodayEntry = !!(this.joyTracker && this.joyTracker.hasEntry(todayStr));
+    const showFab = isJoyEnabled && this.currentTab === 'todo' && !isPastDay && !hasTodayEntry;
+
+    if (!this.fabJoyWrapper) this.fabJoyWrapper = document.getElementById('fabJoyWrapper');
+    if (!this.fabJoyBtn) this.fabJoyBtn = document.getElementById('fabJoyBtn');
+
+    if (showFab) {
+      document.body.classList.add('has-joy-fab');
+      if (appFrame) appFrame.classList.add('has-joy-fab');
+      if (this.fabJoyWrapper) this.fabJoyWrapper.style.setProperty('display', 'flex', 'important');
+
+      if (this.fabJoyBtn) {
+        this.fabJoyBtn.classList.remove('has-joy-today');
+        this.fabJoyBtn.title = this.t('joy_empty_day_invite') || 'Заметить радость дня';
+        this.fabJoyBtn.setAttribute('aria-label', this.fabJoyBtn.title);
+      }
+    } else {
+      document.body.classList.remove('has-joy-fab');
+      if (appFrame) appFrame.classList.remove('has-joy-fab');
+      if (this.fabJoyWrapper) this.fabJoyWrapper.style.setProperty('display', 'none', 'important');
+    }
+  }
+
+  updateJoyWidget() {
+    if (!this.widgetJoy) return;
+    if (!this.joyTracker || !this.joyTracker.isEnabled()) {
+      this.widgetJoy.style.display = 'none';
+      return;
+    }
+    this.widgetJoy.style.display = 'flex';
+
+    const todayStr = this.getTodayDateString();
+    const hasToday = this.joyTracker.hasEntry(todayStr);
+
+    if (hasToday) {
+      this.widgetJoy.classList.remove('needs-entry');
+      this.widgetJoy.classList.add('has-entry');
+      this.widgetJoy.title = `${this.t('tooltip_joy') || 'Заметить радость'}: ✓`;
+    } else {
+      this.widgetJoy.classList.remove('has-entry');
+      this.widgetJoy.classList.add('needs-entry');
+      this.widgetJoy.title = this.t('tooltip_joy') || 'Заметить радость';
+    }
+  }
+
+  renderJoyOnSheet() {
+    if (!this.notebookJoyWrapper) return;
+    if (!this.joyTracker || !this.joyTracker.isEnabled() || this.joyTracker.getSettings().showOnSheet === false || this.currentTab !== 'todo') {
+      this.notebookJoyWrapper.style.display = 'none';
+      return;
+    }
+
+    const todayStr = this.getTodayDateString();
+    const targetDate = this.selectedDate || todayStr;
+    const entry = this.joyTracker.getEntry(targetDate);
+
+    if (entry && entry.text) {
+      this.notebookJoyWrapper.className = 'notebook-joy-wrapper is-placed-sticker';
+      this.notebookJoyWrapper.style.display = 'block';
+
+      const isPastDay = targetDate < todayStr;
+      const defaultX = isPastDay ? 80 : 74;
+      const defaultY = isPastDay ? 346 : 440;
+      const defaultRot = -2;
+
+      let curX = (typeof entry.x === 'number' && !isNaN(entry.x)) ? entry.x : defaultX;
+      let curY = (typeof entry.y === 'number' && !isNaN(entry.y)) ? entry.y : defaultY;
+      let curRot = (typeof entry.rotate === 'number' && !isNaN(entry.rotate)) ? entry.rotate : defaultRot;
+
+      const updateStickerTransform = () => {
+        this.notebookJoyWrapper.style.left = `${curX}%`;
+        this.notebookJoyWrapper.style.top = `${curY}px`;
+        this.notebookJoyWrapper.style.setProperty('--rot', `${curRot}deg`);
+        this.notebookJoyWrapper.style.transform = `translate(-50%, -50%) rotate(${curRot}deg)`;
+      };
+
+      updateStickerTransform();
+      const stickerImg = this.joyTracker.getStickerImagePath(entry.stickerId);
+      const fontSize = this.getAdaptiveJoyFontSize(entry.text);
+
+      this.notebookJoyWrapper.innerHTML = `
+        <div class="notebook-joy-rotate-handle" id="btnJoyRotateHandle" title="Повернуть стикер (нажмите для +15° или потяните)" role="button" tabindex="0" aria-label="Повернуть стикер">
+          <span>↻</span>
+        </div>
+        <div class="notebook-joy-card" id="notebookJoyCard" style="background-image: url('${stickerImg}');" role="button" tabindex="0" title="${isPastDay ? (this.t('joy_archive_readonly') || 'Записи в архиве доступны только для чтения 📖') : (this.t('tooltip_joy_sticker') || 'Заметить радость')}">
+          <div class="notebook-joy-text" style="--joy-font-size: ${fontSize}px; font-size: ${fontSize}px;">${this.escapeHtml(entry.text)}</div>
+        </div>
+      `;
+
+      const textEl = this.notebookJoyWrapper.querySelector('.notebook-joy-text');
+      if (textEl) {
+        this.fitJoyStickerElement(textEl);
+        requestAnimationFrame(() => this.fitJoyStickerElement(textEl));
+      }
+
+      const rotateHandle = document.getElementById('btnJoyRotateHandle');
+      if (rotateHandle) {
+        let isRotating = false;
+        let startAngle = 0;
+        let initialRot = curRot;
+        let startPointerX = 0, startPointerY = 0;
+        let hasMoved = false;
+
+        const onRotateMove = (clientX, clientY, e) => {
+          if (!isRotating) return;
+          if (e && e.cancelable) e.preventDefault();
+
+          if (!hasMoved) {
+            if (Math.hypot(clientX - startPointerX, clientY - startPointerY) > 4) {
+              hasMoved = true;
+            }
+          }
+
+          const rect = this.notebookJoyWrapper.getBoundingClientRect();
+          const centerX = rect.left + rect.width / 2;
+          const centerY = rect.top + rect.height / 2;
+          const currentAngle = Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI);
+          const deltaAngle = currentAngle - startAngle;
+          let deg = Math.round(initialRot + deltaAngle);
+          deg = ((deg % 360) + 360) % 360;
+          curRot = deg;
+          updateStickerTransform();
+        };
+
+        const onRotateEnd = () => {
+          if (!isRotating) return;
+          isRotating = false;
+          window.removeEventListener('pointermove', onPtrMove);
+          window.removeEventListener('pointerup', onPtrEnd);
+          window.removeEventListener('pointercancel', onPtrEnd);
+          window.removeEventListener('touchmove', onTchMove);
+          window.removeEventListener('touchend', onTchEnd);
+          window.removeEventListener('touchcancel', onTchEnd);
+
+          if (!hasMoved) {
+            // Short tap without dragging -> rotate by +15°
+            curRot = Math.round((curRot + 15) % 360);
+            updateStickerTransform();
+            triggerHaptic(20);
+          } else {
+            triggerHaptic(15);
+          }
+
+          this.joyTracker.updatePosition(targetDate, curX, curY, curRot);
+          clearTimeout(hideHandleTimer);
+          hideHandleTimer = setTimeout(() => {
+            this.notebookJoyWrapper?.classList.remove('has-moved');
+          }, 2500);
+        };
+
+        const onPtrMove = (e) => onRotateMove(e.clientX, e.clientY, e);
+        const onPtrEnd = () => onRotateEnd();
+        const onTchMove = (e) => {
+          if (e.touches && e.touches.length > 0) onRotateMove(e.touches[0].clientX, e.touches[0].clientY, e);
+        };
+        const onTchEnd = () => onRotateEnd();
+
+        const startRotation = (clientX, clientY, isTouch, e) => {
+          if (e) {
+            e.stopPropagation();
+            if (e.cancelable) e.preventDefault();
+          }
+          isRotating = true;
+          hasMoved = false;
+          startPointerX = clientX;
+          startPointerY = clientY;
+          initialRot = curRot;
+
+          const rect = this.notebookJoyWrapper.getBoundingClientRect();
+          const centerX = rect.left + rect.width / 2;
+          const centerY = rect.top + rect.height / 2;
+          startAngle = Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI);
+
+          if (isTouch) {
+            window.addEventListener('touchmove', onTchMove, { passive: false });
+            window.addEventListener('touchend', onTchEnd, { passive: true });
+            window.addEventListener('touchcancel', onTchEnd, { passive: true });
+          } else {
+            window.addEventListener('pointermove', onPtrMove, { passive: false });
+            window.addEventListener('pointerup', onPtrEnd);
+            window.addEventListener('pointercancel', onPtrEnd);
+          }
+        };
+
+        rotateHandle.addEventListener('pointerdown', (e) => {
+          if (e.pointerType === 'touch') return;
+          if (e.button !== undefined && e.button !== 0) return;
+          startRotation(e.clientX, e.clientY, false, e);
+        });
+
+        rotateHandle.addEventListener('touchstart', (e) => {
+          if (e.touches.length !== 1) return;
+          startRotation(e.touches[0].clientX, e.touches[0].clientY, true, e);
+        }, { passive: false });
+      }
+
+      const cardEl = document.getElementById('notebookJoyCard');
+      if (cardEl) {
+        let holdTimer = null;
+        let startX = 0, startY = 0;
+        let startStkX = curX, startStkY = curY;
+        let isHoldReady = false;
+        let isDragging = false;
+        let hasMoved = false;
+        let isTwoFingerRotating = false;
+        let startTouchAngle = 0;
+        let startStkRot = curRot;
+
+        const cleanupDrag = () => {
+          clearTimeout(holdTimer);
+          holdTimer = null;
+          isHoldReady = false;
+          isDragging = false;
+          isTwoFingerRotating = false;
+          this.notebookJoyWrapper.classList.remove('is-dragging');
+          window.removeEventListener('pointermove', onPointerMove);
+          window.removeEventListener('pointerup', onPointerEnd);
+          window.removeEventListener('pointercancel', onPointerEnd);
+          window.removeEventListener('touchmove', onTouchMove);
+          window.removeEventListener('touchend', onTouchEnd);
+          window.removeEventListener('touchcancel', onTouchEnd);
+        };
+
+        const onMove = (clientX, clientY, e) => {
+          const dx = clientX - startX;
+          const dy = clientY - startY;
+
+          if (Math.hypot(dx, dy) > 6) {
+            hasMoved = true;
+          }
+
+          // Before 200ms hold: if user scrolls the sheet, abort drag
+          if (!isHoldReady) {
+            if (Math.hypot(dx, dy) > 10) {
+              cleanupDrag();
+            }
+            return;
+          }
+
+          // Drag mode
+          if (isDragging) {
+            if (e && e.cancelable) e.preventDefault();
+            const sheet = document.getElementById('notebookSheet');
+            if (!sheet) return;
+            const rect = sheet.getBoundingClientRect();
+            const newX = Math.max(16, Math.min(84, startStkX + (dx / rect.width) * 100));
+            const newY = Math.max(70, Math.min(rect.height - 70, startStkY + dy));
+
+            curX = parseFloat(newX.toFixed(2));
+            curY = Math.round(newY);
+            updateStickerTransform();
+          }
+        };
+
+        const onEnd = (clientX, clientY, e) => {
+          const wasMoved = isDragging && hasMoved;
+          cleanupDrag();
+
+          if (wasMoved) {
+            this.joyTracker.updatePosition(targetDate, curX, curY, curRot);
+            triggerHaptic(15);
+            // Show rotate handle for 2.5s right after moving so user can rotate
+            this.notebookJoyWrapper.classList.add('has-moved');
+            clearTimeout(hideHandleTimer);
+            hideHandleTimer = setTimeout(() => {
+              this.notebookJoyWrapper?.classList.remove('has-moved');
+            }, 2500);
+          } else {
+            // Quick tap or hold without moving
+            triggerHaptic(15);
+            if (isPastDay) {
+              this.showToast(this.t('joy_archive_readonly') || 'Записи в архиве доступны только для чтения 📖', '📖');
+            } else {
+              this.openJoyModal(targetDate, true);
+            }
+          }
+        };
+
+        const onPointerMove = (e) => onMove(e.clientX, e.clientY, e);
+        const onPointerEnd = (e) => onEnd(e.clientX, e.clientY, e);
+
+        const onTouchMove = (e) => {
+          if (isTwoFingerRotating && e.touches.length >= 2) {
+            if (e.cancelable) e.preventDefault();
+            const t1 = e.touches[0];
+            const t2 = e.touches[1];
+            const currentAngle = Math.atan2(t2.clientY - t1.clientY, t2.clientX - t1.clientX) * (180 / Math.PI);
+            const deltaAngle = currentAngle - startTouchAngle;
+            let deg = Math.round(startStkRot + deltaAngle);
+            deg = ((deg % 360) + 360) % 360;
+            curRot = deg;
+            updateStickerTransform();
+            return;
+          }
+          if (e.touches && e.touches.length === 1) {
+            onMove(e.touches[0].clientX, e.touches[0].clientY, e);
+          }
+        };
+
+        const onTouchEnd = (e) => {
+          if (isTwoFingerRotating) {
+            if (e.touches.length < 2) {
+              isTwoFingerRotating = false;
+              this.joyTracker.updatePosition(targetDate, curX, curY, curRot);
+              triggerHaptic(15);
+            }
+            return;
+          }
+          const t = (e.changedTouches && e.changedTouches[0]) || (e.touches && e.touches[0]);
+          onEnd(t ? t.clientX : 0, t ? t.clientY : 0, e);
+        };
+
+        const startCardInteraction = (clientX, clientY, isTouch, e) => {
+          if (e && e.target && e.target.closest('#btnJoyRotateHandle, .notebook-joy-rotate-handle')) {
+            return;
+          }
+          cleanupDrag();
+
+          startX = clientX;
+          startY = clientY;
+          startStkX = curX;
+          startStkY = curY;
+          isHoldReady = false;
+          isDragging = false;
+          hasMoved = false;
+
+          // 200ms hold timer to pick up the sticker
+          holdTimer = setTimeout(() => {
+            isHoldReady = true;
+            isDragging = true;
+            this.notebookJoyWrapper.classList.add('is-dragging');
+            triggerHaptic([35, 45]);
+          }, 200);
+
+          if (isTouch) {
+            window.addEventListener('touchmove', onTouchMove, { passive: false });
+            window.addEventListener('touchend', onTouchEnd, { passive: true });
+            window.addEventListener('touchcancel', onTouchEnd, { passive: true });
+          } else {
+            window.addEventListener('pointermove', onPointerMove, { passive: false });
+            window.addEventListener('pointerup', onPointerEnd);
+            window.addEventListener('pointercancel', onPointerEnd);
+          }
+        };
+
+        cardEl.addEventListener('pointerdown', (e) => {
+          if (e.pointerType === 'touch') return;
+          if (e.button !== undefined && e.button !== 0) return;
+          startCardInteraction(e.clientX, e.clientY, false, e);
+        });
+
+        cardEl.addEventListener('touchstart', (e) => {
+          if (e.touches.length === 2) {
+            cleanupDrag();
+            isTwoFingerRotating = true;
+            const t1 = e.touches[0];
+            const t2 = e.touches[1];
+            startTouchAngle = Math.atan2(t2.clientY - t1.clientY, t2.clientX - t1.clientX) * (180 / Math.PI);
+            startStkRot = curRot;
+            triggerHaptic(20);
+            window.addEventListener('touchmove', onTouchMove, { passive: false });
+            window.addEventListener('touchend', onTouchEnd, { passive: true });
+            window.addEventListener('touchcancel', onTouchEnd, { passive: true });
+            return;
+          }
+          if (e.touches.length === 1) {
+            startCardInteraction(e.touches[0].clientX, e.touches[0].clientY, true, e);
+          }
+        }, { passive: false });
+
+        // Mouse wheel rotation on PC/desktop
+        cardEl.addEventListener('wheel', (e) => {
+          e.preventDefault();
+          const step = e.deltaY > 0 ? 5 : -5;
+          curRot = Math.round(((curRot + step) % 360 + 360) % 360);
+          updateStickerTransform();
+          this.joyTracker.updatePosition(targetDate, curX, curY, curRot);
+          triggerHaptic(10);
+        }, { passive: false });
+      }
+
+      const pageSheet = document.getElementById('notebookSheet');
+      if (pageSheet && !pageSheet._hasJoyDeselector) {
+        pageSheet._hasJoyDeselector = true;
+        const deselectJoy = (e) => {
+          if (e.target.closest('.notebook-joy-wrapper, .notebook-joy-card, .notebook-joy-rotate-handle, .modal-backdrop')) {
+            return;
+          }
+          const joyWrap = document.getElementById('notebookJoyWrapper');
+          if (joyWrap) {
+            joyWrap.classList.remove('has-moved');
+          }
+        };
+        pageSheet.addEventListener('click', deselectJoy);
+        pageSheet.addEventListener('touchend', deselectJoy);
+      }
+    } else {
+      // No entry for target date: keep notebook sheet completely clean (action is now in the bottom circle button)
+      this.notebookJoyWrapper.style.display = 'none';
+      this.notebookJoyWrapper.innerHTML = '';
+    }
+  }
+
+  openJoyModal(dateStr = null, isEdit = false) {
+    this.dismissActiveKeyboard();
+    if (!this.joyModalBackdrop) return;
+    this._joyModalOpenedAt = Date.now();
+
+    const todayStr = this.getTodayDateString();
+    const targetDate = dateStr || this.selectedDate || todayStr;
+
+    if (targetDate < todayStr) {
+      triggerHaptic(15);
+      this.showToast(this.t('joy_archive_readonly') || 'Записи в архиве доступны только для чтения 📖', '📖');
+      return;
+    }
+
+    this.currentJoyEditingDate = targetDate;
+
+    const existing = this.joyTracker ? this.joyTracker.getEntry(targetDate) : null;
+
+    const isActuallyEdit = !!(isEdit || (existing && existing.text));
+
+    if (this.joyModalTitle) {
+      this.joyModalTitle.textContent = isActuallyEdit
+        ? (this.t('joy_modal_edit_title') || 'За что я благодарен сегодня?')
+        : (this.t('joy_modal_title') || 'За что я благодарен сегодня?');
+    }
+
+    if (existing && existing.text) {
+      this.currentJoySelectedMood = existing.mood || 'm_great';
+      this.currentJoySelectedStickerId = existing.stickerId || this.joyTracker.getRandomStickerId();
+      if (this.joyTextInput) this.joyTextInput.value = existing.text || '';
+    } else {
+      this.currentJoySelectedMood = 'm_great';
+      this.currentJoySelectedStickerId = this.joyTracker.getRandomStickerId();
+      if (this.joyTextInput) this.joyTextInput.value = '';
+    }
+
+    if (this.joyCharCount && this.joyTextInput) {
+      this.joyCharCount.textContent = this.joyTextInput.value.length;
+    }
+
+    // Reset prompt box
+    if (this.joyPromptBox) this.joyPromptBox.style.display = 'none';
+
+    // Update mood chips active state
+    if (this.joyMoodSelector) {
+      this.joyMoodSelector.querySelectorAll('.joy-mood-chip').forEach(chip => {
+        chip.classList.toggle('active', chip.dataset.mood === this.currentJoySelectedMood);
+      });
+    }
+
+    // Update sticker thumbnail preview
+    if (this.joyModalStickerThumb) {
+      this.joyModalStickerThumb.src = this.joyTracker.getStickerImagePath(this.currentJoySelectedStickerId);
+    }
+
+    this.joyModalBackdrop.classList.add('open', 'active');
+    this.joyModalBackdrop.setAttribute('aria-hidden', 'false');
+
+    if (this.joyTextInput) {
+      this.joyTextInput.blur();
+    }
+    if (document.activeElement && typeof document.activeElement.blur === 'function') {
+      document.activeElement.blur();
+    }
+  }
+
+  closeJoyModal() {
+    if (!this.joyModalBackdrop) return;
+    this.joyModalBackdrop.classList.remove('open', 'active');
+    this.joyModalBackdrop.setAttribute('aria-hidden', 'true');
+    this.dismissActiveKeyboard();
+  }
+
+  saveJoyModalEntry() {
+    if (!this.joyTracker) return;
+    const text = (this.joyTextInput ? this.joyTextInput.value : '').trim().slice(0, 100);
+    if (!text) {
+      triggerHaptic([30, 40]);
+      this.showToast(this.t('inline_input_placeholder') || 'Пожалуйста, запишите что-то хорошее', '✏️');
+      if (this.joyTextInput) this.joyTextInput.focus();
+      return;
+    }
+
+    const todayStr = this.getTodayDateString();
+    const dateStr = this.currentJoyEditingDate || todayStr;
+    if (dateStr < todayStr) {
+      triggerHaptic(15);
+      this.showToast(this.t('joy_archive_readonly') || 'Записи в архиве доступны только для чтения 📖', '📖');
+      this.closeJoyModal();
+      return;
+    }
+
+    this.joyTracker.saveEntry(dateStr, {
+      text,
+      mood: this.currentJoySelectedMood,
+      stickerId: this.currentJoySelectedStickerId
+    });
+
+    // Companion Maine Coon Cat reaction & reward!
+    if (this.petSystem) {
+      this.petSystem.data.treats = (this.petSystem.data.treats || 0) + 1;
+      this.petSystem.data.happiness = Math.min(100, (this.petSystem.data.happiness || 50) + 12);
+      this.petSystem.data.xp = (this.petSystem.data.xp || 0) + 8;
+      this.petSystem.checkLevelUp?.();
+      this.petSystem.saveData(true);
+      this.petSystem.renderMiniCompanion();
+      this.petSystem.spawnFlyingTreat('🟤');
+      this.petSystem.playPurr();
+      const quote = this.t('joy_pet_speech_reward') || 'Мурр! Спасибо за радость дня! 🐾💖';
+      this.petSystem.showMiniSpeech(quote);
+    }
+
+    this.showToast(this.t('joy_saved_toast') || 'Радость сохранена! Мейни мурлычет 🐾', '☀️');
+    triggerHaptic([20, 50, 20]);
+    this.closeJoyModal();
+    this.updateJoyUI();
+  }
+
+  openJoyJarModal() {
+    this.dismissActiveKeyboard();
+    if (!this.joyJarModalBackdrop) return;
+    this._joyJarOpenedAt = Date.now();
+
+    if (typeof this.currentJoyJarIndex !== 'number') {
+      this.currentJoyJarIndex = 0;
+    }
+    this.currentJoyJarBackdropIndex = Math.floor(Math.random() * 5);
+
+    this.renderJoyJarContent();
+
+    this.joyJarModalBackdrop.classList.add('open', 'active');
+    this.joyJarModalBackdrop.setAttribute('aria-hidden', 'false');
+
+    requestAnimationFrame(() => {
+      this.joyJarDesk?.querySelectorAll('.notebook-joy-text').forEach(el => this.fitJoyStickerElement(el));
+    });
+  }
+
+  closeJoyJarModal() {
+    if (!this.joyJarModalBackdrop) return;
+    this.joyJarModalBackdrop.classList.remove('open', 'active');
+    this.joyJarModalBackdrop.setAttribute('aria-hidden', 'true');
+  }
+
+  renderJoyJarContent(animate = false) {
+    if (!this.joyTracker) return;
+    const all = this.joyTracker.getAllEntries();
+    const stats = this.joyTracker.getStats();
+
+    if (this.joyJarTotalBadge) {
+      this.joyJarTotalBadge.textContent = stats.totalCount;
+    }
+    if (typeof this.updateJoyDemoBadges === 'function') this.updateJoyDemoBadges();
+
+    if (!this.joyJarDesk) this.joyJarDesk = document.getElementById('joyJarDesk');
+    if (!this.joyJarDesk) return;
+
+    if (!all.length) {
+      this.joyJarDesk.innerHTML = `
+        <div class="joy-jar-empty-state">
+          <div class="joy-jar-empty-icon">🫙✨</div>
+          <div>${this.t('joy_no_entries') || 'В банке радости пока пусто. Запишите первый добрый момент!'}</div>
+        </div>
+      `;
+      return;
+    }
+
+    if (typeof this.currentJoyJarIndex !== 'number' || isNaN(this.currentJoyJarIndex)) {
+      this.currentJoyJarIndex = 0;
+    }
+    this.currentJoyJarIndex = Math.max(0, Math.min(this.currentJoyJarIndex, all.length - 1));
+
+    if (typeof this.currentJoyJarBackdropIndex !== 'number' || isNaN(this.currentJoyJarBackdropIndex)) {
+      this.currentJoyJarBackdropIndex = Math.floor(Math.random() * 5);
+    }
+    const backdropNum = String(this.currentJoyJarBackdropIndex).padStart(2, '0');
+    const backdropImg = `./assets/stickers/paper/back_sticker_${backdropNum}.png?v=5`;
+
+    const activeEntry = all[this.currentJoyJarIndex];
+    const moods = this.joyTracker.getMoods();
+    const moodObj = moods.find(m => m.id === activeEntry.mood) || moods[0];
+    const activeStickerImg = this.joyTracker.getStickerImagePath(activeEntry.stickerId);
+    const activeRot = (typeof activeEntry.rotate === 'number' && !isNaN(activeEntry.rotate)) ? activeEntry.rotate : -1.5;
+    const fontSize = this.getAdaptiveJoyFontSize(activeEntry.text);
+
+    const hasPrev = this.currentJoyJarIndex > 0;
+    const hasNext = this.currentJoyJarIndex < all.length - 1;
+
+    this.joyJarDesk.innerHTML = `
+      <div class="joy-jar-desk-wrapper">
+        <div class="joy-jar-top-meta">
+          <div class="joy-jar-date-badge">
+            <span class="joy-jar-mood-icon">${moodObj.icon}</span>
+            <span class="joy-jar-date-text">${this.formatDateReadable(activeEntry.date)}</span>
+          </div>
+          <span class="joy-jar-count-badge">${this.currentJoyJarIndex + 1} из ${all.length}</span>
+        </div>
+
+        <div class="joy-jar-desk-stage" id="joyJarDeskStage" title="Нажмите, чтобы перелистнуть на следующий стикер">
+          <div class="joy-jar-pile-backdrop" style="background-image: url('${backdropImg}');"></div>
+
+          <div class="notebook-joy-card joy-jar-active-sticker ${animate ? 'animate-shuffle' : ''}" id="joyJarActiveSticker" style="background-image: url('${activeStickerImg}'); --rot: ${activeRot}deg; transform: translate(-50%, -50%) rotate(${activeRot}deg);" role="img" aria-label="${this.escapeHtml(activeEntry.text)}">
+            <div class="notebook-joy-text" style="--joy-font-size: ${fontSize}px; font-size: ${fontSize}px;">${this.escapeHtml(activeEntry.text)}</div>
+          </div>
+        </div>
+
+        <div class="joy-jar-nav-bar">
+          <button type="button" class="joy-jar-nav-btn" id="btnJoyJarPrev" title="Предыдущий стикер" aria-label="Предыдущий стикер" ${!hasPrev ? 'disabled' : ''}>‹</button>
+          <button type="button" class="joy-jar-shuffle-btn" id="btnJoyJarShuffle" title="Случайный стикер из стопки">
+            <span>🎲</span>
+            <span>Случайный</span>
+          </button>
+          <button type="button" class="joy-jar-nav-btn" id="btnJoyJarNext" title="Следующий стикер" aria-label="Следующий стикер" ${!hasNext ? 'disabled' : ''}>›</button>
+        </div>
+      </div>
+    `;
+
+    const textEl = this.joyJarDesk.querySelector('#joyJarActiveSticker .notebook-joy-text');
+    if (textEl) {
+      this.fitJoyStickerElement(textEl);
+      requestAnimationFrame(() => this.fitJoyStickerElement(textEl));
+    }
+
+    const pickRandomBackdrop = () => {
+      this.currentJoyJarBackdropIndex = (this.currentJoyJarBackdropIndex + 1 + Math.floor(Math.random() * 4)) % 5;
+    };
+
+    // Prev / Next / Shuffle events
+    const btnPrev = this.joyJarDesk.querySelector('#btnJoyJarPrev');
+    const btnNext = this.joyJarDesk.querySelector('#btnJoyJarNext');
+    const btnShuffle = this.joyJarDesk.querySelector('#btnJoyJarShuffle');
+    const activeStickerEl = this.joyJarDesk.querySelector('#joyJarActiveSticker');
+    const deskStage = this.joyJarDesk.querySelector('#joyJarDeskStage');
+
+    if (btnPrev) {
+      btnPrev.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.currentJoyJarIndex > 0) {
+          triggerHaptic(15);
+          this.currentJoyJarIndex--;
+          pickRandomBackdrop();
+          this.renderJoyJarContent(true);
+        }
+      });
+    }
+
+    if (btnNext) {
+      btnNext.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.currentJoyJarIndex < all.length - 1) {
+          triggerHaptic(15);
+          this.currentJoyJarIndex++;
+          pickRandomBackdrop();
+          this.renderJoyJarContent(true);
+        }
+      });
+    }
+
+    if (btnShuffle) {
+      btnShuffle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        triggerHaptic([20, 30]);
+        let randIdx = Math.floor(Math.random() * all.length);
+        if (all.length > 1 && randIdx === this.currentJoyJarIndex) {
+          randIdx = (randIdx + 1) % all.length;
+        }
+        this.currentJoyJarIndex = randIdx;
+        pickRandomBackdrop();
+        this.renderJoyJarContent(true);
+      });
+    }
+
+    // Tap on active sticker -> cycle to next
+    if (activeStickerEl) {
+      activeStickerEl.addEventListener('click', () => {
+        triggerHaptic(15);
+        if (all.length > 1) {
+          this.currentJoyJarIndex = (this.currentJoyJarIndex + 1) % all.length;
+          pickRandomBackdrop();
+          this.renderJoyJarContent(true);
+        }
+      });
+    }
+
+    // Touch swipe on stage (left -> next, right -> prev)
+    if (deskStage) {
+      let touchStartX = 0;
+      deskStage.addEventListener('touchstart', (e) => {
+        if (e.touches && e.touches.length === 1) {
+          touchStartX = e.touches[0].clientX;
+        }
+      }, { passive: true });
+
+      deskStage.addEventListener('touchend', (e) => {
+        const touchEndX = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0].clientX : touchStartX;
+        const diffX = touchEndX - touchStartX;
+        if (Math.abs(diffX) > 40) {
+          if (diffX < 0 && this.currentJoyJarIndex < all.length - 1) {
+            triggerHaptic(15);
+            this.currentJoyJarIndex++;
+            pickRandomBackdrop();
+            this.renderJoyJarContent(true);
+          } else if (diffX > 0 && this.currentJoyJarIndex > 0) {
+            triggerHaptic(15);
+            this.currentJoyJarIndex--;
+            pickRandomBackdrop();
+            this.renderJoyJarContent(true);
+          }
+        }
+      }, { passive: true });
+    }
+
+  }
+
+  triggerJoySadMagic() {
+    if (!this.joyTracker) return;
+    const all = this.joyTracker.getAllEntries();
+    if (!all.length) {
+      this.showToast(this.t('joy_no_entries') || 'В банке пока нет записей. Добавьте первый момент!', '☀️');
+      return;
+    }
+
+    triggerHaptic([30, 40, 50]);
+    if (this.petSystem) {
+      this.petSystem.playPurr();
+      this.petSystem.showMiniSpeech('Мурр! Помнишь этот прекрасный день? 🐾💖');
+    }
+
+    let newIdx = Math.floor(Math.random() * all.length);
+    if (all.length > 1 && newIdx === this.currentJoyJarIndex) {
+      newIdx = (newIdx + 1) % all.length;
+    }
+    this.currentJoyJarIndex = newIdx;
+    this.currentJoyJarBackdropIndex = (this.currentJoyJarBackdropIndex + 1 + Math.floor(Math.random() * 4)) % 5;
+    this.renderJoyJarContent(true);
+
+    this.showToast('Теплое воспоминание из стопки! 💫', '✨');
+  }
+
+  openJoyStickerPicker(targetDate = null) {
+    this.dismissActiveKeyboard();
+    if (!this.joyStickerPickerBackdrop || !this.joyTracker) return;
+    this._joyStickerPickerOpenedAt = Date.now();
+    this.joyPickerTargetDate = targetDate;
+
+    const currentStickerId = targetDate
+      ? (this.joyTracker.getEntry(targetDate)?.stickerId || 'paper_01')
+      : this.currentJoySelectedStickerId;
+
+    if (this.joyStickerPickerGrid) {
+      this.joyStickerPickerGrid.innerHTML = this.joyTracker.getAllStickerIds().map(sid => {
+        const isActive = sid === currentStickerId;
+        return `
+          <div class="joy-picker-sticker-item ${isActive ? 'active' : ''}" data-sticker-id="${sid}">
+            <picture>
+              <source srcset="./assets/stickers/paper/${sid}.webp?v=8" type="image/webp">
+              <img src="./assets/stickers/paper/${sid}.png?v=8" alt="${sid}" loading="lazy" draggable="false" onerror="if(!this.dataset.retried){this.dataset.retried='1';this.src='assets/stickers/paper/${sid}.png?v=8';}">
+            </picture>
+          </div>
+        `;
+      }).join('');
+    }
+
+    this.joyStickerPickerBackdrop.classList.add('open', 'active');
+    this.joyStickerPickerBackdrop.setAttribute('aria-hidden', 'false');
+  }
+
+  closeJoyStickerPicker() {
+    if (!this.joyStickerPickerBackdrop) return;
+    this.joyStickerPickerBackdrop.classList.remove('open', 'active');
+    this.joyStickerPickerBackdrop.setAttribute('aria-hidden', 'true');
+    this.joyPickerTargetDate = null;
+  }
+
+  checkEveningJoyTrigger() {
+    if (!this.joyTracker) return;
+    const todayStr = this.getTodayDateString();
+    if (this.joyTracker.shouldTriggerEveningPrompt(todayStr)) {
+      setTimeout(() => {
+        if (document.querySelector('.modal-backdrop.open, .modal-backdrop.active')) return;
+        this.openJoyModal(todayStr);
+      }, 1600);
+    }
   }
 }
 

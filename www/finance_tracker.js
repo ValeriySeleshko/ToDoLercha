@@ -97,10 +97,13 @@
           const raw = localStorage.getItem(STORAGE_KEY);
           if (raw) {
             const parsed = JSON.parse(raw);
+            const txs = (Array.isArray(parsed.transactions) ? parsed.transactions : [])
+              .filter(t => t && t.isSimulated !== true);
+            try { localStorage.removeItem('plan4u_finance_sim_seeded'); } catch (_) {}
             return {
               settings: { ...DEFAULT_SETTINGS, ...(parsed.settings || {}) },
               categories: Array.isArray(parsed.categories) && parsed.categories.length > 0 ? parsed.categories : [...DEFAULT_CATEGORIES],
-              transactions: Array.isArray(parsed.transactions) ? parsed.transactions : []
+              transactions: txs
             };
           }
         }
@@ -169,7 +172,7 @@
         name: (name || '').trim(),
         type: type === 'income' ? 'income' : 'expense',
         color: color || '#3b82f6',
-        iconIndex: typeof iconIndex === 'number' ? Math.max(0, Math.min(48, iconIndex)) : 0
+        iconIndex: typeof iconIndex === 'number' ? Math.max(0, Math.min(97, iconIndex)) : 0
       };
       this.data.categories.push(cat);
       this.saveData();
@@ -179,6 +182,9 @@
     updateCategory(id, updates) {
       const idx = this.data.categories.findIndex(c => c.id === id);
       if (idx === -1) return null;
+      if (updates && typeof updates.iconIndex === 'number') {
+        updates.iconIndex = Math.max(0, Math.min(97, updates.iconIndex));
+      }
       this.data.categories[idx] = {
         ...this.data.categories[idx],
         ...updates
@@ -621,7 +627,6 @@
         </div>
       `;
     }
-
 
     // Экспорт / импорт данных
     exportData() {
