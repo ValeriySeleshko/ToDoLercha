@@ -4488,6 +4488,174 @@ body.keyboard-open .modal-sheet,
 }
 
 /* ==========================================================================
+   Interactive In-App Floating Notification Banner (Heads-Up Alert Inside App)
+   ========================================================================== */
+.in-app-notif-banner {
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top, 14px));
+  left: 14px;
+  right: 14px;
+  max-width: 440px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1.5px solid rgba(216, 58, 136, 0.35);
+  border-radius: 20px;
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.18), 0 3px 10px rgba(216, 58, 136, 0.15);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 100000;
+  transform: translateY(-160%) scale(0.95);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease, box-shadow 0.28s ease;
+  user-select: none;
+  box-sizing: border-box;
+  touch-action: pan-y;
+  cursor: pointer;
+}
+
+.in-app-notif-banner.show {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.in-app-notif-icon-box {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, rgba(216, 58, 136, 0.16), rgba(216, 58, 136, 0.06));
+  border: 1px solid rgba(216, 58, 136, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.in-app-notif-body-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.in-app-notif-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.in-app-notif-app-name {
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--primary-magenta, #d83a88);
+}
+
+.in-app-notif-time {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.in-app-notif-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.in-app-notif-desc {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.in-app-notif-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btn-in-app-notif-action {
+  background: var(--primary-magenta, #d83a88);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 7px 13px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+  box-shadow: 0 2px 8px rgba(216, 58, 136, 0.3);
+  white-space: nowrap;
+}
+
+.btn-in-app-notif-action:active {
+  transform: scale(0.95);
+}
+
+.btn-in-app-notif-close {
+  background: rgba(0, 0, 0, 0.06);
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-in-app-notif-close:active {
+  transform: scale(0.92);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+/* Dark Theme */
+.app-frame.theme-dark .in-app-notif-banner {
+  background: rgba(26, 28, 36, 0.95);
+  border-color: rgba(216, 58, 136, 0.45);
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.6), 0 3px 12px rgba(216, 58, 136, 0.25);
+}
+
+.app-frame.theme-dark .in-app-notif-title {
+  color: #f1f5f9;
+}
+
+.app-frame.theme-dark .in-app-notif-desc {
+  color: #94a3b8;
+}
+
+.app-frame.theme-dark .btn-in-app-notif-close {
+  background: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+
+/* ==========================================================================
    FLOATING ACTION BUTTON (FAB)
    ========================================================================== */
 .fab-wrapper {
@@ -12668,8 +12836,19 @@ body.is-dragging-sticker .section-header-row {
   overflow-y: auto !important;
   scrollbar-width: thin;
   touch-action: pan-x pan-y !important;
-  display: flex !important;
   flex-direction: column !important;
+}
+
+.finance-sheet #financePaneOverview:not(.active),
+.finance-sheet #financePaneHistory:not(.active),
+.finance-sheet #financePaneCategories:not(.active) {
+  display: none !important;
+}
+
+.finance-sheet #financePaneOverview.active,
+.finance-sheet #financePaneHistory.active,
+.finance-sheet #financePaneCategories.active {
+  display: flex !important;
 }
 
 /* Category Filter Horizontal Scroll Strip (Icons Only) */

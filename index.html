@@ -41,6 +41,23 @@
       <!-- Toast notification -->
       <div class="app-toast" id="appToast" aria-live="polite"></div>
 
+      <!-- Interactive In-App Notification Banner (Heads-Up Alert Inside App) -->
+      <div class="in-app-notif-banner" id="inAppNotifBanner" role="alert" aria-live="assertive">
+        <div class="in-app-notif-icon-box" id="inAppNotifIconBox">🔔</div>
+        <div class="in-app-notif-body-wrap">
+          <div class="in-app-notif-header">
+            <span class="in-app-notif-app-name">Plan4U</span>
+            <span class="in-app-notif-time">сейчас</span>
+          </div>
+          <div class="in-app-notif-title" id="inAppNotifTitle">Напоминание</div>
+          <div class="in-app-notif-desc" id="inAppNotifDesc">Текст напоминания</div>
+        </div>
+        <div class="in-app-notif-actions">
+          <button type="button" class="btn-in-app-notif-action" id="btnInAppNotifAction">Открыть</button>
+          <button type="button" class="btn-in-app-notif-close" id="btnInAppNotifClose" aria-label="Закрыть">✕</button>
+        </div>
+      </div>
+
       <!-- Top Widgets Header -->
       <header class="top-widgets-bar">
         <!-- Widget 1: Date (28 пт) -->

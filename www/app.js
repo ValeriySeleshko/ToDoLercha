@@ -1758,8 +1758,7 @@ class NotebookApp {
       this.syncWithNativeWidget();
     });
     this.initDayChangeListener();
-    this.scheduleSmartDailyNotifications();
-    this.scheduleAllHabitReminders();
+    this.initNotificationSystem();
 
     // Initialize Maine Coon Companion (Tamagotchi)
     this.petSystem = new MaineCoonPetSystem(this);
@@ -9607,6 +9606,292 @@ class NotebookApp {
     }
   }
 
+  // Comprehensive notification system setup: Android high-importance channel, foreground listeners, in-app ticker, and alarms
+  async initNotificationSystem() {
+    // 1. Android Notification Channel (Importance: High/5 to ensure heads-up banner on phone)
+    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
+      try {
+        const { LocalNotifications } = window.Capacitor.Plugins;
+        await LocalNotifications.createChannel({
+          id: 'plan4u_reminders',
+          name: 'Plan4U Напоминания и Задачи',
+          description: 'Напоминания о привычках, утреннем плане, вечернем обзоре и питомце',
+          importance: 5, // IMPORTANCE_HIGH: heads-up notification with sound & popup
+          visibility: 1, // VISIBILITY_PUBLIC
+          sound: 'beep.wav',
+          vibration: true,
+          lights: true,
+          lightColor: '#D83A88'
+        }).catch(err => console.warn('Channel creation warn:', err));
+
+        // 2. Foreground Capacitor notification listener: when notification fires while user is in the app
+        if (!this._hasRegisteredNotifListeners) {
+          this._hasRegisteredNotifListeners = true;
+          LocalNotifications.addListener('localNotificationReceived', (notification) => {
+            console.log('Local notification received while in foreground:', notification);
+            this.showInAppNotificationBanner({
+              icon: '🔔',
+              title: notification.title || 'Plan4U',
+              body: notification.body || '',
+              actionText: this.settings?.lang === 'en' ? 'Open' : (this.settings?.lang === 'uk' ? 'Переглянути' : 'Открыть'),
+              onAction: () => {
+                if (this.tabPlanner) this.tabPlanner.click();
+              }
+            });
+          });
+
+          LocalNotifications.addListener('localNotificationActionPerformed', (action) => {
+            console.log('Local notification action clicked:', action);
+            if (this.tabPlanner) this.tabPlanner.click();
+          });
+        }
+      } catch (err) {
+        console.warn('Init notification channel/listeners error:', err);
+      }
+    }
+
+    // 3. Start real-time in-app foreground reminder ticker (checks habit times, daily plan times, etc. every 15s)
+    this.startInAppReminderTicker();
+
+    // 4. Schedule background alarms & habit reminders
+    await this.scheduleSmartDailyNotifications();
+    await this.scheduleAllHabitReminders();
+  }
+
+  // Real-time foreground ticker checking for due reminders while the user actively uses the app
+  startInAppReminderTicker() {
+    if (this._inAppTickerInterval) clearInterval(this._inAppTickerInterval);
+    this._inAppTriggeredToday = this._inAppTriggeredToday || new Set();
+
+    // Check every 15 seconds
+    this._inAppTickerInterval = setInterval(() => {
+      this.checkInAppRemindersDue();
+    }, 15000);
+
+    // Initial check
+    setTimeout(() => this.checkInAppRemindersDue(), 2000);
+  }
+
+  // Check habits and daily routine events against current time (HH:MM)
+  checkInAppRemindersDue() {
+    if (!this.settings || !this.settings.notificationsEnabled) return;
+
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const currentHHMM = `${h}:${m}`;
+
+    // Reset tracked triggers on day change
+    if (this._lastTickerDate && this._lastTickerDate !== todayStr) {
+      this._inAppTriggeredToday.clear();
+    }
+    this._lastTickerDate = todayStr;
+
+    const isUk = this.settings.lang === 'uk';
+    const isEn = this.settings.lang === 'en';
+
+    // 1. Check Habit Reminders
+    if (Array.isArray(this.habits)) {
+      for (const habit of this.habits) {
+        if (!habit.reminderEnabled || !habit.reminderTime) continue;
+        if (habit.reminderTime === currentHHMM) {
+          const triggerKey = `${todayStr}_habit_${habit.id}_${currentHHMM}`;
+          if (!this._inAppTriggeredToday.has(triggerKey)) {
+            this._inAppTriggeredToday.add(triggerKey);
+
+            const title = isEn ? 'Habit Reminder ⏰' : (isUk ? 'Нагадування про звичку ⏰' : 'Напоминание о привычке ⏰');
+            const body = isEn
+              ? `Time for "${habit.title}"! Keep your streak burning 🔥`
+              : (isUk
+                ? `Час для «${habit.title}»! Збережіть вогник серії 🔥`
+                : `Пора выполнить: «${habit.title}»! Не дай огоньку погаснуть 🔥`);
+
+            this.showInAppNotificationBanner({
+              icon: habit.icon || '🔥',
+              title,
+              body,
+              actionText: isEn ? 'Check' : (isUk ? 'Виконати' : 'Отметить'),
+              onAction: () => {
+                const habitTabBtn = document.querySelector('[data-subtab="habits"]');
+                if (habitTabBtn) habitTabBtn.click();
+              }
+            });
+            return; // Trigger one at a time
+          }
+        }
+      }
+    }
+
+    // 2. Check Morning Briefing
+    if (this.settings.morningNotifEnabled !== false) {
+      const morningTime = this.settings.morningNotifTime || '09:00';
+      if (morningTime === currentHHMM) {
+        const morningKey = `${todayStr}_morning_${morningTime}`;
+        if (!this._inAppTriggeredToday.has(morningKey)) {
+          this._inAppTriggeredToday.add(morningKey);
+          const title = isEn ? 'Morning Plan ☀️' : (isUk ? 'Ранковий план ☀️' : 'Утренний план ☀️');
+          const body = isEn
+            ? 'Good morning! Check today’s notebook tasks and have a productive day!'
+            : (isUk
+              ? 'Доброго ранку! Перегляньте заплановані справи в блокноті Plan4U!'
+              : 'Доброе утро! Проверьте список дел на сегодня в блокноте Plan4U!');
+
+          this.showInAppNotificationBanner({
+            icon: '☀️',
+            title,
+            body,
+            actionText: isEn ? 'Open' : (isUk ? 'Відкрити' : 'Открыть'),
+            onAction: () => {
+              if (this.tabPlanner) this.tabPlanner.click();
+            }
+          });
+          return;
+        }
+      }
+    }
+
+    // 3. Check Evening Review
+    if (this.settings.eveningNotifEnabled !== false) {
+      const eveningTime = this.settings.eveningNotifTime || '21:00';
+      if (eveningTime === currentHHMM) {
+        const eveningKey = `${todayStr}_evening_${eveningTime}`;
+        if (!this._inAppTriggeredToday.has(eveningKey)) {
+          this._inAppTriggeredToday.add(eveningKey);
+          const title = isEn ? 'Evening Review 🌙' : (isUk ? 'Вечірній огляд 🌙' : 'Вечерний обзор 🌙');
+          const body = isEn
+            ? 'Evening wrap-up: check off completed tasks and keep your streak!'
+            : (isUk
+              ? 'Вечірній огляд: перевірте виконані справи та збережіть серію!'
+              : 'Вечерний обзор: проверьте выполненные дела и сохраните серию!');
+
+          this.showInAppNotificationBanner({
+            icon: '🌙',
+            title,
+            body,
+            actionText: isEn ? 'Review' : (isUk ? 'Переглянути' : 'Проверить'),
+            onAction: () => {
+              if (this.tabPlanner) this.tabPlanner.click();
+            }
+          });
+          return;
+        }
+      }
+    }
+
+    // 4. Check Pet Care
+    if (this.settings.petNotifEnabled !== false && currentHHMM === '15:00') {
+      const petKey = `${todayStr}_pet_1500`;
+      if (!this._inAppTriggeredToday.has(petKey)) {
+        this._inAppTriggeredToday.add(petKey);
+        const title = isEn ? 'Maine Coon Pet 🐾' : (isUk ? 'Турбота про котика 🐾' : 'Забота о питомце 🐾');
+        const body = isEn
+          ? 'Your Maine Coon misses you! Treat him for today’s achievements 🐟'
+          : (isUk
+            ? 'Мейн-кун скучив! Зайдіть погладити котика та пригостити ласощами 🐟'
+            : 'Мейн-кун скучает! Зайдите погладить котика и угостить вкусняшкой 🐟');
+
+        this.showInAppNotificationBanner({
+          icon: '🐾',
+          title,
+          body,
+          actionText: isEn ? 'Pet cat' : (isUk ? 'До котика' : 'К котику'),
+          onAction: () => {
+            const petBtn = document.getElementById('widgetPet') || document.querySelector('.pet-widget');
+            if (petBtn) petBtn.click();
+          }
+        });
+      }
+    }
+  }
+
+  // Display rich interactive in-app heads-up notification banner
+  showInAppNotificationBanner({ icon = '🔔', title = 'Plan4U', body = '', actionText = null, onAction = null }) {
+    const banner = document.getElementById('inAppNotifBanner');
+    if (!banner) return;
+
+    const iconBox = document.getElementById('inAppNotifIconBox');
+    const titleEl = document.getElementById('inAppNotifTitle');
+    const descEl = document.getElementById('inAppNotifDesc');
+    const actionBtn = document.getElementById('btnInAppNotifAction');
+    const closeBtn = document.getElementById('btnInAppNotifClose');
+
+    if (iconBox) iconBox.textContent = icon;
+    if (titleEl) titleEl.textContent = title;
+    if (descEl) descEl.textContent = body;
+
+    if (actionBtn) {
+      if (actionText) {
+        actionBtn.textContent = actionText;
+        actionBtn.style.display = 'inline-flex';
+        actionBtn.onclick = (e) => {
+          e.stopPropagation();
+          banner.classList.remove('show');
+          if (typeof onAction === 'function') onAction();
+        };
+      } else {
+        actionBtn.style.display = 'none';
+      }
+    }
+
+    if (closeBtn) {
+      closeBtn.onclick = (e) => {
+        e.stopPropagation();
+        banner.classList.remove('show');
+      };
+    }
+
+    banner.onclick = () => {
+      banner.classList.remove('show');
+      if (typeof onAction === 'function') onAction();
+    };
+
+    // Haptic vibration & melodic notification chime
+    triggerHaptic([35, 50, 35]);
+    this.playNotificationChime();
+
+    // Animate banner into view
+    banner.classList.add('show');
+
+    clearTimeout(this._inAppNotifTimer);
+    this._inAppNotifTimer = setTimeout(() => {
+      banner.classList.remove('show');
+    }, 7000);
+  }
+
+  // Melodic notification chime via Web Audio API
+  playNotificationChime() {
+    if (!this.settings?.soundEnabled) return;
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+      const ctx = new AudioContextClass();
+      const now = ctx.currentTime;
+
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(659.25, now); // E5
+      gain1.gain.setValueAtTime(0.25, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.25);
+
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(880, now + 0.1); // A5
+      gain2.gain.setValueAtTime(0.28, now + 0.1);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(now + 0.1);
+      osc2.stop(now + 0.45);
+    } catch (e) { }
+  }
+
   // Schedule smart recurring notifications (Morning Briefing, Evening Review, Pet Care)
   async scheduleSmartDailyNotifications() {
     if (!window.Capacitor || !window.Capacitor.Plugins || !window.Capacitor.Plugins.LocalNotifications) return;
@@ -9641,8 +9926,10 @@ class NotebookApp {
           body,
           schedule: {
             on: { hour: isNaN(h) ? 9 : h, minute: isNaN(m) ? 0 : m },
-            every: 'day'
+            every: 'day',
+            allowWhileIdle: true
           },
+          channelId: 'plan4u_reminders',
           sound: 'beep.wav',
           smallIcon: 'ic_launcher'
         });
@@ -9665,8 +9952,10 @@ class NotebookApp {
           body,
           schedule: {
             on: { hour: isNaN(h) ? 21 : h, minute: isNaN(m) ? 0 : m },
-            every: 'day'
+            every: 'day',
+            allowWhileIdle: true
           },
+          channelId: 'plan4u_reminders',
           sound: 'beep.wav',
           smallIcon: 'ic_launcher'
         });
@@ -9687,8 +9976,10 @@ class NotebookApp {
           body,
           schedule: {
             on: { hour: 15, minute: 0 },
-            every: 'day'
+            every: 'day',
+            allowWhileIdle: true
           },
+          channelId: 'plan4u_reminders',
           sound: 'beep.wav',
           smallIcon: 'ic_launcher'
         });
@@ -9748,8 +10039,10 @@ class NotebookApp {
             body,
             schedule: {
               on: { hour, minute },
-              every: 'day'
+              every: 'day',
+              allowWhileIdle: true
             },
+            channelId: 'plan4u_reminders',
             sound: 'beep.wav',
             smallIcon: 'ic_launcher'
           }]
@@ -9815,39 +10108,59 @@ class NotebookApp {
     return false;
   }
 
-  // Send Test Notification (supports native Android tray notifications & Web Push)
+  // Send Test Notification: fires immediate in-app heads-up banner AND schedules native tray notification
   async sendTestNotification() {
-    triggerHaptic(20);
-    this.playCompletionSound();
+    const isEn = this.settings.lang === 'en';
+    const isUk = this.settings.lang === 'uk';
+    const testTitle = 'Plan4U — Блокнот Задач';
+    const testBody = isEn
+      ? 'Reminder: you have unfinished tasks in Plan4U! Keep your streak burning 🔥'
+      : (isUk
+        ? 'Нагадування: у вас є незавершені справи в Plan4U! Збережіть серію 🔥'
+        : 'Напоминание: у вас есть незавершенные дела в Plan4U! Не дай огоньку погаснуть 🔥');
+
+    // 1. Immediate in-app heads-up banner (so user sees notification inside the app right now!)
+    this.showInAppNotificationBanner({
+      icon: '🔔',
+      title: testTitle,
+      body: testBody,
+      actionText: isEn ? 'Open' : (isUk ? 'Відкрити' : 'Открыть'),
+      onAction: () => {
+        if (this.tabPlanner) this.tabPlanner.click();
+      }
+    });
+
     try {
       if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
-        await window.Capacitor.Plugins.LocalNotifications.schedule({
+        const { LocalNotifications } = window.Capacitor.Plugins;
+        await LocalNotifications.schedule({
           notifications: [
             {
               id: Math.floor(Math.random() * 100000),
-              title: 'Plan4U — Блокнот Задач',
-              body: this.settings.lang === 'en' ? 'Reminder: you have unfinished tasks in Plan4U!' : (this.settings.lang === 'uk' ? 'Нагадування: у вас є незавершені справи в Plan4U!' : 'Напоминание: у вас есть незавершенные дела в Plan4U!'),
-              schedule: { at: new Date(Date.now() + 1000) },
+              title: testTitle,
+              body: testBody,
+              schedule: { at: new Date(Date.now() + 1000), allowWhileIdle: true },
+              channelId: 'plan4u_reminders',
               sound: 'beep.wav',
               smallIcon: 'ic_launcher'
             }
           ]
         });
-        this.showToast(this.settings.lang === 'en' ? 'Test notification sent to phone!' : (this.settings.lang === 'uk' ? 'Тестове сповіщення надіслано на телефон!' : 'Тестовое уведомление отправлено на телефон!'), '🔔');
+        this.showToast(isEn ? 'Test notification sent!' : (isUk ? 'Тестове сповіщення надіслано!' : 'Тестовое уведомление отправлено!'), '🔔');
         return;
       }
       if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification('Plan4U — Блокнот Задач', {
-          body: this.settings.lang === 'en' ? 'Reminder: you have unfinished tasks in Plan4U!' : (this.settings.lang === 'uk' ? 'Нагадування: у вас є незавершені справи в Plan4U!' : 'Напоминание: у вас есть незавершенные дела в Plan4U!'),
+        new Notification(testTitle, {
+          body: testBody,
           icon: 'icon.svg'
         });
-        this.showToast(this.settings.lang === 'en' ? 'Test notification sent!' : (this.settings.lang === 'uk' ? 'Тестове сповіщення надіслано!' : 'Тестовое push-уведомление отправлено!'), '🔔');
+        this.showToast(isEn ? 'Test notification sent!' : (isUk ? 'Тестове сповіщення надіслано!' : 'Тестовое push-уведомление отправлено!'), '🔔');
         return;
       }
     } catch (e) {
       console.warn('Send notification error:', e);
     }
-    this.showToast(this.settings.lang === 'en' ? 'Please allow notification permission' : (this.settings.lang === 'uk' ? 'Будь ласка, дозвольте доступ до сповіщень' : 'Разрешите доступ к уведомлениям'), '🔔');
+    this.showToast(isEn ? 'Please allow notification permission' : (isUk ? 'Будь ласка, дозвольте доступ до сповіщень' : 'Разрешите доступ к уведомлениям'), '🔔');
   }
 
   // Get formatted backup filename: Plan4U_YYYY-MM-DD_HH-mm-ss.json
