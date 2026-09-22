@@ -1,0 +1,65 @@
+[
+  {
+    "id": "cat_toast_egg",
+    "num": 1,
+    "label": "Тост с яйцом",
+    "defaultCategory": "Завтрак",
+    "src": "assets/nutrition_icons/meal_icon_1.webp"
+  },
+  {
+    "id": "cat_fruit_bowl",
+    "num": 2,
+    "label": "Фруктовый боул",
+    "defaultCategory": "Полдник",
+    "src": "assets/nutrition_icons/meal_icon_2.webp"
+  },
+  {
+    "id": "cat_salad",
+    "num": 3,
+    "label": "Салат с авокадо",
+    "defaultCategory": "Обед",
+    "src": "assets/nutrition_icons/meal_icon_3.webp"
+  },
+  {
+    "id": "cat_toast_banana",
+    "num": 4,
+    "label": "Тост с бананом",
+    "defaultCategory": "Перекус",
+    "src": "assets/nutrition_icons/meal_icon_4.webp"
+  },
+  {
+    "id": "cat_meat_plate",
+    "num": 5,
+    "label": "Курица с гарниром",
+    "defaultCategory": "Ужин",
+    "src": "assets/nutrition_icons/meal_icon_5.webp"
+  },
+  {
+    "id": "cat_tea_cookies",
+    "num": 6,
+    "label": "Чай с печеньем",
+    "defaultCategory": "Чай",
+    "src": "assets/nutrition_icons/meal_icon_6.webp"
+  },
+  {
+    "id": "cat_soup_bowl",
+    "num": 7,
+    "label": "Суп / лапша",
+    "defaultCategory": "Обед",
+    "src": "assets/nutrition_icons/meal_icon_7.webp"
+  },
+  {
+    "id": "cat_pie_dessert",
+    "num": 8,
+    "label": "Пирог / десерт",
+    "defaultCategory": "Десерт",
+    "src": "assets/nutrition_icons/meal_icon_8.webp"
+  },
+  {
+    "id": "cat_snack_nuts",
+    "num": 9,
+    "label": "Вода, бананы и орехи",
+    "defaultCategory": "Перекус",
+    "src": "assets/nutrition_icons/meal_icon_9.webp"
+  }
+]

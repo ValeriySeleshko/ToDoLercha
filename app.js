@@ -1226,299 +1226,13 @@ const DEFAULT_SETTINGS = {
   lastSync: 'Локально'
 };
 
-function buildAchievementsCatalog(lang = 'ru') {
-  const list = [];
-
-  const isUk = lang === 'uk';
-  const isEn = lang === 'en';
-
-  // Helper for multi-tiered progressive achievements
-  function addTiered({ prefix, category, icon, titleBase, descTemplate, tiers, getProgress, unit }) {
-    const romanNumerals = [
-      'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X',
-      'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX',
-      'XXI', 'XXII', 'XXIII', 'XXIV', 'XXV', 'XXVI', 'XXVII', 'XXVIII', 'XXIX', 'XXX'
-    ];
-    tiers.forEach((t, idx) => {
-      const levelNum = idx + 1;
-      const roman = romanNumerals[idx] || `${levelNum}`;
-      list.push({
-        id: `${prefix}_tier_${t.val}`,
-        category,
-        type: 'progressive',
-        icon,
-        title: `${titleBase} ${roman}`,
-        desc: descTemplate(t.val, t.rank),
-        target: t.val,
-        unit,
-        tierLevel: levelNum,
-        tierRank: t.rank || (isEn ? `Level ${levelNum}` : (isUk ? `Рівень ${levelNum}` : `Уровень ${levelNum}`)),
-        getProgress
-      });
-    });
-  }
-
-  // 1. 🔥 СЕРИИ ВХОДА И ДИСЦИПЛИНА (28 ступеней от 1 до 1095 дней)
-  const streakTitle = isEn ? 'Victory Streak' : (isUk ? 'Серія перемог' : 'Серия побед');
-  const streakUnit = isEn ? 'days' : 'дн.';
-  const streakDesc = (v, r) => {
-    if (isEn) return `Open the notebook every day without breaks: ${v} ${v === 1 ? 'day' : 'days'}${r ? ` (${r})` : ''}`;
-    if (isUk) return `Заходити в блокнот щодня без перерв: ${v} ${v === 1 ? 'день' : (v < 5 ? 'дні' : 'днів')}${r ? ` (${r})` : ''}`;
-    return `Заходить в блокнот каждый день без перерывов: ${v} ${v === 1 ? 'день' : (v < 5 ? 'дня' : 'дней')}${r ? ` (${r})` : ''}`;
-  };
-
-  addTiered({
-    prefix: 'streak',
-    category: 'streaks',
-    icon: '🔥',
-    titleBase: streakTitle,
-    unit: streakUnit,
-    descTemplate: streakDesc,
-    getProgress: (s) => s.streakCount,
-    tiers: [
-      { val: 1, rank: isEn ? 'First Day' : (isUk ? 'Перший день' : 'Первый день') },
-      { val: 2, rank: isEn ? 'Start' : (isUk ? 'Старт' : 'Старт') },
-      { val: 3, rank: isEn ? '3 Days' : (isUk ? '3 Дні' : '3 Дня') },
-      { val: 5, rank: isEn ? 'Work Week' : (isUk ? 'Робочий тиждень' : 'Рабочая неделя') },
-      { val: 7, rank: isEn ? '1 Week' : (isUk ? '1 Тиждень' : '1 Неделя') },
-      { val: 10, rank: isEn ? '10 Days' : (isUk ? '10 Днів' : '10 Дней') },
-      { val: 14, rank: isEn ? '2 Weeks' : (isUk ? '2 Тижні' : '2 Недели') },
-      { val: 21, rank: isEn ? 'Habit Formed' : (isUk ? 'Звичку закріплено' : 'Привычка закреплена') },
-      { val: 30, rank: isEn ? '1 Month' : (isUk ? '1 Місяць' : '1 Месяц') },
-      { val: 45, rank: isEn ? '45 Days' : (isUk ? '45 Днів' : '45 Дней') },
-      { val: 60, rank: isEn ? '2 Months' : (isUk ? '2 Місяці' : '2 Месяца') },
-      { val: 75, rank: isEn ? '75 Days' : (isUk ? '75 Днів' : '75 Дней') },
-      { val: 90, rank: isEn ? 'Quarter (3 months)' : (isUk ? 'Квартал (3 місяці)' : 'Квартал (3 месяца)') },
-      { val: 100, rank: isEn ? '100 Days!' : (isUk ? 'Сотня днів!' : 'Сотня дней!') },
-      { val: 120, rank: isEn ? '4 Months' : (isUk ? '4 Місяці' : '4 Месяца') },
-      { val: 150, rank: isEn ? '5 Months' : (isUk ? '5 Місяців' : '5 Месяцев') },
-      { val: 180, rank: isEn ? 'Half a Year' : (isUk ? 'Півроку' : 'Полгода') },
-      { val: 200, rank: isEn ? '200 Days' : (isUk ? '200 Днів' : '200 Дней') },
-      { val: 250, rank: isEn ? 'Unshakeable' : (isUk ? 'Непохитний' : 'Непоколебимый') },
-      { val: 300, rank: isEn ? '10 Months' : (isUk ? '10 Місяців' : '10 Месяцев') },
-      { val: 365, rank: isEn ? '1 Full Year!' : (isUk ? '1 Рік перемог!' : '1 Год побед!') },
-      { val: 400, rank: isEn ? '400 Days' : (isUk ? '400 Днів' : '400 Дней') },
-      { val: 500, rank: isEn ? '500 Days' : (isUk ? '500 Днів' : '500 Дней') },
-      { val: 600, rank: isEn ? '600 Days' : (isUk ? '600 Днів' : '600 Дней') },
-      { val: 730, rank: isEn ? '2 Years Streak!' : (isUk ? '2 Роки поспіль!' : '2 Года подряд!') },
-      { val: 850, rank: isEn ? '850 Days' : (isUk ? '850 Днів' : '850 Дней') },
-      { val: 1000, rank: isEn ? '1000 Days of Discipline!' : (isUk ? '1000 Днів дисципліни!' : '1000 Дней дисциплины!') },
-      { val: 1095, rank: isEn ? '3 Years in Plan4U!' : (isUk ? '3 Роки в блокноті!' : '3 Года в блокноте!') }
-    ]
-  });
-
-  // 2. 📝 ОБЩАЯ ПРОДУКТИВНОСТЬ (25 ступеней от 1 до 10 000 дел)
-  addTiered({
-    prefix: 'tasks_total',
-    category: 'tasks',
-    icon: '📝',
-    titleBase: isEn ? 'Task Master' : (isUk ? 'Майстер завдань' : 'Мастер задач'),
-    unit: isEn ? 'tasks' : (isUk ? 'справ' : 'дел'),
-    descTemplate: (v) => isEn ? `Complete a total of ${v} tasks across all notebook tabs` : (isUk ? `Виконати сумарно ${v} завдань у всіх вкладках блокнота` : `Выполнить суммарно ${v} задач во всех вкладках блокнота`),
-    getProgress: (s) => s.totalCompleted,
-    tiers: [
-      { val: 1 }, { val: 5 }, { val: 10 }, { val: 25 }, { val: 50 },
-      { val: 75 }, { val: 100 }, { val: 150 }, { val: 200 }, { val: 250 },
-      { val: 300 }, { val: 400 }, { val: 500 }, { val: 650 }, { val: 800 },
-      { val: 1000 }, { val: 1250 }, { val: 1500 }, { val: 2000 }, { val: 2500 },
-      { val: 3000 }, { val: 4000 }, { val: 5000 }, { val: 7500 }, { val: 10000 }
-    ]
-  });
-
-  // 3. 🌅 УТРЕННИЕ ЗАДАЧИ (15 ступеней)
-  addTiered({
-    prefix: 'morning_tasks',
-    category: 'tasks',
-    icon: '🌅',
-    titleBase: isEn ? 'Early Bird' : (isUk ? 'Рання пташка' : 'Ранняя пташка'),
-    unit: isEn ? 'tasks' : (isUk ? 'справ' : 'дел'),
-    descTemplate: (v) => isEn ? `Complete ${v} morning tasks in MORNING section` : (isUk ? `Виконати ${v} ранкових завдань у блоці РАНОК` : `Выполнить ${v} утренних задач в блоке УТРО`),
-    getProgress: (s) => s.morningCompletedCount,
-    tiers: [
-      { val: 1 }, { val: 3 }, { val: 5 }, { val: 10 }, { val: 20 },
-      { val: 35 }, { val: 50 }, { val: 75 }, { val: 100 }, { val: 150 },
-      { val: 200 }, { val: 300 }, { val: 500 }, { val: 750 }, { val: 1000 }
-    ]
-  });
-
-  // 4. ☀️ ДНЕВНЫЕ ЗАДАЧИ (15 ступеней)
-  addTiered({
-    prefix: 'day_tasks',
-    category: 'tasks',
-    icon: '☀️',
-    titleBase: isEn ? 'Daily Focus' : (isUk ? 'Денний фокус' : 'Дневной фокус'),
-    unit: isEn ? 'tasks' : (isUk ? 'справ' : 'дел'),
-    descTemplate: (v) => isEn ? `Complete ${v} afternoon tasks in DAY section` : (isUk ? `Виконати ${v} денних завдань у блоці ДЕНЬ` : `Выполнить ${v} дневных задач в блоке ДЕНЬ`),
-    getProgress: (s) => s.dayTasksCompletedCount,
-    tiers: [
-      { val: 1 }, { val: 3 }, { val: 5 }, { val: 10 }, { val: 20 },
-      { val: 35 }, { val: 50 }, { val: 75 }, { val: 100 }, { val: 150 },
-      { val: 200 }, { val: 300 }, { val: 500 }, { val: 750 }, { val: 1000 }
-    ]
-  });
-
-  // 5. 🌙 ВЕЧЕРНИЕ ЗАДАЧИ (15 ступеней)
-  addTiered({
-    prefix: 'evening_tasks',
-    category: 'tasks',
-    icon: '🌙',
-    titleBase: isEn ? 'Evening Wrap-up' : (isUk ? 'Вечірній підсумок' : 'Вечерний итог'),
-    unit: isEn ? 'tasks' : (isUk ? 'справ' : 'дел'),
-    descTemplate: (v) => isEn ? `Complete ${v} evening tasks in EVENING section` : (isUk ? `Виконати ${v} вечірніх завдань у блоці ВЕЧІР` : `Выполнить ${v} вечерних задач в блоке ВЕЧЕР`),
-    getProgress: (s) => s.eveningCompletedCount,
-    tiers: [
-      { val: 1 }, { val: 3 }, { val: 5 }, { val: 10 }, { val: 20 },
-      { val: 35 }, { val: 50 }, { val: 75 }, { val: 100 }, { val: 150 },
-      { val: 200 }, { val: 300 }, { val: 500 }, { val: 750 }, { val: 1000 }
-    ]
-  });
-
-  // 6. ☕ В СВОБОДНОЕ ВРЕМЯ (12 ступеней)
-  addTiered({
-    prefix: 'free_tasks',
-    category: 'tasks',
-    icon: '☕',
-    titleBase: isEn ? 'Free Time' : (isUk ? 'Вільний час' : 'Свободное время'),
-    unit: isEn ? 'tasks' : (isUk ? 'справ' : 'дел'),
-    descTemplate: (v) => isEn ? `Complete ${v} tasks in FREE TIME section` : (isUk ? `Виконати ${v} завдань у блоці У ВІЛЬНИЙ ЧАС` : `Выполнить ${v} задач в блоке В СВОБОДНОЕ ВРЕМЯ`),
-    getProgress: (s) => s.freeCompletedCount,
-    tiers: [
-      { val: 1 }, { val: 3 }, { val: 5 }, { val: 10 }, { val: 20 },
-      { val: 35 }, { val: 50 }, { val: 75 }, { val: 100 }, { val: 150 },
-      { val: 250 }, { val: 500 }
-    ]
-  });
-
-  // 7. 🎬 ФИЛЬМЫ И СЕРИАЛЫ В АРХИВЕ (20 ступеней от 1 до 500)
-  addTiered({
-    prefix: 'watch_total',
-    category: 'watch',
-    icon: '🎬',
-    titleBase: isEn ? 'Cinema Enthusiast' : (isUk ? 'Кіноман зі стажем' : 'Киноман со стажем'),
-    unit: isEn ? 'movies' : (isUk ? 'фільмів' : 'фильмов'),
-    descTemplate: (v) => isEn ? `Watch and archive ${v} movies and series` : (isUk ? `Подивитися і зберегти в архів ${v} фільмів та серіалів` : `Посмотреть и сохранить в архив ${v} фильмов и сериалов`),
-    getProgress: (s) => s.watchCompletedCount,
-    tiers: [
-      { val: 1 }, { val: 3 }, { val: 5 }, { val: 10 }, { val: 15 },
-      { val: 20 }, { val: 30 }, { val: 40 }, { val: 50 }, { val: 65 },
-      { val: 80 }, { val: 100 }, { val: 125 }, { val: 150 }, { val: 175 },
-      { val: 200 }, { val: 250 }, { val: 300 }, { val: 400 }, { val: 500 }
-    ]
-  });
-
-  // 8. 🛒 ПОКУПКИ И МАГАЗИНЫ (18 ступеней от 1 до 1000)
-  addTiered({
-    prefix: 'buy_total',
-    category: 'buy',
-    icon: '🛒',
-    titleBase: isEn ? 'Shopping Pro' : (isUk ? 'Мисливець за покупками' : 'Охотник за покупками'),
-    unit: isEn ? 'items' : (isUk ? 'покупок' : 'покупок'),
-    descTemplate: (v) => isEn ? `Purchase and check off ${v} planned shopping items` : (isUk ? `Здійснити та викреслити ${v} запланованих покупок` : `Совершить и вычеркнуть ${v} запланированных покупок`),
-    getProgress: (s) => s.buyCompletedCount,
-    tiers: [
-      { val: 1 }, { val: 3 }, { val: 5 }, { val: 10 }, { val: 15 },
-      { val: 25 }, { val: 40 }, { val: 60 }, { val: 80 }, { val: 100 },
-      { val: 150 }, { val: 200 }, { val: 250 }, { val: 300 }, { val: 400 },
-      { val: 500 }, { val: 750 }, { val: 1000 }
-    ]
-  });
-
-  // 9. ⏳ ЧАСЫ СФОКУСИРОВАННОЙ РАБОТЫ (18 ступеней от 1 до 5000 часов)
-  addTiered({
-    prefix: 'hours_total',
-    category: 'tasks',
-    icon: '⏳',
-    titleBase: isEn ? 'Time Master' : (isUk ? 'Хранитель часу' : 'Хранитель времени'),
-    unit: isEn ? 'hrs' : (isUk ? 'год.' : 'ч.'),
-    descTemplate: (v) => isEn ? `Accumulate ${v} hours of focused work in notebook` : (isUk ? `Накопичити ${v} годин сфокусованої роботи в блокноті` : `Накопить ${v} часов сфокусированной работы в блокноте`),
-    getProgress: (s) => s.totalHoursCompleted,
-    tiers: [
-      { val: 1 }, { val: 5 }, { val: 10 }, { val: 25 }, { val: 50 },
-      { val: 75 }, { val: 100 }, { val: 150 }, { val: 200 }, { val: 300 },
-      { val: 500 }, { val: 750 }, { val: 1000 }, { val: 1500 }, { val: 2000 },
-      { val: 3000 }, { val: 4000 }, { val: 5000 }
-    ]
-  });
-
-  // 10. 📅 ПРОЖИТЫЕ ДНИ В ИСТОРИИ (15 ступеней от 1 до 1000 дней)
-  addTiered({
-    prefix: 'days_history',
-    category: 'streaks',
-    icon: '📅',
-    titleBase: isEn ? 'Life Chronicle' : (isUk ? 'Хроніка життя' : 'Хроника жизни'),
-    unit: isEn ? 'days' : 'дней',
-    descTemplate: (v) => isEn ? `Save history of completed tasks for ${v} active days` : (isUk ? `Зберегти історію виконаних справ за ${v} прожитих днів` : `Сохранить историю выполненных дел за ${v} прожитых дней`),
-    getProgress: (s) => s.livedDaysCount,
-    tiers: [
-      { val: 1 }, { val: 3 }, { val: 7 }, { val: 14 }, { val: 30 },
-      { val: 60 }, { val: 90 }, { val: 120 }, { val: 180 }, { val: 250 },
-      { val: 365 }, { val: 500 }, { val: 730 }, { val: 850 }, { val: 1000 }
-    ]
-  });
-
-  // 11. 🗂️ ОРГАНИЗАЦИЯ И ВКЛАДКИ (8 ступеней)
-  addTiered({
-    prefix: 'tabs_count',
-    category: 'special',
-    icon: '🗂️',
-    titleBase: isEn ? 'Notebook Architect' : (isUk ? 'Архітектор блокнота' : 'Архитектор блокнота'),
-    unit: isEn ? 'tabs' : (isUk ? 'вкладок' : 'вкладок'),
-    descTemplate: (v) => isEn ? `Create and maintain ${v} notebook tabs` : (isUk ? `Створити та підтримувати ${v} вкладок` : `Создать и поддерживать ${v} вкладок`),
-    getProgress: (s) => s.tabsCount,
-    tiers: [
-      { val: 3 }, { val: 4 }, { val: 5 }, { val: 6 }, { val: 7 },
-      { val: 8 }, { val: 10 }, { val: 12 }
-    ]
-  });
-
-  // 12. 🌟 ОСОБЫЕ И ЕДИНОРАЗОВЫЕ ДОСТИЖЕНИЯ (32 уникальные награды)
-  const specialList = [
-    { id: 'first_step', icon: '🌟', title: isEn ? 'First Step' : (isUk ? 'Перший крок' : 'Первый шаг'), desc: isEn ? 'Complete your very first task in the notebook' : (isUk ? 'Завершити своє найперше завдання в блокноті' : 'Завершить свою самую первую задачу в блокноте'), check: s => s.totalCompleted >= 1 },
-    { id: 'all_day_done', icon: '🎯', title: isEn ? '100% Day' : (isUk ? 'День на всі 100%' : 'День на все 100%'), desc: isEn ? 'Complete 100% of tasks in a single day' : (isUk ? 'Виконати 100% справ за один день' : 'Выполнить 100% дел за один день'), check: s => s.hasDay100Percent },
-    { id: 'master_day_10', icon: '⚡', title: isEn ? 'Productive Day (10+)' : (isUk ? 'Продуктивний день (10+)' : 'Продуктивный день (10+)'), desc: isEn ? 'Complete 10 or more tasks in a single day' : (isUk ? 'Виконати 10 або більше справ за один день' : 'Выполнить 10 или больше дел за один день'), check: s => s.has10TasksDay },
-    { id: 'custom_style', icon: '🎨', title: isEn ? 'Personal Style' : (isUk ? 'Власний стиль' : 'Свой стиль'), desc: isEn ? 'Change accent color or theme in settings' : (isUk ? 'Змінити колір акценту або тему в налаштуваннях' : 'Сменить цвет акцента или тему в настройках'), check: s => s.hasCustomizedSettings },
-    { id: 'backup_master', icon: '💾', title: isEn ? 'Prudent' : (isUk ? 'Ощадливий' : 'Бережливый'), desc: isEn ? 'Save a backup of your notebook data to a file' : (isUk ? 'Зберегти резервну копію блокнота у файл' : 'Сохранить резервную копию блокнота в файл'), check: s => s.hasExportedBackup },
-    { id: 'time_traveler', icon: '🚀', title: isEn ? 'Time Machine' : (isUk ? 'Машина часу' : 'Машина времени'), desc: isEn ? 'Schedule a task for a future date in the calendar' : (isUk ? 'Запланувати завдання на майбутню дату в календарі' : 'Запланировать задачу на будущую дату в календаре'), check: s => s.hasFutureTask },
-    { id: 'cinephile_first', icon: '🍿', title: isEn ? 'Premiere Screening' : (isUk ? 'Прем\'єрний показ' : 'Премьерный показ'), desc: isEn ? 'Mark first watched movie in the archive' : (isUk ? 'Відзначити перший переглянутий фільм в архіві' : 'Отметить первый просмотренный фильм в архив'), check: s => s.watchCompletedCount >= 1 },
-    { id: 'serial_fan', icon: '📺', title: isEn ? 'Movie Buff' : (isUk ? 'Кіноман' : 'Киноман'), desc: isEn ? 'Watch 5 movies and mark in archive' : (isUk ? 'Подивитися 5 фільмів і відзначити в архіві' : 'Посмотреть 5 фильмов и отметить в архиве'), check: s => s.watchCompletedCount >= 5 },
-    { id: 'smart_shopper', icon: '🛒', title: isEn ? 'Full Cart' : (isUk ? 'Повний кошик' : 'Полная корзина'), desc: isEn ? 'Buy everything from the "To Buy" list' : (isUk ? 'Купити все зі списку «Що купити?»' : 'Купить всё из списка «Что купить?»'), check: s => s.buyCompletedCount >= 1 },
-    { id: 'shop_places_3', icon: '🏪', title: isEn ? 'Shopping Tour' : (isUk ? 'Шопінг-тур' : 'Шопинг-тур'), desc: isEn ? 'Buy 3 items from the shopping list' : (isUk ? 'Купити 3 товари зі списку покупок' : 'Купить 3 товара из списка покупок'), check: s => s.buyCompletedCount >= 3 },
-    { id: 'shop_places_5', icon: '🏬', title: isEn ? 'Store Connoisseur' : (isUk ? 'Знавець покупок' : 'Знаток покупок'), desc: isEn ? 'Buy 10 items from the shopping list' : (isUk ? 'Купити 10 товарів зі списку покупок' : 'Купить 10 товаров из списка покупок'), check: s => s.buyCompletedCount >= 10 },
-    { id: 'shop_places_10', icon: '🗺️', title: isEn ? 'Shopping Map' : (isUk ? 'Карта шопінгу' : 'Карта шопинга'), desc: isEn ? 'Buy 25 items from the shopping list' : (isUk ? 'Купити 25 товарів зі списку покупок' : 'Купить 25 товаров из списка покупок'), check: s => s.buyCompletedCount >= 25 },
-    { id: 'night_owl', icon: '🦉', title: isEn ? 'Night Owl' : (isUk ? 'Нічна сова' : 'Ночная сова'), desc: isEn ? 'Complete a task late in the evening or night' : (isUk ? 'Завершити завдання пізно ввечері або вночі' : 'Завершить задачу в поздний вечер или ночь'), check: s => s.hasNightTask },
-    { id: 'early_riser', icon: '☕', title: isEn ? 'First Rays' : (isUk ? 'З першими променями' : 'С первыми лучами'), desc: isEn ? 'Complete a morning task before noon' : (isUk ? 'Закрити ранкове завдання до полудня' : 'Закрыть утреннюю задачу до полудня'), check: s => s.morningCompletedCount >= 1 },
-    { id: 'pattern_lines', icon: '📏', title: isEn ? 'Classic Lines' : (isUk ? 'Класичні лінії' : 'Классические линии'), desc: isEn ? 'Set notebook pattern to "Lines"' : (isUk ? 'Встановити візерунок «Лінії»' : 'Установить узор блокнота «Линии»'), check: s => s.hasCustomPattern },
-    { id: 'pattern_grid', icon: '📐', title: isEn ? 'Strict Grid' : (isUk ? 'Сувора клітинка' : 'Строгая клетка'), desc: isEn ? 'Set notebook pattern to "Grid"' : (isUk ? 'Встановити візерунок «Клітинка»' : 'Установить узор блокнота «Клетка»'), check: s => s.hasGridPattern },
-    { id: 'pattern_dots', icon: '🔘', title: isEn ? 'Elegant Dots' : (isUk ? 'Елегантні крапки' : 'Элегантные точки'), desc: isEn ? 'Set notebook pattern to "Dots"' : (isUk ? 'Встановити візерунок «Крапки»' : 'Установить узор блокнота «Точки»'), check: s => s.hasDotsPattern },
-    { id: 'pattern_blank', icon: '📄', title: isEn ? 'Blank Sheet' : (isUk ? 'Чистий аркуш' : 'Чистый лист'), desc: isEn ? 'Set notebook pattern to blank' : (isUk ? 'Встановити чистий фон без візерунка' : 'Установить чистый фон без узора'), check: s => s.hasBlankPattern },
-    { id: 'multi_tab_user', icon: '📁', title: isEn ? 'Multitasker' : (isUk ? 'Багатозадачність' : 'Многозадачность'), desc: isEn ? 'Manage tasks across 4 tabs simultaneously' : (isUk ? 'Вести справи одночасно у 4 вкладках' : 'Вести дела одновременно в 4 вкладках'), check: s => s.tabsCount >= 4 },
-    { id: 'defer_task_once', icon: '🔄', title: isEn ? 'Second Wind' : (isUk ? 'Друге дихання' : 'Второе дыхание'), desc: isEn ? 'Defer a task to the next day via swipe' : (isUk ? 'Перенести завдання свайпом на наступний день' : 'Перенести задачу свайпом на следующий день'), check: s => s.hasDeferredTask },
-    { id: 'photo_task', icon: '📝', title: isEn ? 'Detailed Note' : (isUk ? 'З приміткою' : 'С заметкой'), desc: isEn ? 'Add notes or details to a task' : (isUk ? 'Додати примітку або подробиці до завдання' : 'Добавить заметку или подробности к задаче'), check: s => s.hasNotesTask },
-    { id: 'dark_side', icon: '🌙', title: isEn ? 'Dark Knight' : (isUk ? 'Темний лицар' : 'Тёмный рыцарь'), desc: isEn ? 'Enable deep dark theme' : (isUk ? 'Увімкнути глибоку темну тему' : 'Включить глубокую тёмную тему блокнота'), check: s => s.hasDarkTheme },
-    { id: 'century_history', icon: '🏛️', title: isEn ? 'Chronicler' : (isUk ? 'Літописець' : 'Летописец'), desc: isEn ? 'Accumulate over 100 history entries' : (isUk ? 'Накопичити понад 100 записів в історії днів' : 'Накопить более 100 записей в истории дней'), check: s => s.totalHistoryItems >= 100 },
-    { id: 'half_thousand_history', icon: '📜', title: isEn ? 'Grand Historian' : (isUk ? 'Великий хронікер' : 'Великий хроникер'), desc: isEn ? 'Accumulate over 500 history entries' : (isUk ? 'Накопичити понад 500 записів в історії' : 'Накопить более 500 записей в истории'), check: s => s.totalHistoryItems >= 500 },
-    { id: 'thousand_history', icon: '👑', title: isEn ? 'Productivity Emperor' : (isUk ? 'Імператор продуктивності' : 'Император продуктивности'), desc: isEn ? 'Accumulate over 1000 history entries' : (isUk ? 'Накопичити понад 1000 записів в історії днів' : 'Накопить более 1000 записей в истории дней'), check: s => s.totalHistoryItems >= 1000 },
-    { id: 'collector_10', icon: '🥉', title: isEn ? 'Collector (Bronze)' : (isUk ? 'Колекціонер (Бронза)' : 'Коллекционер (Бронза)'), desc: isEn ? 'Unlock 10 achievements in Plan4U' : (isUk ? 'Розблокувати 10 досягнень у блокноті' : 'Разблокировать 10 достижений в блокноте'), check: s => s.unlockedCount >= 10 },
-    { id: 'collector_25', icon: '🥈', title: isEn ? 'Collector (Silver)' : (isUk ? 'Колекціонер (Срібло)' : 'Коллекционер (Серебро)'), desc: isEn ? 'Unlock 25 achievements in Plan4U' : (isUk ? 'Розблокувати 25 досягнень у блокноті' : 'Разблокировать 25 достижений в блокноте'), check: s => s.unlockedCount >= 25 },
-    { id: 'collector_50', icon: '🥇', title: isEn ? 'Collector (Gold)' : (isUk ? 'Колекціонер (Золото)' : 'Коллекционер (Золото)'), desc: isEn ? 'Unlock 50 achievements in Plan4U' : (isUk ? 'Розблокувати 50 досягнень у блокноті' : 'Разблокировать 50 достижений в блокноте'), check: s => s.unlockedCount >= 50 },
-    { id: 'collector_75', icon: '💎', title: isEn ? 'Collector (Platinum)' : (isUk ? 'Колекціонер (Платина)' : 'Коллекционер (Платина)'), desc: isEn ? 'Unlock 75 achievements in Plan4U' : (isUk ? 'Розблокувати 75 досягнень у блокноті' : 'Разблокировать 75 достижений в блокноте'), check: s => s.unlockedCount >= 75 },
-    { id: 'collector_100', icon: '🏆', title: isEn ? 'Century of Glory (100)' : (isUk ? 'Вік слави (100 ачівок)' : 'Век славы (100 ачивок)'), desc: isEn ? 'Unlock 100 achievements in Plan4U!' : (isUk ? 'Розблокувати 100 досягнень у блокноті!' : 'Разблокировать 100 достижений в блокноте!'), check: s => s.unlockedCount >= 100 },
-    { id: 'collector_150', icon: '🌌', title: isEn ? 'Cosmic Triumph (150)' : (isUk ? 'Космічний тріумф (150)' : 'Космический триумф (150)'), desc: isEn ? 'Unlock 150 achievements in Plan4U!' : (isUk ? 'Розблокувати 150 досягнень у блокноті!' : 'Разблокировать 150 достижений в блокноте!'), check: s => s.unlockedCount >= 150 },
-    { id: 'collector_200', icon: '👑', title: isEn ? 'Ultimate Champion (200)' : (isUk ? 'Абсолютний чемпіон (200)' : 'Абсолютный чемпион (200)'), desc: isEn ? 'Unlock 200 achievements in Plan4U!' : (isUk ? 'Розблокувати 200 досягнень у блокноті!' : 'Разблокировать 200 достижений в блокноте!'), check: s => s.unlockedCount >= 200 }
-  ];
-
-  specialList.forEach(item => {
-    list.push({
-      ...item,
-      category: 'special',
-      type: 'onetime'
-    });
-  });
-
-  return list;
+// buildAchievementsCatalog and ACHIEVEMENTS_LIST are modularized into achievements_system.js
+if (typeof buildAchievementsCatalog === 'undefined') {
+  var buildAchievementsCatalog = (window.Plan4UAchievements && window.Plan4UAchievements.buildCatalog) || window.buildAchievementsCatalog;
 }
-
-let ACHIEVEMENTS_LIST = buildAchievementsCatalog(detectSystemLanguage());
+if (typeof ACHIEVEMENTS_LIST === 'undefined') {
+  var ACHIEVEMENTS_LIST = window.ACHIEVEMENTS_LIST || (buildAchievementsCatalog ? buildAchievementsCatalog(detectSystemLanguage()) : []);
+}
 
 function getTabColor(colorId) {
   if (!colorId || colorId === 'default') return TAB_COLORS[0];
@@ -1590,99 +1304,13 @@ async function decryptCloudPayload(cipherJsonStr, password, email) {
 // =========================================================================
 // STICKERS & NOTEBOOK DECOR CATALOG (WebP Assets)
 // =========================================================================
-const STICKERS_CATALOG = {
-  fall: Array.from({ length: 49 }, (_, i) => {
-    const num = String(i + 1).padStart(2, '0');
-    return {
-      id: `fall_${num}`,
-      img: `./assets/stickers/fall/fall_${num}.webp`
-    };
-  }),
-  cats: Array.from({ length: 49 }, (_, i) => {
-    const num = String(i + 1).padStart(2, '0');
-    return {
-      id: `cat_${num}`,
-      img: `./assets/stickers/cats/cat_${num}.webp`
-    };
-  }).filter(s => s.id !== 'cat_19'),
-  more_cats: Array.from({ length: 49 }, (_, i) => {
-    const num = String(i + 1).padStart(2, '0');
-    return {
-      id: `more_cat_${num}`,
-      img: `./assets/stickers/more_cats/more_cat_${num}.webp`
-    };
-  }),
-  flora: Array.from({ length: 64 }, (_, i) => {
-    const num = String(i + 1).padStart(2, '0');
-    return {
-      id: `flora_${num}`,
-      img: `./assets/stickers/flora/flora_${num}.webp`
-    };
-  }),
-  fauna: Array.from({ length: 49 }, (_, i) => {
-    const num = String(i + 1).padStart(2, '0');
-    return {
-      id: `fauna_${num}`,
-      img: `./assets/stickers/fauna/fauna_${num}.webp`
-    };
-  }),
-  ocean: Array.from({ length: 49 }, (_, i) => {
-    const num = String(i + 1).padStart(2, '0');
-    return {
-      id: `ocean_${num}`,
-      img: `./assets/stickers/ocean/ocean_${num}.webp`
-    };
-  }),
-  pigs: Array.from({ length: 49 }, (_, i) => {
-    const num = String(i + 1).padStart(2, '0');
-    return {
-      id: `pig_${num}`,
-      img: `./assets/stickers/pigs/pig_${num}.webp`
-    };
-  }),
-  food: Array.from({ length: 49 }, (_, i) => {
-    const num = String(i + 1).padStart(2, '0');
-    return {
-      id: `food_${num}`,
-      img: `./assets/stickers/food/food_${num}.webp`
-    };
-  }),
-  sweets: Array.from({ length: 49 }, (_, i) => {
-    const num = String(i + 1).padStart(2, '0');
-    return {
-      id: `sweet_${num}`,
-      img: `./assets/stickers/sweets/sweet_${num}.webp`
-    };
-  }),
-  reptiles: Array.from({ length: 49 }, (_, i) => {
-    const num = String(i + 1).padStart(2, '0');
-    return {
-      id: `reptile_${num}`,
-      img: `./assets/stickers/reptiles/reptile_${num}.webp`
-    };
-  }),
-  sport: Array.from({ length: 49 }, (_, i) => {
-    const num = String(i + 1).padStart(2, '0');
-    return {
-      id: `sport_${num}`,
-      img: `./assets/stickers/sport/sport_${num}.webp`
-    };
-  })
-};
-
-const DEFAULT_STICKER_CATEGORIES = [
-  { id: 'fall', key: 'cat_fall', icon: '🍂', fallback: 'Осень' },
-  { id: 'cats', key: 'cat_cats', icon: '🐱', fallback: 'Коты' },
-  { id: 'more_cats', key: 'cat_more_cats', icon: '🐾', fallback: 'Ещё коты' },
-  { id: 'flora', key: 'cat_flora', icon: '🍄', fallback: 'Флора' },
-  { id: 'fauna', key: 'cat_fauna', icon: '🐝', fallback: 'Фауна' },
-  { id: 'ocean', key: 'cat_ocean', icon: '🌊', fallback: 'Океан' },
-  { id: 'pigs', key: 'cat_pigs', icon: '🐹', fallback: 'Свини' },
-  { id: 'food', key: 'cat_food', icon: '🍔', fallback: 'Еда' },
-  { id: 'sweets', key: 'cat_sweets', icon: '🍰', fallback: 'Сладости' },
-  { id: 'reptiles', key: 'cat_reptiles', icon: '🐸', fallback: 'Рептилии' },
-  { id: 'sport', key: 'cat_sport', icon: '⚽', fallback: 'Спорт' }
-];
+// STICKERS_CATALOG and DEFAULT_STICKER_CATEGORIES are modularized into stickers_system.js
+if (typeof STICKERS_CATALOG === 'undefined') {
+  var STICKERS_CATALOG = (window.Plan4UStickers && window.Plan4UStickers.CATALOG) || window.STICKERS_CATALOG || {};
+}
+if (typeof DEFAULT_STICKER_CATEGORIES === 'undefined') {
+  var DEFAULT_STICKER_CATEGORIES = (window.Plan4UStickers && window.Plan4UStickers.CATEGORIES) || window.DEFAULT_STICKER_CATEGORIES || [];
+}
 
 class NotebookApp {
   constructor() {
@@ -1750,6 +1378,8 @@ class NotebookApp {
     this.updateCycleWidget();
     this.updateFinanceWidget();
     this.updateFinanceArchiveStamp();
+    this.updateNutritionWidget?.();
+    this.updateNutritionArchiveStamp?.();
     this.updateJoyUI();
     this.updateModulesHubState();
     this.checkEveningJoyTrigger();
@@ -1812,6 +1442,10 @@ class NotebookApp {
           Plan4UStorage.loadFile('stickers.json', null),
           Plan4UStorage.loadFile('habits.json', null)
         ]);
+
+        if (this.nutritionTracker && typeof this.nutritionTracker.hydrateFromStorage === 'function') {
+          this.nutritionTracker.hydrateFromStorage().catch(() => {});
+        }
 
         let hasRestored = false;
 
@@ -3461,7 +3095,7 @@ class NotebookApp {
     }
 
     // Check if habits list contains old mock placeholders from early prototypes
-    const isOldDefault = habitsList.some(h => h.id === 'h_read' || h.id === 'h_meditate');
+    const isOldDefault = habitsList.some(h => h.id === 'h_read' || h.id === 'h_meditate' || h.id === 'h_vitamin_d' || h.id === 'h_zaryadka');
 
     // Initial starter habits apply ONLY on brand-new clean installs or ancient prototypes.
     // Existing user habits (including updates on device) are NEVER wiped, reset, or overwritten!
@@ -6347,8 +5981,181 @@ class NotebookApp {
     this.financeEditingTxId = null;
     this.financeEntryType = 'expense';
     this.financeNewCatColor = '#22c55e';
-    this.financeNewCatIcon = 0;
     this.financeNewCatType = 'expense';
+
+    // Nutrition & Macro Tracker Elements & Instance
+    this.nutritionTracker = (window.Plan4UNutritionTracker && window.Plan4UNutritionTracker.NutritionTracker)
+      ? new window.Plan4UNutritionTracker.NutritionTracker()
+      : null;
+    this.widgetNutrition = document.getElementById('widgetNutrition');
+    this.widgetNutritionRing = document.getElementById('widgetNutritionRing');
+    this.notebookNutritionStamp = document.getElementById('notebookNutritionStamp');
+    this.nutritionModalBackdrop = document.getElementById('nutritionModalBackdrop');
+    this.nutritionCloseBtn = document.getElementById('nutritionCloseBtn');
+    this.btnNutritionAddCategory = document.getElementById('btnNutritionAddCategory');
+    this.btnNutritionStats = document.getElementById('btnNutritionStats');
+    this.nutritionStatsModalBackdrop = document.getElementById('nutritionStatsModalBackdrop');
+    this.nutritionStatsCloseBtn = document.getElementById('nutritionStatsCloseBtn');
+    this.btnNutritionTabCalendar = document.getElementById('btnNutritionTabCalendar');
+    this.btnNutritionTabFrequency = document.getElementById('btnNutritionTabFrequency');
+    this.nutritionPaneCalendar = document.getElementById('nutritionPaneCalendar');
+    this.nutritionPaneFrequency = document.getElementById('nutritionPaneFrequency');
+    this.nutritionCalendarGrid = document.getElementById('nutritionCalendarGrid');
+    this.nutritionFrequencyList = document.getElementById('nutritionFrequencyList');
+    this.nutritionHeaderDate = document.getElementById('nutritionHeaderDate');
+    this.nutritionDonutContainer = document.getElementById('nutritionDonutContainer');
+    this.nutritionDonutCenter = document.getElementById('nutritionDonutCenter');
+    this.nutritionDonutCenterVal = document.getElementById('nutritionDonutCenterVal');
+    this.nutritionDonutCenterTarget = document.getElementById('nutritionDonutCenterTarget');
+    this.nutritionDonutCenterSub = document.getElementById('nutritionDonutCenterSub');
+    this.nutritionSelectedMealBadge = document.getElementById('nutritionSelectedMealBadge');
+    this.nutritionFilterIcon = document.getElementById('nutritionFilterIcon');
+    this.nutritionFilterName = document.getElementById('nutritionFilterName');
+    this.btnClearMealFilter = document.getElementById('btnClearMealFilter');
+    this.nutritionMacroBarsContainer = document.getElementById('nutritionMacroBarsContainer');
+    this.nutritionHungerScaleBox = document.getElementById('nutritionHungerScaleBox');
+    this.hungerScaleTrack = document.getElementById('hungerScaleTrack');
+    this.hungerScaleFill = document.getElementById('hungerScaleFill');
+    this.hungerScaleSlider = document.getElementById('hungerScaleSlider');
+    this.hungerScaleSmiley = document.getElementById('hungerScaleSmiley');
+    this.hungerScaleCatBox = document.getElementById('hungerScaleCatBox');
+    this.hungerScaleCatA = document.getElementById('hungerScaleCatA');
+    this.hungerScaleCatB = document.getElementById('hungerScaleCatB');
+    this.hungerCatColorPopup = document.getElementById('hungerCatColorPopup');
+    this.hungerCatColorList = document.getElementById('hungerCatColorList');
+    this.btnHungerCatColorClose = document.getElementById('btnHungerCatColorClose');
+    this.hungerScaleBubble = document.getElementById('hungerScaleBubble');
+    this.nutritionMealsFilterBar = document.getElementById('nutritionMealsFilterBar');
+    this.nutritionMealsList = document.getElementById('nutritionMealsList');
+    this.nutritionEmptyHint = document.getElementById('nutritionEmptyHint');
+    this.btnNutritionAddFood = document.getElementById('btnNutritionAddFood');
+    this.nutritionBottomBar = document.getElementById('nutritionBottomBar');
+    this.nutritionArchiveActions = document.getElementById('nutritionArchiveActions');
+    this.isNutritionArchiveMode = false;
+    this.nutritionSelectedMealFilterId = null;
+    this.currentNutritionDate = null;
+
+    // Macro Color Picker Modal Elements (Long press on Ж, Б, У)
+    this.macroColorModalBackdrop = document.getElementById('macroColorModalBackdrop');
+    this.macroColorTitle = document.getElementById('macroColorTitle');
+    this.macroColorCloseBtn = document.getElementById('macroColorCloseBtn');
+    this.macroColorCancelBtn = document.getElementById('macroColorCancelBtn');
+    this.macroColorApplyBtn = document.getElementById('macroColorApplyBtn');
+    this.macroColorPalette = document.getElementById('macroColorPalette');
+    this.macroCustomColorInput = document.getElementById('macroCustomColorInput');
+    this.btnResetMacroColor = document.getElementById('btnResetMacroColor');
+    this.macroColorPreviewNormal = document.getElementById('macroColorPreviewNormal');
+    this.macroColorPreviewOver = document.getElementById('macroColorPreviewOver');
+    this.activeEditingMacroKey = null;
+    this.tempEditingMacroColor = null;
+
+    // Add Food Modal Elements
+    this.nutritionAddFoodModalBackdrop = document.getElementById('nutritionAddFoodModalBackdrop');
+    this.nutritionAddFoodCloseBtn = document.getElementById('nutritionAddFoodCloseBtn');
+    this.tabFoodSingle = document.getElementById('tabFoodSingle');
+    this.tabFoodComposite = document.getElementById('tabFoodComposite');
+    this.paneFoodSingle = document.getElementById('paneFoodSingle');
+    this.paneFoodComposite = document.getElementById('paneFoodComposite');
+    this.singleFoodName = document.getElementById('singleFoodName');
+    this.btnScanBarcodeSingle = document.getElementById('btnScanBarcodeSingle');
+    this.singleFoodSuggestions = document.getElementById('singleFoodSuggestions');
+    this.singleFoodMealSelect = document.getElementById('singleFoodMealSelect');
+    this.singleFoodWeight = document.getElementById('singleFoodWeight');
+    this.foodQuickChips = document.getElementById('foodQuickChips');
+    this.singleFoodSummaryWeight = document.getElementById('singleFoodSummaryWeight');
+    this.singleFoodKcal100 = document.getElementById('singleFoodKcal100');
+    this.singleFoodProt100 = document.getElementById('singleFoodProt100');
+    this.singleFoodFat100 = document.getElementById('singleFoodFat100');
+    this.singleFoodCarb100 = document.getElementById('singleFoodCarb100');
+    this.singleFoodCalcKcal = document.getElementById('singleFoodCalcKcal');
+    this.singleFoodCalcProt = document.getElementById('singleFoodCalcProt');
+    this.singleFoodCalcFat = document.getElementById('singleFoodCalcFat');
+    this.singleFoodCalcCarb = document.getElementById('singleFoodCalcCarb');
+    this.btnSaveSingleFood = document.getElementById('btnSaveSingleFood');
+    this.btnSaveCustomFood = document.getElementById('btnSaveCustomFood');
+
+    // Composite Dish Elements
+    this.compositeDishName = document.getElementById('compositeDishName');
+    this.compositeDishSuggestions = document.getElementById('compositeDishSuggestions');
+    this.compositeMealSelect = document.getElementById('compositeMealSelect');
+    this.compositeIngredientsList = document.getElementById('compositeIngredientsList');
+    this.btnAddCompositeIngredient = document.getElementById('btnAddCompositeIngredient');
+    this.compositeRawWeightTotal = document.getElementById('compositeRawWeightTotal');
+    this.compositeRawKcalTotal = document.getElementById('compositeRawKcalTotal');
+    this.compositeRawProtTotal = document.getElementById('compositeRawProtTotal');
+    this.compositeRawFatTotal = document.getElementById('compositeRawFatTotal');
+    this.compositeRawCarbTotal = document.getElementById('compositeRawCarbTotal');
+    this.compositeCookedWeight = document.getElementById('compositeCookedWeight');
+    this.compositePortionEaten = document.getElementById('compositePortionEaten');
+    this.compositeYieldRatioHint = document.getElementById('compositeYieldRatioHint');
+    this.compositeCalcKcal = document.getElementById('compositeCalcKcal');
+    this.compositeCalcProt = document.getElementById('compositeCalcProt');
+    this.compositeCalcFat = document.getElementById('compositeCalcFat');
+    this.compositeCalcCarb = document.getElementById('compositeCalcCarb');
+    this.compositeSummaryWeight = document.getElementById('compositeSummaryWeight');
+    this.compositePer100gHint = document.getElementById('compositePer100gHint');
+    this.btnSaveCompositeFood = document.getElementById('btnSaveCompositeFood');
+    this.currentCompositeIngredients = [];
+
+    // Barcode Scanner Elements
+    this.nutritionBarcodeScannerModalBackdrop = document.getElementById('nutritionBarcodeScannerModalBackdrop');
+    this.nutritionScannerVideo = document.getElementById('nutritionScannerVideo');
+    this.btnScannerTorch = document.getElementById('btnScannerTorch');
+    this.btnScannerManual = document.getElementById('btnScannerManual');
+    this.btnScannerClose = document.getElementById('btnScannerClose');
+    this.scannerMediaStream = null;
+    this.scannerScanInterval = null;
+    this.scannerTargetMode = 'single';
+    this.scannerIngredientIndex = null;
+    this.scannerTorchActive = false;
+
+    // Settings Card Elements
+    this.moduleCardNutrition = document.getElementById('moduleCardNutrition');
+    this.moduleHeaderNutrition = document.getElementById('moduleHeaderNutrition');
+    this.toggleNutritionTracker = document.getElementById('toggleNutritionTracker');
+    this.btnExpandNutritionModule = document.getElementById('btnExpandNutritionModule');
+    this.nutritionSubSettings = document.getElementById('nutritionSubSettings');
+    this.toggleNutritionStamp = document.getElementById('toggleNutritionStamp');
+    this.nutritionSettingCalories = document.getElementById('nutritionSettingCalories');
+    this.nutritionSettingProtein = document.getElementById('nutritionSettingProtein');
+    this.nutritionSettingFat = document.getElementById('nutritionSettingFat');
+    this.nutritionSettingCarbs = document.getElementById('nutritionSettingCarbs');
+    this.btnOpenNutritionFromSettings = document.getElementById('btnOpenNutritionFromSettings');
+
+    // Nutrition Settings Modal Elements
+    this.nutritionSettingsModalBackdrop = document.getElementById('nutritionSettingsModalBackdrop');
+    this.nutritionSettingsCloseBtn = document.getElementById('nutritionSettingsCloseBtn');
+    this.modalSettingCalorieTarget = document.getElementById('modalSettingCalorieTarget');
+    this.modalSettingProteinTarget = document.getElementById('modalSettingProteinTarget');
+    this.modalSettingFatTarget = document.getElementById('modalSettingFatTarget');
+    this.modalSettingCarbTarget = document.getElementById('modalSettingCarbTarget');
+    this.customMealsList = document.getElementById('customMealsList');
+    this.newMealIconPickerGrid = document.getElementById('newMealIconPickerGrid');
+    this.newMealSelectedPreviewImg = document.getElementById('newMealSelectedPreviewImg');
+    this.newMealIconInput = document.getElementById('newMealIconInput');
+    this.newMealNameInput = document.getElementById('newMealNameInput');
+    this.newMealColorInput = document.getElementById('newMealColorInput');
+    this.btnAddNewMealSubmit = document.getElementById('btnAddNewMealSubmit');
+    this.btnSaveNutritionSettingsModal = document.getElementById('btnSaveNutritionSettingsModal');
+    this.singleMealPreviewIcon = document.getElementById('singleMealPreviewIcon');
+    this.compositeMealPreviewIcon = document.getElementById('compositeMealPreviewIcon');
+
+    // Edit Meal Modal Elements
+    this.editMealModalBackdrop = document.getElementById('editMealModalBackdrop');
+    this.editMealModalTitle = document.getElementById('editMealModalTitle');
+    this.editMealModalCloseBtn = document.getElementById('editMealModalCloseBtn');
+    this.editMealForm = document.getElementById('editMealForm');
+    this.editMealIdInput = document.getElementById('editMealIdInput');
+    this.editMealIconInput = document.getElementById('editMealIconInput');
+    this.editMealNameInput = document.getElementById('editMealNameInput');
+    this.editMealColorInput = document.getElementById('editMealColorInput');
+    this.editMealSelectedPreview = document.getElementById('editMealSelectedPreview');
+    this.editMealSelectedPreviewImg = document.getElementById('editMealSelectedPreviewImg');
+    this.editMealColorsRow = document.getElementById('editMealColorsRow');
+    this.editMealIconPickerGrid = document.getElementById('editMealIconPickerGrid');
+    this.btnCancelEditMeal = document.getElementById('btnCancelEditMeal');
+    this.btnDeleteEditMeal = document.getElementById('btnDeleteEditMeal');
+    this.btnSaveEditMeal = document.getElementById('btnSaveEditMeal');
 
     this.weekDaysBar = document.getElementById('weekDaysBar');
     this.weekDaysTrack = document.getElementById('weekDaysTrack');
@@ -6998,28 +6805,6 @@ class NotebookApp {
     if (this.settingsDoneBtn) {
       this.settingsDoneBtn.addEventListener('click', () => this.closeSettingsModal());
     }
-    const btnForceCacheReset = document.getElementById('btnForceCacheReset');
-    if (btnForceCacheReset) {
-      btnForceCacheReset.addEventListener('click', async () => {
-        triggerHaptic([30, 50, 30]);
-        btnForceCacheReset.textContent = '⏳ Очистка...';
-        try {
-          if (window.caches) {
-            const keys = await caches.keys();
-            await Promise.all(keys.map(k => caches.delete(k)));
-          }
-          if ('serviceWorker' in navigator) {
-            const registrations = await navigator.serviceWorker.getRegistrations();
-            for (const reg of registrations) {
-              await reg.unregister();
-            }
-          }
-        } catch (e) {
-          console.warn('Cache clear error:', e);
-        }
-        window.location.reload(true);
-      });
-    }
     bindSafeBackdrop(this.settingsModalBackdrop, () => this.closeSettingsModal(), () => this._settingsModalOpenedAt);
 
     // Calendar Modal listeners
@@ -7260,6 +7045,13 @@ class NotebookApp {
       });
     }
 
+    if (this.moduleHeaderNutrition) {
+      this.moduleHeaderNutrition.addEventListener('click', (e) => {
+        if (e.target.closest('.toggle-switch, input, button')) return;
+        this.toggleModuleCard('moduleCardNutrition', 'nutritionSubSettings', 'btnExpandNutritionModule');
+      });
+    }
+
     // Settings Category Expand / Collapse Listeners
     const setupSectionToggle = (headerId, btnId, sectionId, bodyId) => {
       const btn = document.getElementById(btnId);
@@ -7288,6 +7080,9 @@ class NotebookApp {
 
     // Initialize Joy Tracker Event Listeners
     this.initJoyTrackerListeners();
+
+    // Initialize Nutrition & Macro Tracker Event Listeners
+    this.initNutritionTrackerListeners();
 
     if (this.btnCycleStartToday) {
       this.btnCycleStartToday.addEventListener('click', () => {
@@ -9552,6 +9347,20 @@ class NotebookApp {
       }
     }
 
+    if (this.nutritionTracker) {
+      const nSet = this.nutritionTracker.getSettings();
+      if (this.toggleNutritionTracker) {
+        this.toggleNutritionTracker.checked = !!nSet.enabled;
+      }
+      if (this.toggleNutritionStamp) {
+        this.toggleNutritionStamp.checked = nSet.showArchiveStamp !== false;
+      }
+      if (this.nutritionSettingCalories) this.nutritionSettingCalories.value = nSet.calorieTarget || 2000;
+      if (this.nutritionSettingProtein) this.nutritionSettingProtein.value = nSet.proteinTarget || 80;
+      if (this.nutritionSettingFat) this.nutritionSettingFat.value = nSet.fatTarget || 70;
+      if (this.nutritionSettingCarbs) this.nutritionSettingCarbs.value = nSet.carbTarget || 250;
+    }
+
     const last = localStorage.getItem('plan4u_last_gdrive_export');
     if (this.cloudLastSyncText && last) {
       this.cloudLastSyncText.innerHTML = `Сохранено на Диск: <b>${last}</b>`;
@@ -11093,6 +10902,8 @@ class NotebookApp {
     this.updateCycleWidget();
     this.updateFinanceWidget();
     this.updateFinanceArchiveStamp();
+    this.updateNutritionWidget?.();
+    this.updateNutritionArchiveStamp?.();
     this.updateJoyUI();
     this.renderTabs();
     this.syncWithNativeWidget?.();
@@ -11234,6 +11045,8 @@ class NotebookApp {
     // In JS: 0 is Sunday, 1 is Monday... convert so Monday is 0
     let startDayOfWeek = (firstDayOfMonth.getDay() + 6) % 7;
 
+    const isNutritionEnabled = !!(this.nutritionTracker && typeof this.nutritionTracker.isEnabled === 'function' && this.nutritionTracker.isEnabled());
+
     // Previous month padding days
     const prevMonthLastDay = new Date(currentYear, currentMonth, 0).getDate();
     for (let i = startDayOfWeek - 1; i >= 0; i--) {
@@ -11245,13 +11058,25 @@ class NotebookApp {
       const prevDate = new Date(currentYear, currentMonth - 1, pDay);
       const pDateStr = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}-${String(pDay).padStart(2, '0')}`;
       const pStatus = this.getHabitsDayStatus(pDateStr);
-      if (pStatus.hasHabits) {
+      if (pStatus.hasHabits && pStatus.completedCount > 0) {
         const badge = document.createElement('span');
         badge.className = `calendar-habit-badge ${pStatus.isCompleted ? 'completed' : 'missed'}`;
         if (pStatus.isCompleted) {
           badge.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"></polyline></svg>';
         }
         cell.appendChild(badge);
+      }
+
+      // Nutrition avocado on past archive days (only if food was actually logged)
+      if (isNutritionEnabled) {
+        const pStats = this.nutritionTracker.getStatsForDate(pDateStr);
+        if (pStats && (pStats.entryCount > 0 || pStats.totalCalories > 0)) {
+          const avo = document.createElement('span');
+          avo.className = 'calendar-nutrition-avocado';
+          avo.textContent = '🥑';
+          avo.title = `Питание: ${pStats.totalCalories} ккал`;
+          cell.appendChild(avo);
+        }
       }
 
       this.calendarDaysGrid.appendChild(cell);
@@ -11282,9 +11107,13 @@ class NotebookApp {
         cell.classList.add('has-joy');
       }
 
-      // Habit status badge (top-left circle: checkmark if completed, empty ring if missed)
+      // Habit status badge (top-left circle: checkmark if completed, ring if pending today or partial past)
       const habitStatus = this.getHabitsDayStatus(dateStr);
-      if (habitStatus.hasHabits) {
+      const showHabitBadge = isToday
+        ? habitStatus.hasHabits
+        : (habitStatus.hasHabits && habitStatus.completedCount > 0);
+
+      if (showHabitBadge) {
         const hBadge = document.createElement('span');
         hBadge.className = `calendar-habit-badge ${habitStatus.isCompleted ? 'completed' : 'missed'}`;
         if (habitStatus.isCompleted) {
@@ -11298,6 +11127,18 @@ class NotebookApp {
             : `Привычки: ${habitStatus.completedCount} из ${habitStatus.scheduledCount} выполнено`;
         }
         cell.appendChild(hBadge);
+      }
+
+      // Nutrition avocado on days with logged food
+      if (isNutritionEnabled) {
+        const nStats = this.nutritionTracker.getStatsForDate(dateStr);
+        if (nStats && (nStats.entryCount > 0 || nStats.totalCalories > 0)) {
+          const avo = document.createElement('span');
+          avo.className = 'calendar-nutrition-avocado';
+          avo.textContent = '🥑';
+          avo.title = `Питание: ${nStats.totalCalories} ккал`;
+          cell.appendChild(avo);
+        }
       }
 
       // Cycle status highlight (period, irregular window, ovulation)
@@ -11368,7 +11209,12 @@ class NotebookApp {
 
       const selectedHabitStatus = this.getHabitsDayStatus(this.tempSelectedDate);
       let habitInfoText = '';
-      if (selectedHabitStatus.hasHabits) {
+      const isPastSelected = this.tempSelectedDate < todayStr;
+      const shouldShowHabitInfo = isPastSelected
+        ? (selectedHabitStatus.hasHabits && selectedHabitStatus.completedCount > 0)
+        : selectedHabitStatus.hasHabits;
+
+      if (shouldShowHabitInfo) {
         const habitsWord = window.Plan4UI18n ? Plan4UI18n.t('habit_cal_info_label', {}, lang) : 'Привычки';
         const habitDoneMark = selectedHabitStatus.isCompleted ? '✓' : '';
         habitInfoText = ` • ${habitsWord}: ${selectedHabitStatus.completedCount}/${selectedHabitStatus.scheduledCount} ${habitDoneMark}`;
@@ -11383,22 +11229,32 @@ class NotebookApp {
         joyInfoText = ` • ☀️ ${mObj.icon} ${joyWord}`;
       }
 
+      let nutritionInfoText = '';
+      if (isNutritionEnabled) {
+        const nStats = this.nutritionTracker.getStatsForDate(this.tempSelectedDate);
+        if (nStats && (nStats.entryCount > 0 || nStats.totalCalories > 0)) {
+          nutritionInfoText = ` • 🥑 ${nStats.totalCalories} ккал`;
+        }
+      }
+
       if (this.calendarInfoStats) {
         if (selectedDayTasks.length > 0) {
           const tasksWord = lang === 'en' ? 'Tasks' : (lang === 'uk' ? 'Завдань на день' : 'Задач на день');
           const doneWord = lang === 'en' ? 'Completed' : (lang === 'uk' ? 'Виконано' : 'Выполнено');
           const histWord = lang === 'en' ? 'In history' : (lang === 'uk' ? 'В історії' : 'В истории');
-          this.calendarInfoStats.textContent = `${tasksWord}: ${selectedDayTasks.length} • ${doneWord}: ${completedToday}${historyList.length > 0 ? ` • ${histWord}: ${historyList.length}` : ''}${habitInfoText}${joyInfoText}`;
+          this.calendarInfoStats.textContent = `${tasksWord}: ${selectedDayTasks.length} • ${doneWord}: ${completedToday}${historyList.length > 0 ? ` • ${histWord}: ${historyList.length}` : ''}${habitInfoText}${joyInfoText}${nutritionInfoText}`;
         } else if (historyList.length > 0) {
           const histText = lang === 'en' ? `In history for this day: ${historyList.length} completed tasks` : (lang === 'uk' ? `В історії цього дня: ${historyList.length} виконаних справ` : `В истории этого дня: ${historyList.length} выполненных дел`);
-          this.calendarInfoStats.textContent = `${histText}${habitInfoText}${joyInfoText}`;
+          this.calendarInfoStats.textContent = `${histText}${habitInfoText}${joyInfoText}${nutritionInfoText}`;
         } else if (habitInfoText) {
           const habitsWord = window.Plan4UI18n ? Plan4UI18n.t('habit_cal_info_label', {}, lang) : 'Привычки';
           const habitsOnlyText = `${habitsWord}: ${selectedHabitStatus.completedCount}/${selectedHabitStatus.scheduledCount} ${selectedHabitStatus.isCompleted ? '✓' : ''}`;
-          this.calendarInfoStats.textContent = `${habitsOnlyText}${joyInfoText}`;
+          this.calendarInfoStats.textContent = `${habitsOnlyText}${joyInfoText}${nutritionInfoText}`;
         } else if (joyInfoText) {
           const joyWord = lang === 'en' ? 'Joy note saved on paper sticker' : (lang === 'uk' ? 'Запис радості збережено на стікері' : 'Запись радости сохранена на стикере');
-          this.calendarInfoStats.textContent = `☀️ ${joyWord}!`;
+          this.calendarInfoStats.textContent = `☀️ ${joyWord}!${nutritionInfoText}`;
+        } else if (nutritionInfoText) {
+          this.calendarInfoStats.textContent = nutritionInfoText.replace(/^ • /, '');
         } else {
           const emptyText = isTempToday
             ? (lang === 'en' ? 'Click "Open this day" to plan tasks' : (lang === 'uk' ? 'Натисніть «Відкрити цей день», щоб планувати справи' : 'Нажмите «Открыть этот день», чтобы планировать задачи'))
@@ -11722,7 +11578,8 @@ class NotebookApp {
     const cycleEnabled = !!(this.cycleTracker && typeof this.cycleTracker.isEnabled === 'function' && this.cycleTracker.isEnabled());
     const financeEnabled = !!(this.financeTracker && typeof this.financeTracker.isEnabled === 'function' && this.financeTracker.isEnabled());
     const joyEnabled = !!(this.joyTracker && typeof this.joyTracker.isEnabled === 'function' && this.joyTracker.isEnabled());
-    return cycleEnabled || financeEnabled || joyEnabled;
+    const nutritionEnabled = !!(this.nutritionTracker && typeof this.nutritionTracker.isEnabled === 'function' && this.nutritionTracker.isEnabled());
+    return cycleEnabled || financeEnabled || joyEnabled || nutritionEnabled;
   }
 
   isModulesHubDisabled() {
@@ -11820,6 +11677,9 @@ class NotebookApp {
 
     // 2.5. Refresh joy widget
     this.updateJoyWidget?.();
+
+    // 2.6. Refresh nutrition widget
+    this.updateNutritionWidget?.();
 
     // 3. Unclaimed achievements indicator on trigger button
     const hasUnclaimed = this.hasUnclaimedAchievements ? this.hasUnclaimedAchievements() : false;
@@ -17409,7 +17269,8 @@ class NotebookApp {
       { cardId: 'notifSettingsSection', subSettingsId: 'notifSettingsBody', btnExpandId: 'btnExpandNotifSettings' },
       { cardId: 'backupSettingsSection', subSettingsId: 'backupSettingsBody', btnExpandId: 'btnExpandBackupSettings' },
       { cardId: 'moduleCardCycle', subSettingsId: 'cycleSubSettings', btnExpandId: 'btnExpandCycleModule' },
-      { cardId: 'moduleCardFinance', subSettingsId: 'financeSubSettings', btnExpandId: 'btnExpandFinanceModule' }
+      { cardId: 'moduleCardFinance', subSettingsId: 'financeSubSettings', btnExpandId: 'btnExpandFinanceModule' },
+      { cardId: 'moduleCardNutrition', subSettingsId: 'nutritionSubSettings', btnExpandId: 'btnExpandNutritionModule' }
     ];
     const lang = this.settings?.lang || 'ru';
     const isEn = lang === 'en';
@@ -19327,6 +19188,4321 @@ class NotebookApp {
   }
 
   /* ============================================================================
+   * 🥑 NUTRITION & MACRO TRACKER (ПОДСЧЁТ КАЛОРИЙ И БЖУ) METHODS
+   * ============================================================================ */
+
+  initNutritionTrackerListeners() {
+    if (!this.nutritionTracker) return;
+    this.applyMacroColors();
+
+    // 1. Top Header Widget Click (inside modulesHubDropdown)
+    if (this.widgetNutrition) {
+      this.widgetNutrition.addEventListener('click', () => {
+        triggerHaptic(20);
+        this.closeModulesHubDropdown();
+        this.isNutritionArchiveMode = false;
+        this.openNutritionModal();
+      });
+    }
+
+    // 2. Archive Paper Sheet Craft Stamp Click
+    if (this.notebookNutritionStamp) {
+      this.notebookNutritionStamp.addEventListener('click', () => {
+        triggerHaptic(20);
+        this.isNutritionArchiveMode = true;
+        this.openNutritionModal(this.selectedDate);
+      });
+    }
+
+    // 3. Main Modal Close & Safe Backdrop
+    if (this.nutritionCloseBtn) {
+      this.nutritionCloseBtn.addEventListener('click', () => this.closeNutritionModal());
+    }
+    this.bindSafeBackdrop(this.nutritionModalBackdrop, () => this.closeNutritionModal(), () => this._nutritionModalOpenedAt);
+
+    // 4. Header Settings Gear or + Category Button Click
+    if (this.btnNutritionAddCategory) {
+      this.btnNutritionAddCategory.addEventListener('click', () => {
+        triggerHaptic(15);
+        this.openMealEditModal(null);
+      });
+    }
+    if (this.btnNutritionSettings) {
+      this.btnNutritionSettings.addEventListener('click', () => {
+        triggerHaptic(15);
+        this.openNutritionSettingsModal();
+      });
+    }
+    if (this.btnNutritionStats) {
+      this.btnNutritionStats.addEventListener('click', () => {
+        triggerHaptic(15);
+        this.openNutritionStatsModal();
+      });
+    }
+    if (this.nutritionStatsCloseBtn) {
+      this.nutritionStatsCloseBtn.addEventListener('click', () => {
+        this.closeNutritionStatsModal();
+      });
+    }
+    this.bindSafeBackdrop(this.nutritionStatsModalBackdrop, () => this.closeNutritionStatsModal(), () => this._nutritionStatsModalOpenedAt);
+    if (this.btnNutritionTabCalendar && this.btnNutritionTabFrequency) {
+      this.btnNutritionTabCalendar.addEventListener('click', () => {
+        triggerHaptic(12);
+        this.switchNutritionStatsTab('calendar');
+      });
+      this.btnNutritionTabFrequency.addEventListener('click', () => {
+        triggerHaptic(12);
+        this.switchNutritionStatsTab('frequency');
+      });
+    }
+
+    // 5. Interactive Donut Center Click (Resets Meal Filter back to Total Daily Calories)
+    if (this.nutritionDonutCenter) {
+      this.nutritionDonutCenter.addEventListener('click', () => {
+        if (this.nutritionSelectedMealFilterId) {
+          triggerHaptic(15);
+          this.nutritionSelectedMealFilterId = null;
+          this.renderNutritionModalContent();
+        }
+      });
+    }
+
+    // 5.5. Interactive Hunger & Norm Balance Scale click / tap
+    const hungerBox = this.nutritionHungerScaleBox || document.getElementById('nutritionHungerScaleBox');
+    if (hungerBox) {
+      hungerBox.addEventListener('click', (e) => {
+        e.stopPropagation();
+        triggerHaptic(15);
+        this.showHungerScaleBubble();
+      });
+    }
+
+    // 6. Clear Meal Filter Badge Button
+    if (this.btnClearMealFilter) {
+      this.btnClearMealFilter.addEventListener('click', (e) => {
+        e.stopPropagation();
+        triggerHaptic(15);
+        this.nutritionSelectedMealFilterId = null;
+        this.renderNutritionModalContent();
+      });
+    }
+
+    // 6.5 Hunger & Norm Balance Scale Events (10-Step Cat Evolution & Color Submenu)
+    this.setupHungerScaleInteractions();
+
+    // 7. Bottom Action Button: Add Food [+]
+    if (this.btnNutritionAddFood) {
+      this.btnNutritionAddFood.addEventListener('click', () => {
+        triggerHaptic(20);
+        this.openAddFoodModal();
+      });
+    }
+
+    // 8. Add Food Modal: Tab Switcher (Single Food vs Composite Dish)
+    if (this.tabFoodSingle && this.tabFoodComposite) {
+      this.tabFoodSingle.addEventListener('click', () => {
+        triggerHaptic(15);
+        this.tabFoodSingle.classList.add('active');
+        this.tabFoodComposite.classList.remove('active');
+        if (this.paneFoodSingle) this.paneFoodSingle.style.display = 'block';
+        if (this.paneFoodComposite) this.paneFoodComposite.style.display = 'none';
+      });
+
+      this.tabFoodComposite.addEventListener('click', () => {
+        triggerHaptic(15);
+        this.tabFoodComposite.classList.add('active');
+        this.tabFoodSingle.classList.remove('active');
+        if (this.paneFoodComposite) this.paneFoodComposite.style.display = 'block';
+        if (this.paneFoodSingle) this.paneFoodSingle.style.display = 'none';
+        this.recalculateCompositeDish();
+      });
+    }
+
+    if (this.singleFoodMealSelect) {
+      this.singleFoodMealSelect.addEventListener('change', () => {
+        const m = this.nutritionTracker?.getMeal(this.singleFoodMealSelect.value);
+        if (m && this.singleMealPreviewIcon) {
+          this.singleMealPreviewIcon.innerHTML = this.nutritionTracker.renderMealIcon(m.icon, m.name);
+        }
+      });
+    }
+
+    if (this.compositeMealSelect) {
+      this.compositeMealSelect.addEventListener('change', () => {
+        const m = this.nutritionTracker?.getMeal(this.compositeMealSelect.value);
+        if (m && this.compositeMealPreviewIcon) {
+          this.compositeMealPreviewIcon.innerHTML = this.nutritionTracker.renderMealIcon(m.icon, m.name);
+        }
+      });
+    }
+
+    if (this.nutritionAddFoodCloseBtn) {
+      this.nutritionAddFoodCloseBtn.addEventListener('click', () => this.closeAddFoodModal());
+    }
+    this.bindSafeBackdrop(this.nutritionAddFoodModalBackdrop, () => this.closeAddFoodModal(), () => this._nutritionAddFoodOpenedAt);
+
+    // 9. Single Food: Real-Time Inputs & Auto-Calculation
+    const singleInputs = [this.singleFoodWeight, this.singleFoodKcal100, this.singleFoodProt100, this.singleFoodFat100, this.singleFoodCarb100];
+    singleInputs.forEach(input => {
+      if (input) {
+        input.addEventListener('input', () => this.recalculateSingleFoodPortion());
+        input.addEventListener('focus', () => {
+          try { input.select(); } catch (_) {}
+        });
+      }
+    });
+
+    // Quick increment chips for food serving weight (+1, +5, +10, +50, +100, Clear)
+    if (this.foodQuickChips) {
+      const preventFocusAndDismiss = (e) => {
+        if (e) {
+          try { e.preventDefault(); } catch (_) {}
+        }
+        if (this.singleFoodWeight && typeof this.singleFoodWeight.blur === 'function') {
+          this.singleFoodWeight.blur();
+        }
+        if (document.activeElement && typeof document.activeElement.blur === 'function') {
+          document.activeElement.blur();
+        }
+        this.dismissActiveKeyboard();
+      };
+
+      let clearPressTimer = null;
+      let clearLongPressed = false;
+
+      this.foodQuickChips.querySelectorAll('.food-chip-btn').forEach(btn => {
+        // Prevent gaining focus or triggering mobile on-screen keyboard
+        btn.addEventListener('pointerdown', preventFocusAndDismiss);
+        btn.addEventListener('mousedown', preventFocusAndDismiss);
+        btn.addEventListener('touchstart', preventFocusAndDismiss, { passive: false });
+
+        if (btn.dataset.action === 'clear') {
+          btn.addEventListener('pointerdown', () => {
+            clearLongPressed = false;
+            clearPressTimer = setTimeout(() => {
+              clearLongPressed = true;
+              triggerHaptic(25);
+              if (this.singleFoodWeight) {
+                this.singleFoodWeight.value = '100';
+              }
+              this.recalculateSingleFoodPortion();
+              preventFocusAndDismiss();
+            }, 450);
+          });
+
+          const cancelClearTimer = () => {
+            if (clearPressTimer) {
+              clearTimeout(clearPressTimer);
+              clearPressTimer = null;
+            }
+          };
+
+          btn.addEventListener('pointerup', cancelClearTimer);
+          btn.addEventListener('pointercancel', cancelClearTimer);
+          btn.addEventListener('pointerleave', cancelClearTimer);
+        }
+
+        btn.addEventListener('click', (e) => {
+          if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+          triggerHaptic(15);
+          preventFocusAndDismiss();
+
+          if (btn.dataset.action === 'clear') {
+            if (clearLongPressed) {
+              clearLongPressed = false;
+              return;
+            }
+            if (this.singleFoodWeight) {
+              this.singleFoodWeight.value = '0';
+            }
+          } else {
+            const add = parseFloat(btn.dataset.add) || 0;
+            const current = parseFloat((this.singleFoodWeight?.value || '0').replace(',', '.')) || 0;
+            const sum = Math.max(0, Math.round((current + add) * 10) / 10);
+            if (this.singleFoodWeight) {
+              this.singleFoodWeight.value = sum.toString();
+            }
+          }
+
+          this.recalculateSingleFoodPortion();
+          preventFocusAndDismiss();
+        });
+      });
+    }
+
+    // 10. Single Food: Live Search Suggestions (with Open Food Facts + Local Cache)
+    if (this.singleFoodName) {
+      let searchTimer = null;
+      this.singleFoodName.addEventListener('input', (e) => {
+        clearTimeout(searchTimer);
+        const q = (e.target.value || '').trim();
+        if (q.length < 2) {
+          if (this.singleFoodSuggestions) this.singleFoodSuggestions.style.display = 'none';
+          return;
+        }
+
+        searchTimer = setTimeout(async () => {
+          const results = await this.nutritionTracker.searchFood(q);
+          if (!this.singleFoodSuggestions) return;
+          if (results && results.length > 0) {
+            const protColor = this.nutritionTracker?.getMacroColor('protein') || '#3b82f6';
+            const fatColor = this.nutritionTracker?.getMacroColor('fat') || '#f59e0b';
+            const carbColor = this.nutritionTracker?.getMacroColor('carbs') || '#10b981';
+            const protRgb = this.hexToRgb(protColor) || { r: 59, g: 130, b: 246 };
+            const fatRgb = this.hexToRgb(fatColor) || { r: 245, g: 158, b: 11 };
+            const carbRgb = this.hexToRgb(carbColor) || { r: 16, g: 185, b: 129 };
+
+            this.singleFoodSuggestions.innerHTML = results.map(item => {
+              let badgeHtml = '';
+              if (item.isComposite) {
+                const count = item.ingredientsCount || (Array.isArray(item.ingredients) ? item.ingredients.length : 0);
+                badgeHtml = `<span class="food-badge-recipe">❤️ Рецепт (${count})</span>`;
+              } else if (item.isCustom || item.source === 'custom') {
+                badgeHtml = `<span class="food-badge-custom">❤️ Моё блюдо</span>`;
+              }
+              return `
+                <div class="food-suggestion-item" data-food-id="${escapeHtml(item.id)}">
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                    <span><strong>${escapeHtml(item.name)}</strong>${badgeHtml}</span>
+                  </div>
+                  <div style="font-size: 11px; color: #64748b; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 3px;">
+                    <span>${item.caloriesPer100g} ккал •</span>
+                    <span class="food-macro-pill prot" style="color: ${protColor}; background: rgba(${protRgb.r}, ${protRgb.g}, ${protRgb.b}, 0.15);">Б:${item.proteinPer100g}</span>
+                    <span class="food-macro-pill fat" style="color: ${fatColor}; background: rgba(${fatRgb.r}, ${fatRgb.g}, ${fatRgb.b}, 0.15);">Ж:${item.fatPer100g}</span>
+                    <span class="food-macro-pill carb" style="color: ${carbColor}; background: rgba(${carbRgb.r}, ${carbRgb.g}, ${carbRgb.b}, 0.15);">У:${item.carbsPer100g}</span>
+                  </div>
+                </div>
+              `;
+            }).join('');
+
+            this.singleFoodSuggestions.querySelectorAll('.food-suggestion-item').forEach((row, idx) => {
+              row.addEventListener('click', () => {
+                const selected = results[idx];
+                if (selected) {
+                  if (selected.isComposite) {
+                    // Переключаемся на вкладку «Составное блюдо» и заполняем все ингредиенты
+                    if (this.tabFoodComposite) this.tabFoodComposite.click();
+                    this.populateCompositeRecipe(selected.recipe || selected);
+                  } else {
+                    this.applyScannedFoodToSingle(selected);
+                    if (this.nutritionTracker && typeof this.nutritionTracker.saveCustomFood === 'function') {
+                      this.nutritionTracker.saveCustomFood(selected);
+                    }
+                  }
+                  if (this.singleFoodSuggestions) this.singleFoodSuggestions.style.display = 'none';
+                }
+              });
+            });
+
+            this.singleFoodSuggestions.style.display = 'block';
+          } else {
+            this.singleFoodSuggestions.style.display = 'none';
+          }
+        }, 300);
+      });
+
+      document.addEventListener('click', (e) => {
+        if (this.singleFoodSuggestions && !this.singleFoodSuggestions.contains(e.target) && e.target !== this.singleFoodName) {
+          this.singleFoodSuggestions.style.display = 'none';
+        }
+      });
+
+      this.singleFoodName.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && this.singleFoodSuggestions) {
+          this.singleFoodSuggestions.style.display = 'none';
+        }
+      });
+    }
+
+    // 11. Single Food: Barcode Scan Button
+    if (this.btnScanBarcodeSingle) {
+      this.btnScanBarcodeSingle.addEventListener('click', () => {
+        triggerHaptic(20);
+        this.startBarcodeScanner('single');
+      });
+    }
+
+    // 12. Single Food: Save to Log
+    if (this.btnSaveSingleFood) {
+      this.btnSaveSingleFood.addEventListener('click', () => {
+        const name = (this.singleFoodName?.value || '').trim();
+        if (!name) {
+          this.showToast('Введите название продукта', '⚠️');
+          return;
+        }
+
+        const rawWeight = parseFloat((this.singleFoodWeight?.value || '').replace(',', '.'));
+        if (isNaN(rawWeight) || rawWeight <= 0) {
+          this.showToast('Укажите вес порции больше 0 г', '⚠️');
+          return;
+        }
+        const weight = rawWeight;
+        const c100 = Math.max(0, parseFloat(this.singleFoodKcal100?.value) || 0);
+        const p100 = Math.max(0, parseFloat(this.singleFoodProt100?.value) || 0);
+        const f100 = Math.max(0, parseFloat(this.singleFoodFat100?.value) || 0);
+        const cb100 = Math.max(0, parseFloat(this.singleFoodCarb100?.value) || 0);
+
+        const portionCal = Math.round((weight * c100) / 100);
+        const portionProt = Math.round(((weight * p100) / 100) * 10) / 10;
+        const portionFat = Math.round(((weight * f100) / 100) * 10) / 10;
+        const portionCarb = Math.round(((weight * cb100) / 100) * 10) / 10;
+
+        const mealId = this.singleFoodMealSelect?.value || this.nutritionSelectedMealFilterId || 'meal_breakfast';
+
+        if (this.editingNutritionEntryId) {
+          this.nutritionTracker.updateEntry(this.editingNutritionEntryId, {
+            mealId,
+            foodType: 'single',
+            name,
+            weightGrams: weight,
+            calories: portionCal,
+            protein: portionProt,
+            fat: portionFat,
+            carbs: portionCarb,
+            per100g: { calories: c100, protein: p100, fat: f100, carbs: cb100 },
+            barcode: this.singleFoodName?.dataset.scannedBarcode || ''
+          });
+          this.editingNutritionEntryId = null;
+          triggerHaptic([20, 50, 20]);
+          this.showToast(`Обновлено: ${name} (${portionCal} ккал)`, '✏️');
+        } else {
+          this.nutritionTracker.addEntry({
+            date: this.currentNutritionDate,
+            mealId,
+            foodType: 'single',
+            name,
+            weightGrams: weight,
+            calories: portionCal,
+            protein: portionProt,
+            fat: portionFat,
+            carbs: portionCarb,
+            per100g: { calories: c100, protein: p100, fat: f100, carbs: cb100 },
+            barcode: this.singleFoodName?.dataset.scannedBarcode || ''
+          });
+          triggerHaptic([20, 50, 20]);
+          this.showToast(`Добавлено: ${name} (${portionCal} ккал)`, '🥗');
+        }
+
+        // Автоматически сохраняем в базу своих блюд с пометкой ❤️ "Моё блюдо"
+        if (this.nutritionTracker && typeof this.nutritionTracker.saveCustomFood === 'function') {
+          this.nutritionTracker.saveCustomFood({
+            name,
+            barcode: this.singleFoodName?.dataset.scannedBarcode || '',
+            caloriesPer100g: c100,
+            proteinPer100g: p100,
+            fatPer100g: f100,
+            carbsPer100g: cb100,
+            isCustom: true,
+            source: 'custom'
+          });
+        }
+
+        this.closeAddFoodModal();
+        this.renderNutritionModalContent();
+        this.updateNutritionWidget();
+        this.updateNutritionArchiveStamp();
+      });
+    }
+
+    // 13. Single Food: Save into Custom Foods Database
+    if (this.btnSaveCustomFood) {
+      this.btnSaveCustomFood.addEventListener('click', () => {
+        const name = (this.singleFoodName?.value || '').trim();
+        if (!name) {
+          this.showToast('Введите название продукта', '⚠️');
+          return;
+        }
+
+        this.nutritionTracker.saveCustomFood({
+          name,
+          barcode: this.singleFoodName?.dataset.scannedBarcode || '',
+          caloriesPer100g: Math.max(0, parseFloat(this.singleFoodKcal100?.value) || 0),
+          proteinPer100g: Math.max(0, parseFloat(this.singleFoodProt100?.value) || 0),
+          fatPer100g: Math.max(0, parseFloat(this.singleFoodFat100?.value) || 0),
+          carbsPer100g: Math.max(0, parseFloat(this.singleFoodCarb100?.value) || 0),
+          isCustom: true,
+          source: 'custom'
+        });
+
+        triggerHaptic(20);
+        this.showToast(`Продукт сохранен в базу: ${name} ❤️`, '✨');
+      });
+    }
+
+    // 13.1 Composite Dish: Live Search / Recipe Autocomplete
+    if (this.compositeDishName) {
+      let compDishSearchTimer = null;
+      this.compositeDishName.addEventListener('input', (e) => {
+        clearTimeout(compDishSearchTimer);
+        const q = (e.target.value || '').trim();
+        if (q.length < 1) {
+          if (this.compositeDishSuggestions) this.compositeDishSuggestions.style.display = 'none';
+          return;
+        }
+
+        compDishSearchTimer = setTimeout(async () => {
+          const results = await this.nutritionTracker.searchFood(q);
+          if (!this.compositeDishSuggestions) return;
+          if (results && results.length > 0) {
+            const protColor = this.nutritionTracker?.getMacroColor('protein') || '#3b82f6';
+            const fatColor = this.nutritionTracker?.getMacroColor('fat') || '#f59e0b';
+            const carbColor = this.nutritionTracker?.getMacroColor('carbs') || '#10b981';
+            const protRgb = this.hexToRgb(protColor) || { r: 59, g: 130, b: 246 };
+            const fatRgb = this.hexToRgb(fatColor) || { r: 245, g: 158, b: 11 };
+            const carbRgb = this.hexToRgb(carbColor) || { r: 16, g: 185, b: 129 };
+
+            this.compositeDishSuggestions.innerHTML = results.map(item => {
+              let badgeHtml = '';
+              if (item.isComposite) {
+                const count = item.ingredientsCount || (Array.isArray(item.ingredients) ? item.ingredients.length : 0);
+                badgeHtml = `<span class="food-badge-recipe">❤️ Рецепт (${count} ингред.)</span>`;
+              } else if (item.isCustom || item.source === 'custom') {
+                badgeHtml = `<span class="food-badge-custom">❤️ Моё блюдо</span>`;
+              }
+              return `
+                <div class="food-suggestion-item" data-food-id="${escapeHtml(item.id)}">
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                    <span><strong>${escapeHtml(item.name)}</strong>${badgeHtml}</span>
+                  </div>
+                  <div style="font-size: 11px; color: #64748b; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 3px;">
+                    <span>${item.caloriesPer100g} ккал •</span>
+                    <span class="food-macro-pill prot" style="color: ${protColor}; background: rgba(${protRgb.r}, ${protRgb.g}, ${protRgb.b}, 0.15);">Б:${item.proteinPer100g}</span>
+                    <span class="food-macro-pill fat" style="color: ${fatColor}; background: rgba(${fatRgb.r}, ${fatRgb.g}, ${fatRgb.b}, 0.15);">Ж:${item.fatPer100g}</span>
+                    <span class="food-macro-pill carb" style="color: ${carbColor}; background: rgba(${carbRgb.r}, ${carbRgb.g}, ${carbRgb.b}, 0.15);">У:${item.carbsPer100g}</span>
+                  </div>
+                </div>
+              `;
+            }).join('');
+
+            this.compositeDishSuggestions.querySelectorAll('.food-suggestion-item').forEach((row, idx) => {
+              row.addEventListener('click', () => {
+                const selected = results[idx];
+                if (selected) {
+                  if (selected.isComposite) {
+                    this.populateCompositeRecipe(selected.recipe || selected);
+                  } else {
+                    if (this.compositeDishName) this.compositeDishName.value = selected.name;
+                  }
+                  if (this.compositeDishSuggestions) this.compositeDishSuggestions.style.display = 'none';
+                }
+              });
+            });
+
+            this.compositeDishSuggestions.style.display = 'block';
+          } else {
+            this.compositeDishSuggestions.style.display = 'none';
+          }
+        }, 200);
+      });
+
+      document.addEventListener('click', (e) => {
+        if (this.compositeDishSuggestions && !this.compositeDishSuggestions.contains(e.target) && e.target !== this.compositeDishName) {
+          this.compositeDishSuggestions.style.display = 'none';
+        }
+      });
+
+      this.compositeDishName.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && this.compositeDishSuggestions) {
+          this.compositeDishSuggestions.style.display = 'none';
+        }
+      });
+    }
+
+    // 14. Composite Dish: Add Ingredient Button
+    if (this.btnAddCompositeIngredient) {
+      this.btnAddCompositeIngredient.addEventListener('click', () => {
+        triggerHaptic(15);
+        this.currentCompositeIngredients.push({
+          name: '',
+          rawWeight: 100,
+          calories100g: 0,
+          protein100g: 0,
+          fat100g: 0,
+          carbs100g: 0,
+          isCollapsed: false // Новый ингредиент открыт для заполнения
+        });
+        this.renderCompositeIngredientsList();
+        this.recalculateCompositeDish();
+
+        // Фокусируем поле ввода нового ингредиента
+        setTimeout(() => {
+          const rows = this.compositeIngredientsList?.querySelectorAll('.composite-ingredient-row');
+          const lastRow = rows ? rows[rows.length - 1] : null;
+          const nameInput = lastRow?.querySelector('.comp-ing-name');
+          if (nameInput) nameInput.focus();
+        }, 60);
+      });
+    }
+
+    // 15. Composite Dish: Cooking Yield Inputs (Готовый вес и Порция)
+    if (this.compositeCookedWeight) {
+      this.compositeCookedWeight.addEventListener('input', () => this.recalculateCompositeDish());
+    }
+    if (this.compositePortionEaten) {
+      this.compositePortionEaten.addEventListener('input', () => this.recalculateCompositeDish());
+    }
+
+    // 16. Composite Dish: Save to Log
+    if (this.btnSaveCompositeFood) {
+      this.btnSaveCompositeFood.addEventListener('click', () => {
+        const dishName = (this.compositeDishName?.value || '').trim() || 'Составное блюдо';
+        const mealId = this.compositeMealSelect?.value || this.nutritionSelectedMealFilterId || 'meal_lunch';
+
+        const calc = this.nutritionTracker.calculateCompositeDish(
+          this.currentCompositeIngredients,
+          parseFloat(this.compositeCookedWeight?.value) || 0,
+          parseFloat(this.compositePortionEaten?.value) || 0
+        );
+
+        if (calc.ingredients.length === 0 || calc.rawTotalWeight <= 0) {
+          this.showToast('Добавьте хотя бы один ингредиент с весом', '⚠️');
+          return;
+        }
+
+        const portion = calc.portionNutrients;
+
+        if (this.editingNutritionEntryId) {
+          this.nutritionTracker.updateEntry(this.editingNutritionEntryId, {
+            mealId,
+            foodType: 'composite',
+            name: dishName,
+            weightGrams: portion.weightGrams,
+            calories: portion.calories,
+            protein: portion.protein,
+            fat: portion.fat,
+            carbs: portion.carbs,
+            rawIngredients: calc.ingredients,
+            cookedWeight: calc.cookedWeight,
+            portionWeight: portion.weightGrams,
+            per100g: calc.per100gCooked
+          });
+          this.editingNutritionEntryId = null;
+          triggerHaptic([25, 50, 25]);
+          this.showToast(`Обновлено: ${dishName} (${portion.calories} ккал)`, '✏️');
+        } else {
+          this.nutritionTracker.addEntry({
+            date: this.currentNutritionDate,
+            mealId,
+            foodType: 'composite',
+            name: dishName,
+            weightGrams: portion.weightGrams,
+            calories: portion.calories,
+            protein: portion.protein,
+            fat: portion.fat,
+            carbs: portion.carbs,
+            rawIngredients: calc.ingredients,
+            cookedWeight: calc.cookedWeight,
+            portionWeight: portion.weightGrams,
+            per100g: calc.per100gCooked
+          });
+          triggerHaptic([25, 50, 25]);
+          this.showToast(`Добавлено: ${dishName} (${portion.calories} ккал)`, '🍲');
+        }
+
+        // Автоматически сохраняем составное блюдо (рецепт) в базу данных
+        if (this.nutritionTracker && typeof this.nutritionTracker.saveRecipe === 'function') {
+          this.nutritionTracker.saveRecipe({
+            id: this.compositeDishName?.dataset.activeRecipeId || null,
+            name: dishName,
+            ingredients: this.currentCompositeIngredients,
+            cookedWeight: parseFloat(this.compositeCookedWeight?.value) || calc.cookedWeight,
+            portionWeight: portion.weightGrams,
+            caloriesPer100g: calc.per100gCooked.calories,
+            proteinPer100g: calc.per100gCooked.protein,
+            fatPer100g: calc.per100gCooked.fat,
+            carbsPer100g: calc.per100gCooked.carbs
+          });
+        }
+
+        this.closeAddFoodModal();
+        this.renderNutritionModalContent();
+        this.updateNutritionWidget();
+        this.updateNutritionArchiveStamp();
+      });
+    }
+
+    // 17. Barcode Scanner Viewfinder Controls
+    if (this.btnScannerClose) {
+      this.btnScannerClose.addEventListener('click', () => this.stopBarcodeScanner());
+    }
+    if (this.btnScannerManual) {
+      this.btnScannerManual.addEventListener('click', () => {
+        this.stopBarcodeScanner();
+        this.promptManualBarcodeEntry();
+      });
+    }
+    if (this.btnScannerTorch) {
+      this.btnScannerTorch.addEventListener('click', async () => {
+        if (!this.scannerMediaStream) return;
+        const track = this.scannerMediaStream.getVideoTracks()[0];
+        if (track && typeof track.applyConstraints === 'function') {
+          try {
+            this.scannerTorchActive = !this.scannerTorchActive;
+            await track.applyConstraints({ advanced: [{ torch: this.scannerTorchActive }] });
+            triggerHaptic(15);
+          } catch (e) {}
+        }
+      });
+    }
+
+    // 18. Settings Card Listeners in "Модули" Tab
+    if (this.toggleNutritionTracker) {
+      this.toggleNutritionTracker.onchange = (e) => {
+        const enabled = e.target.checked;
+        this.nutritionTracker.updateSettings({ enabled });
+        this.updateNutritionWidget();
+        this.updateNutritionArchiveStamp();
+        this.updateModulesHubState();
+
+        const lang = this.settings?.lang || 'ru';
+        const msg = enabled
+          ? (lang === 'en' ? 'Nutrition tracker enabled! 🥑' : (lang === 'uk' ? 'Щоденник харчування увімкнено! 🥑' : 'Дневник питания включен! 🥑'))
+          : (lang === 'en' ? 'Nutrition tracker disabled' : (lang === 'uk' ? 'Щоденник харчування вимкнено' : 'Дневник питания отключен'));
+        this.showToast(msg, enabled ? '🥑' : null);
+
+        if (enabled && this.moduleCardNutrition && !this.moduleCardNutrition.classList.contains('expanded')) {
+          this.toggleModuleCard('moduleCardNutrition', 'nutritionSubSettings', 'btnExpandNutritionModule');
+        }
+      };
+    }
+
+    if (this.btnExpandNutritionModule) {
+      this.btnExpandNutritionModule.addEventListener('click', () => {
+        this.toggleModuleCard('moduleCardNutrition', 'nutritionSubSettings', 'btnExpandNutritionModule');
+      });
+    }
+
+    if (this.toggleNutritionStamp) {
+      this.toggleNutritionStamp.onchange = (e) => {
+        this.nutritionTracker.updateSettings({ showArchiveStamp: e.target.checked });
+        this.updateNutritionArchiveStamp();
+      };
+    }
+
+    const targetInputs = [
+      { el: this.nutritionSettingCalories, key: 'calorieTarget' },
+      { el: this.nutritionSettingProtein, key: 'proteinTarget' },
+      { el: this.nutritionSettingFat, key: 'fatTarget' },
+      { el: this.nutritionSettingCarbs, key: 'carbTarget' }
+    ];
+    targetInputs.forEach(({ el, key }) => {
+      if (el) {
+        const updateTarget = (valStr) => {
+          const val = Math.max(0, parseInt(valStr, 10) || 0);
+          this.nutritionTracker.updateSettings({ [key]: val });
+          this.updateNutritionWidget();
+          this.renderNutritionModalContent();
+        };
+        el.oninput = (e) => updateTarget(e.target.value);
+        el.onchange = (e) => updateTarget(e.target.value);
+      }
+    });
+
+    // Stepper buttons (+ / -) for nutrition targets
+    this.setupTargetSteppers();
+
+    if (this.btnOpenNutritionFromSettings) {
+      this.btnOpenNutritionFromSettings.addEventListener('click', () => {
+        triggerHaptic(20);
+        this.closeSettingsModal();
+        this.openNutritionModal();
+      });
+    }
+
+    // 19. Nutrition Settings Modal (Targets & Meals Editor)
+    if (this.nutritionSettingsCloseBtn) {
+      this.nutritionSettingsCloseBtn.addEventListener('click', () => this.closeNutritionSettingsModal());
+    }
+    this.bindSafeBackdrop(this.nutritionSettingsModalBackdrop, () => this.closeNutritionSettingsModal(), () => this._nutritionSettingsModalOpenedAt);
+
+    if (this.btnAddNewMealSubmit) {
+      this.btnAddNewMealSubmit.addEventListener('click', () => {
+        const name = (this.newMealNameInput?.value || '').trim();
+        if (!name) {
+          this.showToast('Введите название приёма пищи', '⚠️');
+          return;
+        }
+        const icon = (this.newMealIconInput?.value || '').trim() || '🥪';
+        const color = this.newMealColorInput?.value || '#ec4899';
+
+        this.nutritionTracker.addMeal({ name, icon, color });
+        if (this.newMealNameInput) this.newMealNameInput.value = '';
+        triggerHaptic(20);
+        this.showToast(`Приём пищи добавлен: ${name}`, '✨');
+        this.renderCustomMealsSettingsList();
+        this.renderNutritionModalContent();
+      });
+    }
+
+    if (this.btnSaveNutritionSettingsModal) {
+      this.btnSaveNutritionSettingsModal.addEventListener('click', () => {
+        if (this.modalSettingCalorieTarget) {
+          const cal = Math.max(500, parseInt(this.modalSettingCalorieTarget?.value, 10) || 2000);
+          const p = Math.max(10, parseInt(this.modalSettingProteinTarget?.value, 10) || 80);
+          const f = Math.max(10, parseInt(this.modalSettingFatTarget?.value, 10) || 70);
+          const c = Math.max(20, parseInt(this.modalSettingCarbTarget?.value, 10) || 250);
+
+          this.nutritionTracker.updateSettings({
+            calorieTarget: cal,
+            proteinTarget: p,
+            fatTarget: f,
+            carbTarget: c
+          });
+
+          // Sync card inputs
+          if (this.nutritionSettingCalories) this.nutritionSettingCalories.value = cal;
+          if (this.nutritionSettingProtein) this.nutritionSettingProtein.value = p;
+          if (this.nutritionSettingFat) this.nutritionSettingFat.value = f;
+          if (this.nutritionSettingCarbs) this.nutritionSettingCarbs.value = c;
+        }
+
+        triggerHaptic(20);
+        this.closeNutritionSettingsModal();
+        this.renderNutritionModalContent();
+        this.updateNutritionWidget();
+      });
+    }
+
+    // Edit Meal Modal Events
+    if (this.editMealModalCloseBtn) {
+      this.editMealModalCloseBtn.addEventListener('click', () => this.closeMealEditModal());
+    }
+    if (this.btnCancelEditMeal) {
+      this.btnCancelEditMeal.addEventListener('click', () => this.closeMealEditModal());
+    }
+    this.bindSafeBackdrop(this.editMealModalBackdrop, () => this.closeMealEditModal(), () => this._editMealModalOpenedAt);
+
+    if (this.btnSaveEditMeal) {
+      this.btnSaveEditMeal.addEventListener('click', () => this.saveMealEditModal());
+    }
+
+    if (this.btnDeleteEditMeal) {
+      this.btnDeleteEditMeal.addEventListener('click', () => {
+        const mealId = this.editMealIdInput?.value;
+        if (!mealId || !this.nutritionTracker) return;
+        const allMeals = this.nutritionTracker.getMeals();
+        if (allMeals.length <= 1) {
+          this.showToast(this.t('nutrition_cannot_delete_last_meal') || 'Нельзя удалить единственный приём пищи', '⚠️');
+          return;
+        }
+        const meal = this.nutritionTracker.getMeal(mealId);
+        const mealName = meal?.name || 'Приём пищи';
+        this.showConfirmModal({
+          title: this.t('nutrition_delete_meal_title') || 'Удалить приём пищи?',
+          message: (this.t('nutrition_delete_meal_msg') || 'Вы действительно хотите удалить приём пищи «{name}»? Добавленные ранее записи сохранятся в истории.').replace('{name}', mealName),
+          icon: '🗑️',
+          confirmText: this.t('delete') || 'Удалить',
+          onConfirm: () => {
+            this.nutritionTracker.deleteMeal(mealId);
+            triggerHaptic(20);
+            this.showToast((this.t('nutrition_toast_meal_deleted') || 'Приём пищи удалён') + `: ${mealName}`, '🗑️');
+            this.closeMealEditModal();
+            this.renderCustomMealsSettingsList();
+            this.renderNutritionModalContent();
+            this.updateNutritionWidget();
+          }
+        });
+      });
+    }
+
+    // Macro Color Picker Events (Long press on Ж, Б, У)
+    if (this.macroColorCloseBtn) {
+      this.macroColorCloseBtn.addEventListener('click', () => this.closeMacroColorPicker());
+    }
+    if (this.macroColorCancelBtn) {
+      this.macroColorCancelBtn.addEventListener('click', () => this.closeMacroColorPicker());
+    }
+    if (this.macroColorApplyBtn) {
+      this.macroColorApplyBtn.addEventListener('click', () => this.saveMacroColor());
+    }
+    if (this.btnResetMacroColor) {
+      this.btnResetMacroColor.addEventListener('click', () => this.resetMacroColor());
+    }
+    if (this.macroCustomColorInput) {
+      this.macroCustomColorInput.addEventListener('input', (e) => {
+        const color = e.target.value;
+        this.updateMacroColorPreview(color);
+        if (this.macroColorPalette) {
+          this.macroColorPalette.querySelectorAll('.macro-palette-swatch').forEach(swatch => {
+            swatch.classList.toggle('active', swatch.dataset.color.toLowerCase() === color.toLowerCase());
+          });
+        }
+      });
+    }
+    if (this.macroColorModalBackdrop) {
+      this.macroColorModalBackdrop.addEventListener('click', (e) => {
+        if (e.target === this.macroColorModalBackdrop) {
+          this.closeMacroColorPicker();
+        }
+      });
+    }
+  }
+
+  // --- Macro Color Synchronizer & Helpers ---
+  hexToRgb(hex) {
+    if (!hex || typeof hex !== 'string') return null;
+    let clean = hex.replace('#', '').trim();
+    if (clean.length === 3) clean = clean.split('').map(c => c + c).join('');
+    if (clean.length !== 6) return null;
+    const num = parseInt(clean, 16);
+    if (isNaN(num)) return null;
+    return {
+      r: (num >> 16) & 255,
+      g: (num >> 8) & 255,
+      b: num & 255
+    };
+  }
+
+  applyMacroColors() {
+    if (!this.nutritionTracker) return;
+    const protColor = this.nutritionTracker.getMacroColor('protein') || '#3b82f6';
+    const fatColor = this.nutritionTracker.getMacroColor('fat') || '#f59e0b';
+    const carbColor = this.nutritionTracker.getMacroColor('carbs') || '#10b981';
+
+    const protRgb = this.hexToRgb(protColor) || { r: 59, g: 130, b: 246 };
+    const fatRgb = this.hexToRgb(fatColor) || { r: 245, g: 158, b: 11 };
+    const carbRgb = this.hexToRgb(carbColor) || { r: 16, g: 185, b: 129 };
+
+    const setPropsOn = (el) => {
+      if (!el || !el.style) return;
+      el.style.setProperty('--macro-color-prot', protColor);
+      el.style.setProperty('--macro-color-prot-rgb', `${protRgb.r}, ${protRgb.g}, ${protRgb.b}`);
+      el.style.setProperty('--macro-color-fat', fatColor);
+      el.style.setProperty('--macro-color-fat-rgb', `${fatRgb.r}, ${fatRgb.g}, ${fatRgb.b}`);
+      el.style.setProperty('--macro-color-carb', carbColor);
+      el.style.setProperty('--macro-color-carb-rgb', `${carbRgb.r}, ${carbRgb.g}, ${carbRgb.b}`);
+    };
+
+    setPropsOn(document.documentElement);
+    setPropsOn(document.body);
+    setPropsOn(this.nutritionModalBackdrop);
+    setPropsOn(this.nutritionAddFoodModalBackdrop);
+    setPropsOn(this.singleFoodModalBackdrop);
+    setPropsOn(this.compositeDishModalBackdrop);
+    setPropsOn(this.nutritionSettingsModalBackdrop);
+  }
+
+  // --- Macro Color Picker Handlers ---
+  adjustHexColor(hex, percent) {
+    if (this.nutritionTracker && typeof this.nutritionTracker.adjustHexColor === 'function') {
+      return this.nutritionTracker.adjustHexColor(hex, percent);
+    }
+    if (!hex || typeof hex !== 'string' || !hex.startsWith('#')) return hex || '#3b82f6';
+    let cleanHex = hex.replace('#', '');
+    if (cleanHex.length === 3) cleanHex = cleanHex.split('').map(c => c + c).join('');
+    const num = parseInt(cleanHex, 16);
+    if (isNaN(num)) return hex;
+    const r = Math.min(255, Math.max(0, (num >> 16) + percent));
+    const g = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + percent));
+    const b = Math.min(255, Math.max(0, (num & 0x0000FF) + percent));
+    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+  }
+
+  openMacroColorPicker(macroKey) {
+    if (!this.macroColorModalBackdrop || !this.nutritionTracker || this.isNutritionArchiveMode) return;
+    this.activeEditingMacroKey = macroKey;
+
+    const macroNames = {
+      fat: { name: 'Жиры (Ж)', default: '#f59e0b' },
+      protein: { name: 'Белки (Б)', default: '#3b82f6' },
+      carbs: { name: 'Углеводы (У)', default: '#10b981' }
+    };
+    const info = macroNames[macroKey] || { name: 'Макронутриент', default: '#3b82f6' };
+    if (this.macroColorTitle) {
+      this.macroColorTitle.textContent = `Цвет: ${info.name}`;
+    }
+
+    const currentColor = this.nutritionTracker.getMacroColor(macroKey);
+    this.tempEditingMacroColor = currentColor;
+
+    this.renderMacroColorPalette();
+    this.updateMacroColorPreview(this.tempEditingMacroColor);
+
+    if (this.macroCustomColorInput) {
+      this.macroCustomColorInput.value = this.tempEditingMacroColor;
+    }
+
+    this.macroColorModalBackdrop.classList.add('open');
+    this.macroColorModalBackdrop.setAttribute('aria-hidden', 'false');
+  }
+
+  closeMacroColorPicker() {
+    if (this.macroColorModalBackdrop) {
+      this.macroColorModalBackdrop.classList.remove('open');
+      this.macroColorModalBackdrop.setAttribute('aria-hidden', 'true');
+    }
+    this.activeEditingMacroKey = null;
+  }
+
+  renderMacroColorPalette() {
+    if (!this.macroColorPalette) return;
+    const presets = [
+      '#f59e0b', '#d97706', '#eab308', '#10b981', '#059669', '#06b6d4', '#0ea5e9',
+      '#3b82f6', '#2563eb', '#6366f1', '#8b5cf6', '#a855f7', '#d83a88', '#ec4899'
+    ];
+    const currentColor = (this.tempEditingMacroColor || '').toLowerCase();
+
+    this.macroColorPalette.innerHTML = presets.map(color => {
+      const isActive = color.toLowerCase() === currentColor;
+      return `
+        <button type="button" 
+                class="macro-palette-swatch ${isActive ? 'active' : ''}" 
+                data-color="${color}" 
+                style="background-color: ${color};" 
+                title="${color}"
+                aria-label="Выбрать цвет ${color}">
+        </button>
+      `;
+    }).join('');
+
+    this.macroColorPalette.querySelectorAll('.macro-palette-swatch').forEach(swatch => {
+      swatch.addEventListener('click', (e) => {
+        e.stopPropagation();
+        triggerHaptic(15);
+        const color = swatch.dataset.color;
+        this.tempEditingMacroColor = color;
+        if (this.macroCustomColorInput) {
+          this.macroCustomColorInput.value = color;
+        }
+        this.macroColorPalette.querySelectorAll('.macro-palette-swatch').forEach(s => s.classList.remove('active'));
+        swatch.classList.add('active');
+        this.updateMacroColorPreview(color);
+      });
+    });
+  }
+
+  updateMacroColorPreview(color) {
+    if (!color) return;
+    this.tempEditingMacroColor = color;
+    const lighter = this.adjustHexColor(color, 32);
+    const deeper = this.adjustHexColor(color, -18);
+
+    if (this.macroColorPreviewNormal) {
+      this.macroColorPreviewNormal.style.background = `linear-gradient(180deg, ${lighter} 0%, ${color} 100%)`;
+    }
+    if (this.macroColorPreviewOver) {
+      this.macroColorPreviewOver.style.background = `linear-gradient(180deg, #dc2626 0%, #ef4444 14%, ${color} 26%, ${deeper} 100%)`;
+    }
+  }
+
+  saveMacroColor() {
+    if (!this.activeEditingMacroKey || !this.tempEditingMacroColor) return;
+    this.nutritionTracker.setMacroColor(this.activeEditingMacroKey, this.tempEditingMacroColor);
+    this.applyMacroColors();
+    triggerHaptic(20);
+    this.closeMacroColorPicker();
+    this.renderNutritionModalContent();
+    if (typeof this.showToast === 'function') {
+      this.showToast('Цвет шкалы сохранён ✨', '🎨');
+    }
+  }
+
+  resetMacroColor() {
+    if (!this.activeEditingMacroKey) return;
+    const defaultColor = this.nutritionTracker.resetMacroColor(this.activeEditingMacroKey);
+    this.tempEditingMacroColor = defaultColor;
+    if (this.macroCustomColorInput) {
+      this.macroCustomColorInput.value = defaultColor;
+    }
+    this.applyMacroColors();
+    this.renderMacroColorPalette();
+    this.updateMacroColorPreview(defaultColor);
+    this.renderNutritionModalContent();
+    triggerHaptic(15);
+  }
+
+  attachMacroBarLongPressEvents() {
+    if (!this.nutritionMacroBarsContainer || this.isNutritionArchiveMode) return;
+    const columns = this.nutritionMacroBarsContainer.querySelectorAll('.macro-bar-column');
+    columns.forEach(col => {
+      const macroKey = col.dataset.macro;
+      if (!macroKey) return;
+
+      let pressTimer = null;
+      let startX = 0;
+      let startY = 0;
+
+      const startPress = (e) => {
+        if (e.touches && e.touches.length > 0) {
+          startX = e.touches[0].clientX;
+          startY = e.touches[0].clientY;
+        } else {
+          startX = e.clientX;
+          startY = e.clientY;
+        }
+        col.classList.add('is-pressing');
+        clearTimeout(pressTimer);
+        pressTimer = setTimeout(() => {
+          col.classList.remove('is-pressing');
+          pressTimer = null;
+          triggerHaptic(50);
+          this.openMacroColorPicker(macroKey);
+        }, 420);
+      };
+
+      const cancelPress = () => {
+        col.classList.remove('is-pressing');
+        if (pressTimer) {
+          clearTimeout(pressTimer);
+          pressTimer = null;
+        }
+      };
+
+      const movePress = (e) => {
+        if (!pressTimer) return;
+        const currentX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+        const currentY = (e.touches && e.touches[0]) ? e.touches[0].clientY : e.clientY;
+        if (Math.abs(currentX - startX) > 10 || Math.abs(currentY - startY) > 10) {
+          cancelPress();
+        }
+      };
+
+      col.addEventListener('touchstart', startPress, { passive: true });
+      col.addEventListener('touchmove', movePress, { passive: true });
+      col.addEventListener('touchend', cancelPress, { passive: true });
+      col.addEventListener('touchcancel', cancelPress, { passive: true });
+
+      col.addEventListener('mousedown', (e) => {
+        if (e.button === 0) startPress(e);
+      });
+      col.addEventListener('mousemove', movePress);
+      col.addEventListener('mouseup', cancelPress);
+      col.addEventListener('mouseleave', cancelPress);
+
+      col.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        cancelPress();
+        triggerHaptic(50);
+        this.openMacroColorPicker(macroKey);
+      });
+    });
+  }
+
+  // --- 10-Step Food Cat Evolution & Satiety Scale ---
+  getFoodCatColor() {
+    const saved = localStorage.getItem('todolercha_food_cat_color');
+    const val = parseInt(saved, 10);
+    return (val >= 1 && val <= 6) ? val : 1; // 1: Рыжий by default
+  }
+
+  setFoodCatColor(colorId) {
+    const val = Math.max(1, Math.min(6, colorId || 1));
+    localStorage.setItem('todolercha_food_cat_color', String(val));
+    this.preloadFoodCatImages(val);
+    const pos = (this._currentHungerScalePos != null) ? this._currentHungerScalePos : 50;
+    this.renderHungerScaleAtPosition(pos);
+    if (this._currentHungerScaleData) {
+      this.showHungerScaleBubble(pos);
+    }
+  }
+
+  getFoodCatUrl(colorId, step) {
+    const c = Math.max(1, Math.min(6, colorId || 1));
+    const s = String(Math.max(1, Math.min(10, step || 5))).padStart(2, '0');
+    return `assets/food_cats/cat_c${c}_s${s}.webp`;
+  }
+
+  preloadFoodCatImages(colorId) {
+    const c = Math.max(1, Math.min(6, colorId || 1));
+    for (let s = 1; s <= 10; s++) {
+      const img = new Image();
+      img.src = this.getFoodCatUrl(c, s);
+    }
+  }
+
+  openFoodCatColorPicker() {
+    const bubble = this.hungerScaleBubble || document.getElementById('hungerScaleBubble');
+    if (bubble) {
+      bubble.classList.remove('is-visible');
+      bubble.style.display = 'none';
+    }
+
+    const popup = this.hungerCatColorPopup || document.getElementById('hungerCatColorPopup');
+    const list = this.hungerCatColorList || document.getElementById('hungerCatColorList');
+    if (!popup || !list) return;
+
+    const colors = [
+      { id: 1, name: 'Рыжий' },
+      { id: 2, name: 'Дымчатый' },
+      { id: 3, name: 'Полосатый' },
+      { id: 4, name: 'Белоснежный' },
+      { id: 5, name: 'Черепаховый' },
+      { id: 6, name: 'Черный' }
+    ];
+
+    const activeColor = this.getFoodCatColor();
+    list.innerHTML = colors.map(c => `
+      <button type="button" class="hunger-cat-color-card ${c.id === activeColor ? 'is-active' : ''}" data-cat-color="${c.id}" title="${c.name}">
+        <div class="hunger-cat-card-img-wrap">
+          <img src="${this.getFoodCatUrl(c.id, 5)}" class="hunger-cat-card-img" alt="${c.name}" draggable="false" />
+          ${c.id === activeColor ? '<span class="hunger-cat-card-check">✓</span>' : ''}
+        </div>
+        <span class="hunger-cat-card-label">${c.name}</span>
+      </button>
+    `).join('');
+
+    popup.style.display = 'block';
+    requestAnimationFrame(() => {
+      popup.classList.add('is-open');
+    });
+
+    list.querySelectorAll('.hunger-cat-color-card').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const cid = parseInt(btn.dataset.catColor, 10);
+        triggerHaptic(25);
+        this.setFoodCatColor(cid);
+        this.closeFoodCatColorPicker();
+      });
+    });
+  }
+
+  closeFoodCatColorPicker() {
+    const popup = this.hungerCatColorPopup || document.getElementById('hungerCatColorPopup');
+    if (!popup) return;
+    popup.classList.remove('is-open');
+    setTimeout(() => {
+      if (!popup.classList.contains('is-open')) {
+        popup.style.display = 'none';
+      }
+    }, 220);
+  }
+
+  setupHungerScaleInteractions() {
+    const track = this.hungerScaleTrack || document.getElementById('hungerScaleTrack');
+    const thumb = this.hungerScaleSlider || document.getElementById('hungerScaleSlider');
+    const catBox = this.hungerScaleCatBox || document.getElementById('hungerScaleCatBox');
+    const closeBtn = this.btnHungerCatColorClose || document.getElementById('btnHungerCatColorClose');
+    const popup = this.hungerCatColorPopup || document.getElementById('hungerCatColorPopup');
+
+    if (closeBtn) {
+      closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.closeFoodCatColorPicker();
+      });
+    }
+
+    if (!this._foodCatDocClickListener) {
+      this._foodCatDocClickListener = (e) => {
+        const p = this.hungerCatColorPopup || document.getElementById('hungerCatColorPopup');
+        const cBox = this.hungerScaleCatBox || document.getElementById('hungerScaleCatBox');
+        if (p && p.classList.contains('is-open')) {
+          if (!p.contains(e.target) && !cBox?.contains(e.target)) {
+            this.closeFoodCatColorPicker();
+          }
+        }
+      };
+      document.addEventListener('click', this._foodCatDocClickListener);
+    }
+
+    if (!catBox || !track || this._hungerScaleInteractionsBound) return;
+    this._hungerScaleInteractionsBound = true;
+
+    // Preload active cat images
+    this.preloadFoodCatImages(this.getFoodCatColor());
+
+    let longPressTimer = null;
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let trackRect = null;
+    let revertTimeout = null;
+
+    const cancelLongPress = () => {
+      if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+    };
+
+    const getPosPercentFromClientX = (clientX) => {
+      trackRect = track.getBoundingClientRect();
+      if (!trackRect || trackRect.width <= 0) return 50;
+      const relX = clientX - trackRect.left;
+      const pct = (relX / trackRect.width) * 100;
+      return Math.max(0, Math.min(100, pct));
+    };
+
+    const onPointerDown = (e) => {
+      if (e.button != null && e.button !== 0) return;
+      trackRect = track.getBoundingClientRect();
+      startX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+      startY = (e.touches && e.touches[0]) ? e.touches[0].clientY : e.clientY;
+      isDragging = false;
+
+      if (revertTimeout) {
+        clearTimeout(revertTimeout);
+        revertTimeout = null;
+      }
+
+      cancelLongPress();
+      longPressTimer = setTimeout(() => {
+        longPressTimer = null;
+        triggerHaptic(50);
+        this.openFoodCatColorPicker();
+      }, 380);
+    };
+
+    const onPointerMove = (e) => {
+      const clientX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+      const clientY = (e.touches && e.touches[0]) ? e.touches[0].clientY : e.clientY;
+
+      if (longPressTimer) {
+        const dx = Math.abs(clientX - startX);
+        const dy = Math.abs(clientY - startY);
+        if (dx > 8 || dy > 8) {
+          cancelLongPress();
+          isDragging = true;
+          if (thumb) thumb.classList.add('is-dragging');
+        }
+      }
+
+      if (isDragging) {
+        const pct = getPosPercentFromClientX(clientX);
+        this.renderHungerScaleAtPosition(pct);
+        this.showHungerScaleBubble(pct);
+      }
+    };
+
+    const onPointerUp = () => {
+      cancelLongPress();
+      if (isDragging) {
+        isDragging = false;
+        if (thumb) thumb.classList.remove('is-dragging');
+        if (revertTimeout) clearTimeout(revertTimeout);
+        revertTimeout = setTimeout(() => {
+          if (this._actualHungerScaleTargetPos != null) {
+            this.animateHungerScaleTo(this._actualHungerScaleTargetPos, 500);
+          }
+        }, 2200);
+      }
+    };
+
+    catBox.addEventListener('touchstart', onPointerDown, { passive: true });
+    window.addEventListener('touchmove', onPointerMove, { passive: true });
+    window.addEventListener('touchend', onPointerUp, { passive: true });
+    window.addEventListener('touchcancel', onPointerUp, { passive: true });
+
+    catBox.addEventListener('mousedown', onPointerDown);
+    window.addEventListener('mousemove', onPointerMove);
+    window.addEventListener('mouseup', onPointerUp);
+
+    catBox.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      cancelLongPress();
+      triggerHaptic(40);
+      this.openFoodCatColorPicker();
+    });
+
+    catBox.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!isDragging) {
+        triggerHaptic(15);
+        this.showHungerScaleBubble();
+      }
+    });
+
+    track.addEventListener('click', (e) => {
+      if (catBox.contains(e.target)) return;
+      e.stopPropagation();
+      triggerHaptic(15);
+      const pct = getPosPercentFromClientX(e.clientX);
+      this.animateHungerScaleTo(pct, 380);
+      this.showHungerScaleBubble(pct);
+      if (revertTimeout) clearTimeout(revertTimeout);
+      revertTimeout = setTimeout(() => {
+        if (this._actualHungerScaleTargetPos != null) {
+          this.animateHungerScaleTo(this._actualHungerScaleTargetPos, 500);
+        }
+      }, 2400);
+    });
+  }
+
+  renderHungerScaleAtPosition(posPercent) {
+    const thumb = this.hungerScaleSlider || document.getElementById('hungerScaleSlider');
+    const fill = this.hungerScaleFill || document.getElementById('hungerScaleFill');
+    const catA = this.hungerScaleCatA || document.getElementById('hungerScaleCatA');
+    const catB = this.hungerScaleCatB || document.getElementById('hungerScaleCatB');
+    if (!thumb) return;
+
+    const clampedPos = Math.max(0, Math.min(100, posPercent));
+    this._currentHungerScalePos = clampedPos;
+
+    thumb.style.left = `clamp(20px, ${clampedPos}%, calc(100% - 20px))`;
+    if (fill) {
+      fill.style.width = `${clampedPos}%`;
+    }
+
+    // Rounding to nearest step (1..10). Middle (50%) corresponds to norm (step 5 or 6)
+    let nearestStep;
+    if (clampedPos <= 0) {
+      nearestStep = 1;
+    } else if (clampedPos >= 100) {
+      nearestStep = 10;
+    } else if (Math.abs(clampedPos - 50) < 0.5) {
+      const ratio = this._currentHungerScaleData?.ratio ?? 1.0;
+      nearestStep = (ratio >= 1.0) ? 6 : 5;
+    } else {
+      nearestStep = Math.max(1, Math.min(10, Math.round(1 + (clampedPos / 100) * 9)));
+    }
+
+    const colorId = this.getFoodCatColor();
+    const targetSrc = this.getFoodCatUrl(colorId, nearestStep);
+
+    if (catA && catB) {
+      const activeEl = (this._activeCatLayer === 'B') ? catB : catA;
+      const needsUpdate = (this._currentCatStep !== nearestStep) ||
+                          (this._currentCatColor !== colorId) ||
+                          (activeEl.getAttribute('src') !== targetSrc);
+
+      if (needsUpdate) {
+        const isFirstInit = !this._activeCatLayer || !activeEl.getAttribute('src');
+        this._currentCatStep = nearestStep;
+        this._currentCatColor = colorId;
+
+        if (isFirstInit) {
+          catA.src = targetSrc;
+          catA.style.opacity = '1';
+          catA.style.zIndex = '2';
+          catB.style.opacity = '0';
+          catB.style.zIndex = '1';
+          this._activeCatLayer = 'A';
+        } else {
+          const useA = (this._activeCatLayer !== 'A');
+          const incoming = useA ? catA : catB;
+          const outgoing = useA ? catB : catA;
+
+          incoming.src = targetSrc;
+          incoming.style.zIndex = '2';
+          outgoing.style.zIndex = '1';
+          outgoing.style.opacity = '1'; // Solid base underneath - never semi-transparent!
+          incoming.style.opacity = '1';
+          this._activeCatLayer = useA ? 'A' : 'B';
+
+          if (this._catFadeTimer) clearTimeout(this._catFadeTimer);
+          this._catFadeTimer = setTimeout(() => {
+            outgoing.style.opacity = '0';
+          }, 140);
+        }
+      } else {
+        // Ensure active layer is always 100% solid and non-transparent
+        if (this._activeCatLayer === 'B') {
+          catB.style.opacity = '1';
+          catA.style.opacity = '0';
+        } else {
+          catA.style.opacity = '1';
+          catB.style.opacity = '0';
+        }
+      }
+    }
+  }
+
+  animateHungerScaleTo(targetPercent, duration = 650) {
+    if (this._hungerAnimRaf) {
+      cancelAnimationFrame(this._hungerAnimRaf);
+      this._hungerAnimRaf = null;
+    }
+
+    const startPos = (this._currentHungerScalePos != null) ? this._currentHungerScalePos : 50;
+    const delta = targetPercent - startPos;
+    if (Math.abs(delta) < 0.2) {
+      this.renderHungerScaleAtPosition(targetPercent);
+      return;
+    }
+
+    const startTime = performance.now();
+    const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+
+    const tick = (now) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      const eased = easeOutCubic(progress);
+      const curPos = startPos + delta * eased;
+
+      this.renderHungerScaleAtPosition(curPos);
+
+      if (progress < 1) {
+        this._hungerAnimRaf = requestAnimationFrame(tick);
+      } else {
+        this._hungerAnimRaf = null;
+        this._currentHungerScalePos = targetPercent;
+        this.renderHungerScaleAtPosition(targetPercent);
+      }
+    };
+
+    this._hungerAnimRaf = requestAnimationFrame(tick);
+  }
+
+  updateHungerScale(stats) {
+    this._lastNutritionStats = stats;
+    const box = this.nutritionHungerScaleBox || document.getElementById('nutritionHungerScaleBox');
+    const thumb = this.hungerScaleSlider || document.getElementById('hungerScaleSlider');
+    if (!box || !thumb) return;
+
+    const targetCal = Math.max(1, (stats?.targets?.calories) || 2000);
+    const currentCal = Math.max(0, (stats?.totalCalories) || 0);
+    const calRatio = currentCal / targetCal;
+
+    // Macro analysis (Б, Ж, У)
+    const pTarget = Math.max(1, (stats?.targets?.protein) || 80);
+    const fTarget = Math.max(1, (stats?.targets?.fat) || 70);
+    const cTarget = Math.max(1, (stats?.targets?.carbs) || 250);
+
+    const pCur = Math.max(0, (stats?.totalProtein) || 0);
+    const fCur = Math.max(0, (stats?.totalFat) || 0);
+    const cCur = Math.max(0, (stats?.totalCarbs) || 0);
+
+    const pRatio = pCur / pTarget;
+    const fRatio = fCur / fTarget;
+    const cRatio = cCur / cTarget;
+
+    const macroList = [
+      { key: 'protein', name: 'Белки', ratio: pRatio, current: pCur, target: pTarget },
+      { key: 'fat', name: 'Жиры', ratio: fRatio, current: fCur, target: fTarget },
+      { key: 'carbs', name: 'Углеводы', ratio: cRatio, current: cCur, target: cTarget }
+    ];
+    macroList.sort((a, b) => b.ratio - a.ratio);
+    const maxMacro = macroList[0];
+
+    // Option 1: Smart cat responsive to macro overflow
+    // Base position is calRatio. If any macro overflows (>105%), the cat reacts to the excess!
+    let effectiveRatio = calRatio;
+    let isMacroOver = false;
+
+    if (maxMacro && maxMacro.ratio > 1.05) {
+      isMacroOver = true;
+      if (calRatio >= 1.0) {
+        effectiveRatio = Math.max(calRatio, 0.6 * calRatio + 0.4 * maxMacro.ratio);
+      } else {
+        // Calories not yet at 100%, but strong macro excess (e.g. fats 380%)
+        effectiveRatio = Math.max(calRatio, 0.5 * calRatio + 0.5 * maxMacro.ratio);
+      }
+    }
+
+    // Normal position: 0% at 0 kcal, 50% at 100% target (center notch), up to 100% at >=180% target
+    let posPercent = 50;
+    if (effectiveRatio <= 1.0) {
+      posPercent = Math.min(50, Math.round(effectiveRatio * 50));
+    } else {
+      const overProgress = Math.min(1, (effectiveRatio - 1.0) / 0.8);
+      posPercent = Math.round(50 + (overProgress * 50));
+    }
+    posPercent = Math.max(0, Math.min(100, posPercent));
+
+    this._actualHungerScaleTargetPos = posPercent;
+
+    // Smooth transition with crossfade through intermediate steps
+    this.animateHungerScaleTo(posPercent, 650);
+
+    // 10 Steps descriptions
+    let stepIndex;
+    if (posPercent <= 0) {
+      stepIndex = 1;
+    } else if (posPercent >= 100) {
+      stepIndex = 10;
+    } else if (Math.abs(posPercent - 50) < 0.5) {
+      stepIndex = (effectiveRatio >= 1.0) ? 6 : 5;
+    } else {
+      stepIndex = Math.max(1, Math.min(10, Math.round(1 + (posPercent / 100) * 9)));
+    }
+    const stepTitles = [
+      'Самый голодный кот 😿',
+      'Очень голоден 🥺',
+      'Проголодался 🐱',
+      'Легкий аппетит 🙂',
+      'Почти сыт (Перед нормой) 🐾',
+      'Идеальная норма! Сыт и счастлив ✨',
+      'Сытно перекусил 🥐',
+      'Сыт с запасом 🍰',
+      'Объелся 🍩',
+      'Самый толстый кот 😺'
+    ];
+    const stepDescs = [
+      'Организм требует подкрепления! Срочно поешьте.',
+      'Животик урчит, пора запланировать приём пищи.',
+      'Время подкрепиться, чтобы не терять энергию.',
+      'Ещё немного калорий до дневной целевой нормы.',
+      'Кот в отличной здоровой форме, цель почти достигнута!',
+      'Целевая норма калорий выполнена! Баланс на 100%.',
+      'Плотная еда, калории слегка выше дневной цели.',
+      'Калории с заметным запасом. Дайте желудку отдых.',
+      'Существенное превышение нормы на сегодня.',
+      'Максимальное переедание! Настоящий пухлый колобок.'
+    ];
+
+    const diff = Math.max(0, Math.round(targetCal - currentCal));
+    const over = Math.max(0, Math.round(currentCal - targetCal));
+
+    let detail = stepDescs[stepIndex - 1];
+    if (isMacroOver && maxMacro && maxMacro.ratio > 1.1) {
+      const macroPct = Math.round(maxMacro.ratio * 100);
+      if (calRatio <= 1.0) {
+        detail += ` (Перебор: ${maxMacro.name} ${macroPct}% ⚠️)`;
+      } else {
+        detail += ` (+${over} ккал, ${maxMacro.name} ${macroPct}% ⚠️)`;
+      }
+    } else if (calRatio <= 1.0 && diff > 0) {
+      detail += ` (Осталось ${diff} ккал до нормы)`;
+    } else if (calRatio > 1.0 && over > 0) {
+      detail += ` (+${over} ккал выше цели)`;
+    }
+
+    this._currentHungerScaleData = {
+      ratio: effectiveRatio,
+      effectiveRatio,
+      calRatio,
+      maxMacro,
+      isMacroOver,
+      currentCal,
+      targetCal,
+      stepIndex,
+      title: `${stepTitles[stepIndex - 1]} [Ступень ${stepIndex}/10]`,
+      desc: detail,
+      posPercent
+    };
+  }
+
+  showHungerScaleBubble(customPos = null) {
+    const popup = this.hungerCatColorPopup || document.getElementById('hungerCatColorPopup');
+    if (popup && popup.classList.contains('is-open')) return;
+
+    const bubble = this.hungerScaleBubble || document.getElementById('hungerScaleBubble');
+    if (!bubble) return;
+
+    const data = this._currentHungerScaleData;
+    if (!data) return;
+
+    const activePos = customPos != null ? customPos : data.posPercent;
+    let stepIndex;
+    if (activePos <= 0) {
+      stepIndex = 1;
+    } else if (activePos >= 100) {
+      stepIndex = 10;
+    } else if (Math.abs(activePos - 50) < 0.5) {
+      stepIndex = (data.ratio >= 1.0) ? 6 : 5;
+    } else {
+      stepIndex = Math.max(1, Math.min(10, Math.round(1 + (activePos / 100) * 9)));
+    }
+
+    const stepTitles = [
+      'Самый голодный кот 😿',
+      'Очень голоден 🥺',
+      'Проголодался 🐱',
+      'Легкий аппетит 🙂',
+      'Почти сыт (Перед нормой) 🐾',
+      'Идеальная норма! Сыт и счастлив ✨',
+      'Сытно перекусил 🥐',
+      'Сыт с запасом 🍰',
+      'Объелся 🍩',
+      'Самый толстый кот 😺'
+    ];
+
+    const iconEl = bubble.querySelector('.hunger-bubble-icon');
+    const titleEl = bubble.querySelector('.hunger-bubble-title');
+    const descEl = bubble.querySelector('.hunger-bubble-desc');
+
+    const colorId = this.getFoodCatColor();
+    const catSrc = this.getFoodCatUrl(colorId, stepIndex);
+
+    if (iconEl) {
+      iconEl.innerHTML = `<img src="${catSrc}" style="width:26px;height:26px;object-fit:contain;vertical-align:middle;" alt="Cat" draggable="false" />`;
+    }
+    if (titleEl) {
+      const displayPct = customPos != null
+        ? Math.round(customPos <= 50 ? customPos * 2 : 100 + (customPos - 50) * 1.6)
+        : Math.round((data.effectiveRatio || data.ratio) * 100);
+      titleEl.textContent = `${stepTitles[stepIndex - 1]} (${displayPct}%)`;
+    }
+    if (descEl) {
+      descEl.textContent = data.desc;
+    }
+
+    bubble.style.left = `clamp(24px, ${activePos}%, calc(100% - 24px))`;
+    bubble.classList.add('is-visible');
+
+    clearTimeout(this._hungerBubbleTimeout);
+    this._hungerBubbleTimeout = setTimeout(() => {
+      bubble.classList.remove('is-visible');
+    }, 3500);
+  }
+
+  // --- Modal Open / Close / Render ---
+  openNutritionModal(date = null) {
+    this.dismissActiveKeyboard();
+    if (!this.nutritionModalBackdrop) return;
+    this._nutritionModalOpenedAt = Date.now();
+
+    this.currentNutritionDate = date || this.selectedDate || this.getTodayDateString();
+    const todayStr = this.getTodayDateString();
+    this.isNutritionArchiveMode = !!(this.currentNutritionDate && this.currentNutritionDate < todayStr);
+    this.nutritionSelectedMealFilterId = null;
+
+    const sheet = this.nutritionModalBackdrop.querySelector('.nutrition-sheet');
+    if (sheet) {
+      sheet.classList.toggle('is-archive-mode', !!this.isNutritionArchiveMode);
+    }
+    this.nutritionModalBackdrop.classList.toggle('is-archive-mode', !!this.isNutritionArchiveMode);
+
+    if (this.nutritionHeaderDate) {
+      this.nutritionHeaderDate.textContent = this.formatDateReadable(this.currentNutritionDate);
+    }
+
+    this.nutritionModalBackdrop.classList.add('open');
+    this.nutritionModalBackdrop.setAttribute('aria-hidden', 'false');
+
+    this.renderNutritionModalContent();
+  }
+
+  closeNutritionModal() {
+    if (this.nutritionModalBackdrop) {
+      this.nutritionModalBackdrop.classList.remove('open');
+      this.nutritionModalBackdrop.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  renderNutritionModalContent() {
+    if (!this.nutritionTracker || !this.nutritionModalBackdrop) return;
+    this.applyMacroColors();
+    const protColor = this.nutritionTracker.getMacroColor('protein') || '#3b82f6';
+    const fatColor = this.nutritionTracker.getMacroColor('fat') || '#f59e0b';
+    const carbColor = this.nutritionTracker.getMacroColor('carbs') || '#10b981';
+    const protRgb = this.hexToRgb(protColor) || { r: 59, g: 130, b: 246 };
+    const fatRgb = this.hexToRgb(fatColor) || { r: 245, g: 158, b: 11 };
+    const carbRgb = this.hexToRgb(carbColor) || { r: 16, g: 185, b: 129 };
+
+    // Hide edit/add and test controls in archive mode
+    if (this.btnNutritionAddCategory) {
+      this.btnNutritionAddCategory.style.display = this.isNutritionArchiveMode ? 'none' : 'inline-flex';
+    }
+    if (this.btnNutritionStats) {
+      this.btnNutritionStats.style.display = this.isNutritionArchiveMode ? 'none' : 'inline-flex';
+    }
+    const targetDate = this.currentNutritionDate || this.selectedDate || this.getTodayDateString();
+    const stats = this.nutritionTracker.getStatsForDate(targetDate);
+
+    // 1. Render Left SVG Donut
+    if (this.nutritionDonutContainer) {
+      this.nutritionDonutContainer.innerHTML = this.nutritionTracker.generateRingSvg(stats, {
+        selectedMealId: this.nutritionSelectedMealFilterId
+      });
+    }
+
+    // 2. Interactive Donut Center Display
+    if (this.nutritionSelectedMealFilterId) {
+      const meal = stats.allMealsWithStatus.find(m => m.mealId === this.nutritionSelectedMealFilterId);
+      const mealCal = meal ? meal.calories : 0;
+      const mealName = meal ? meal.name : 'Приём пищи';
+
+      if (this.nutritionDonutCenterVal) this.nutritionDonutCenterVal.textContent = mealCal;
+      if (this.nutritionDonutCenterTarget) this.nutritionDonutCenterTarget.textContent = 'ккал';
+      if (this.nutritionDonutCenterSub) this.nutritionDonutCenterSub.textContent = mealName;
+
+      if (this.nutritionSelectedMealBadge) {
+        this.nutritionSelectedMealBadge.style.display = 'inline-flex';
+        if (this.nutritionFilterIcon) this.nutritionFilterIcon.innerHTML = this.nutritionTracker.renderMealIcon(meal?.icon, meal?.name);
+        if (this.nutritionFilterName) this.nutritionFilterName.textContent = `${mealName}: ${mealCal} ккал`;
+      }
+    } else {
+      if (this.nutritionDonutCenterVal) this.nutritionDonutCenterVal.textContent = stats.totalCalories;
+      if (this.nutritionDonutCenterTarget) this.nutritionDonutCenterTarget.textContent = `/ ${stats.targets.calories} ккал`;
+      if (this.nutritionDonutCenterSub) this.nutritionDonutCenterSub.textContent = this.t('nutrition_all_day_calories') || 'за день';
+
+      if (this.nutritionSelectedMealBadge) {
+        this.nutritionSelectedMealBadge.style.display = 'none';
+      }
+    }
+
+    // 3. Render 3 Vertical Bars (Б, Ж, У) with overflow line & warnings
+    if (this.nutritionMacroBarsContainer) {
+      this.nutritionMacroBarsContainer.innerHTML = this.nutritionTracker.generateMacroBarsHtml(stats);
+      this.attachMacroBarLongPressEvents();
+    }
+
+    // 3.5. Update Interactive Hunger & Norm Balance Scale
+    this.updateHungerScale(stats);
+
+    // 4. Attach Click Events on Donut Sectors and Meal Badges
+    if (this.nutritionDonutContainer) {
+      this.nutritionDonutContainer.querySelectorAll('.nutrition-donut-sector, .nutrition-donut-icon-group').forEach(el => {
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const mealId = el.dataset.mealId;
+          triggerHaptic(15);
+          if (this.nutritionSelectedMealFilterId === mealId) {
+            this.nutritionSelectedMealFilterId = null;
+          } else {
+            this.nutritionSelectedMealFilterId = mealId;
+          }
+          this.renderNutritionModalContent();
+        });
+      });
+    }
+
+    // 4.5. Render Horizontal Meals Filter Bar (Icons only, acts as filter)
+    if (this.nutritionMealsFilterBar) {
+      const allMeals = this.nutritionTracker.getMeals();
+      this.nutritionMealsFilterBar.innerHTML = allMeals.map(meal => {
+        const isSelected = meal.id === this.nutritionSelectedMealFilterId;
+        return `
+          <button type="button" 
+                  class="meal-filter-item ${isSelected ? 'is-selected' : ''}" 
+                  data-meal-id="${escapeHtml(meal.id)}" 
+                  title="${escapeHtml(meal.name)}" 
+                  aria-label="${escapeHtml(meal.name)}" 
+                  aria-pressed="${isSelected}">
+            ${this.nutritionTracker.renderMealIcon(meal.icon, meal.name, 'meal-filter-icon-img')}
+          </button>
+        `;
+      }).join('');
+
+      this.nutritionMealsFilterBar.querySelectorAll('.meal-filter-item').forEach(btn => {
+        let pressTimer = null;
+        let isLongPress = false;
+        let startX = 0, startY = 0;
+
+        const onPointerDown = (e) => {
+          if (this.isNutritionArchiveMode) return;
+          isLongPress = false;
+          startX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+          startY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+          clearTimeout(pressTimer);
+          pressTimer = setTimeout(() => {
+            isLongPress = true;
+            triggerHaptic(30);
+            const mealId = btn.dataset.mealId;
+            if (mealId) this.openMealEditModal(mealId);
+          }, 500);
+        };
+
+        const onPointerMove = (e) => {
+          const cx = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+          const cy = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+          if (Math.abs(cx - startX) > 8 || Math.abs(cy - startY) > 8) {
+            clearTimeout(pressTimer);
+          }
+        };
+
+        const onPointerUp = () => {
+          clearTimeout(pressTimer);
+        };
+
+        btn.addEventListener('pointerdown', onPointerDown, { passive: true });
+        btn.addEventListener('pointermove', onPointerMove, { passive: true });
+        btn.addEventListener('pointerup', onPointerUp, { passive: true });
+        btn.addEventListener('pointercancel', onPointerUp, { passive: true });
+
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (isLongPress) return;
+          const mealId = btn.dataset.mealId;
+          triggerHaptic(15);
+          if (this.nutritionSelectedMealFilterId === mealId) {
+            this.nutritionSelectedMealFilterId = null;
+          } else {
+            this.nutritionSelectedMealFilterId = mealId;
+          }
+          this.renderNutritionModalContent();
+        });
+      });
+
+      if (!this.nutritionMealsFilterBar._wheelBound) {
+        this.nutritionMealsFilterBar._wheelBound = true;
+        this.nutritionMealsFilterBar.addEventListener('wheel', (e) => {
+          if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+            this.nutritionMealsFilterBar.scrollLeft += e.deltaY;
+            e.preventDefault();
+          }
+        }, { passive: false });
+      }
+
+      if (this.nutritionSelectedMealFilterId) {
+        const activeBtn = this.nutritionMealsFilterBar.querySelector('.meal-filter-item.is-selected');
+        if (activeBtn) {
+          activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }
+      }
+    }
+
+    // 5. Render Daily Meals Breakdown List
+    if (this.nutritionMealsList) {
+      const isFiltered = !!this.nutritionSelectedMealFilterId;
+      const mealsToDisplay = stats.allMealsWithStatus.filter(m => {
+        if (isFiltered) return m.mealId === this.nutritionSelectedMealFilterId;
+        return m.entries.length > 0 || !this.isNutritionArchiveMode;
+      });
+
+      if (stats.entryCount === 0 && !isFiltered) {
+        this.nutritionMealsList.innerHTML = '';
+        if (this.nutritionEmptyHint) this.nutritionEmptyHint.style.display = 'block';
+      } else {
+        if (this.nutritionEmptyHint) this.nutritionEmptyHint.style.display = 'none';
+
+        this.nutritionMealsList.innerHTML = mealsToDisplay.map(meal => {
+          const entriesHtml = meal.entries.length > 0 ? meal.entries.map(entry => `
+            <div class="nutrition-food-row-wrapper" data-entry-id="${escapeHtml(entry.id)}" data-meal-id="${escapeHtml(meal.mealId)}" style="border-color: ${meal.color || 'var(--meal-accent, var(--primary-magenta, #d83a88))'};">
+              ${!this.isNutritionArchiveMode ? `
+                <div class="nutrition-swipe-actions-right">
+                  <button type="button" class="swipe-action-btn action-edit" data-action="edit" data-entry-id="${escapeHtml(entry.id)}" title="Редактировать" aria-label="Редактировать">
+                    <svg class="swipe-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                  </button>
+                  <button type="button" class="swipe-action-btn action-delete" data-action="delete" data-entry-id="${escapeHtml(entry.id)}" title="Удалить" aria-label="Удалить">
+                    <svg class="swipe-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                  </button>
+                </div>
+              ` : ''}
+              <div class="nutrition-food-entry-item">
+                <div class="nutrition-food-info">
+                  <div class="nutrition-food-name">${escapeHtml(entry.name)}</div>
+                  <div class="nutrition-food-meta">
+                    <span class="food-meta-weight">${entry.weightGrams} г</span>
+                    <span class="food-meta-dot">•</span>
+                    <span class="food-meta-kcal"><strong>${entry.calories} ккал</strong></span>
+                    <span class="food-meta-dot">•</span>
+                    <span class="food-meta-macros">
+                      <span class="food-macro-pill prot" style="color: ${protColor}; background: rgba(${protRgb.r}, ${protRgb.g}, ${protRgb.b}, 0.15);">Б:${entry.protein}</span>
+                      <span class="food-macro-pill fat" style="color: ${fatColor}; background: rgba(${fatRgb.r}, ${fatRgb.g}, ${fatRgb.b}, 0.15);">Ж:${entry.fat}</span>
+                      <span class="food-macro-pill carb" style="color: ${carbColor}; background: rgba(${carbRgb.r}, ${carbRgb.g}, ${carbRgb.b}, 0.15);">У:${entry.carbs}</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `).join('') : `<div style="padding: 10px 14px; font-size: 12px; color: #94a3b8; font-style: italic; text-align: center;">Пока ничего не добавлено</div>`;
+
+          const isSelectedMeal = meal.mealId === this.nutritionSelectedMealFilterId;
+          return `
+            <div class="nutrition-meal-group-card ${isSelectedMeal ? 'is-selected' : ''}" style="--meal-accent: ${meal.color || 'var(--primary-magenta, #d83a88)'};">
+              <div class="nutrition-meal-group-header" data-meal-id="${escapeHtml(meal.mealId)}" style="cursor: pointer;" title="Нажмите для выделения сектора на кольце">
+                <div class="nutrition-meal-group-title">
+                  <span class="meal-group-icon">${this.nutritionTracker.renderMealIcon(meal.icon, meal.name)}</span>
+                  <span>${escapeHtml(meal.name)}</span>
+                </div>
+                <div class="nutrition-meal-group-badge" style="color: ${meal.color || 'var(--primary-magenta, #d83a88)'};">
+                  ${meal.calories} ккал
+                </div>
+              </div>
+              <div class="nutrition-meal-group-entries">
+                ${entriesHtml}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // Bind meal group headers to toggle donut sector selection
+        this.nutritionMealsList.querySelectorAll('.nutrition-meal-group-header').forEach(header => {
+          header.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const mealId = header.dataset.mealId;
+            triggerHaptic(15);
+            if (this.nutritionSelectedMealFilterId === mealId) {
+              this.nutritionSelectedMealFilterId = null;
+            } else {
+              this.nutritionSelectedMealFilterId = mealId;
+            }
+            this.renderNutritionModalContent();
+          });
+        });
+
+        // Attach swipe gestures for revealing Edit & Delete buttons
+        this.attachNutritionSwipeEvents();
+      }
+    }
+
+    // 6. Archive Mode & Filter Display Adjustments for Add Food Button
+    if (this.nutritionBottomBar) {
+      const showAddFoodBtn = !this.isNutritionArchiveMode && !!this.nutritionSelectedMealFilterId;
+      this.nutritionBottomBar.style.display = showAddFoodBtn ? 'flex' : 'none';
+    }
+    if (this.nutritionArchiveActions) {
+      this.nutritionArchiveActions.style.display = this.isNutritionArchiveMode ? 'block' : 'none';
+    }
+  }
+
+  // Attach touch and drag swipe gestures for nutrition food rows (revealing Edit & Delete buttons)
+  attachNutritionSwipeEvents() {
+    if (!this.nutritionMealsList || this.isNutritionArchiveMode) return;
+    const wrappers = this.nutritionMealsList.querySelectorAll('.nutrition-food-row-wrapper');
+    if (!wrappers.length) return;
+    let activeOpenWrapper = null;
+
+    const snapOpen = (w) => {
+      if (!w) return;
+      w.classList.add('open');
+      activeOpenWrapper = w;
+      const r = w.querySelector('.nutrition-food-entry-item');
+      const a = w.querySelector('.nutrition-swipe-actions-right');
+      if (r) {
+        r.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+        r.style.transform = 'translate3d(-92px, 0, 0)';
+      }
+      if (a) {
+        a.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+        a.style.transform = 'translate3d(0px, 0, 0)';
+      }
+      setTimeout(() => {
+        if (w.classList.contains('open') && !w.classList.contains('swiping')) {
+          if (r) { r.style.transition = ''; r.style.transform = ''; }
+          if (a) { a.style.transition = ''; a.style.transform = ''; }
+        }
+      }, 240);
+    };
+
+    const closeWrapper = (w, animated = true) => {
+      if (!w) return;
+      const r = w.querySelector('.nutrition-food-entry-item');
+      const a = w.querySelector('.nutrition-swipe-actions-right');
+      if (animated) {
+        if (r) {
+          r.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+          r.style.transform = 'translate3d(0, 0, 0)';
+        }
+        if (a) {
+          a.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+          a.style.transform = 'translate3d(100%, 0, 0)';
+        }
+        w.classList.remove('open', 'swiping');
+        setTimeout(() => {
+          if (!w.classList.contains('open') && !w.classList.contains('swiping')) {
+            if (r) { r.style.transition = ''; r.style.transform = ''; }
+            if (a) { a.style.transition = ''; a.style.transform = ''; }
+          }
+        }, 240);
+      } else {
+        w.classList.remove('open', 'swiping');
+        if (r) { r.style.transform = ''; r.style.transition = ''; }
+        if (a) { a.style.transform = ''; a.style.transition = ''; }
+      }
+      if (activeOpenWrapper === w) activeOpenWrapper = null;
+    };
+
+    const closeAllSwipes = (animated = true) => {
+      wrappers.forEach(w => {
+        if (w.classList.contains('open') || w.classList.contains('swiping')) {
+          closeWrapper(w, animated);
+        }
+      });
+      activeOpenWrapper = null;
+    };
+
+    // Close on outside tap
+    const outsideTapHandler = (e) => {
+      if (activeOpenWrapper && !activeOpenWrapper.contains(e.target)) {
+        closeAllSwipes(true);
+      }
+    };
+    if (this._nutritionSwipeOutsideHandler) {
+      document.removeEventListener('pointerdown', this._nutritionSwipeOutsideHandler);
+    }
+    this._nutritionSwipeOutsideHandler = outsideTapHandler;
+    document.addEventListener('pointerdown', this._nutritionSwipeOutsideHandler, { passive: true });
+
+    // Handle button clicks in swipe panel
+    wrappers.forEach(wrapper => {
+      const actionsRight = wrapper.querySelector('.nutrition-swipe-actions-right');
+      if (actionsRight) {
+        actionsRight.querySelectorAll('.swipe-action-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const action = btn.dataset.action;
+            const entryId = btn.dataset.entryId || wrapper.dataset.entryId;
+            triggerHaptic(20);
+            closeAllSwipes(false);
+
+            if (action === 'edit') {
+              this.openAddFoodModal(wrapper.dataset.mealId, entryId);
+            } else if (action === 'delete') {
+              if (entryId) {
+                const entry = this.nutritionTracker?.getEntry ? this.nutritionTracker.getEntry(entryId) : null;
+                const foodName = entry?.name ? ` «${entry.name}»` : '';
+                const title = this.t('nutrition_delete_entry_title') || 'Удалить запись?';
+                const message = (this.t('nutrition_delete_entry_confirm') || 'Удалить{foodName} из дневника питания?')
+                  .replace('{foodName}', foodName);
+
+                this.showConfirmModal({
+                  title,
+                  message,
+                  icon: '🗑️',
+                  confirmText: this.t('delete') || 'Удалить',
+                  onConfirm: () => {
+                    this.nutritionTracker.deleteEntry(entryId);
+                    this.showToast(this.t('nutrition_toast_entry_deleted') || 'Запись удалена', '🗑️');
+                    this.renderNutritionModalContent();
+                    this.updateNutritionWidget();
+                    this.updateNutritionArchiveStamp();
+                  }
+                });
+              }
+            }
+          });
+        });
+      }
+
+      const row = wrapper.querySelector('.nutrition-food-entry-item');
+      if (!row) return;
+
+      let startX = 0;
+      let startY = 0;
+      let isDragging = false;
+      let isHorizontal = null;
+      let rafId = null;
+      const actionsWidth = 92;
+      const openThreshold = -30;
+
+      const handleStart = (clientX, clientY, target) => {
+        if (target && target.closest('.swipe-action-btn, button')) {
+          return false;
+        }
+        if (activeOpenWrapper && activeOpenWrapper !== wrapper) {
+          closeAllSwipes(true);
+        }
+        startX = clientX;
+        startY = clientY;
+        isDragging = false;
+        isHorizontal = null;
+        wrapper.classList.add('swiping');
+        if (row) row.style.transition = 'none';
+        if (actionsRight) actionsRight.style.transition = 'none';
+        return true;
+      };
+
+      const handleMove = (clientX, clientY, e) => {
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+
+        if (isHorizontal === null) {
+          if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
+            isHorizontal = Math.abs(dx) > Math.abs(dy);
+          }
+        }
+
+        if (!isHorizontal) return;
+
+        if (!isDragging) {
+          isDragging = true;
+          try { window.getSelection()?.removeAllRanges(); } catch (err) { }
+        }
+
+        if (e && e.cancelable) e.preventDefault();
+
+        const maxLeftSwipe = -actionsWidth;
+        let translateX = dx;
+        if (wrapper.classList.contains('open')) {
+          translateX = maxLeftSwipe + dx;
+          if (translateX > 0) {
+            translateX = translateX * 0.2;
+          } else if (translateX < maxLeftSwipe) {
+            translateX = maxLeftSwipe + (translateX - maxLeftSwipe) * 0.2;
+          }
+        } else {
+          if (translateX > 0) {
+            translateX = translateX * 0.2;
+          } else if (translateX < maxLeftSwipe) {
+            translateX = maxLeftSwipe + (translateX - maxLeftSwipe) * 0.25;
+          }
+        }
+
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => {
+          if (row) row.style.transform = `translate3d(${translateX}px, 0, 0)`;
+          if (wrapper.classList.contains('open')) {
+            const actionsOffset = Math.max(0, actionsWidth + translateX);
+            if (actionsRight) actionsRight.style.transform = `translate3d(${actionsOffset}px, 0, 0)`;
+          } else {
+            if (translateX < 0) {
+              const actionsOffset = Math.max(0, actionsWidth + translateX);
+              if (actionsRight) actionsRight.style.transform = `translate3d(${actionsOffset}px, 0, 0)`;
+            } else {
+              if (actionsRight) actionsRight.style.transform = 'translate3d(100%, 0, 0)';
+            }
+          }
+        });
+      };
+
+      const handleEnd = (clientX, target) => {
+        if (rafId) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+        }
+        wrapper.classList.remove('swiping');
+        if (row) row.style.transition = '';
+        if (actionsRight) actionsRight.style.transition = '';
+
+        const wasDragging = isDragging;
+        isDragging = false;
+
+        if (!wasDragging) {
+          if (wrapper.classList.contains('open') && (!target || !target.closest('.nutrition-swipe-actions-right'))) {
+            closeAllSwipes(true);
+          }
+          return;
+        }
+
+        const dx = clientX - startX;
+        if (wrapper.classList.contains('open')) {
+          if (dx > 25) {
+            closeWrapper(wrapper, true);
+            triggerHaptic(15);
+          } else {
+            snapOpen(wrapper);
+          }
+        } else {
+          if (dx < openThreshold) {
+            closeAllSwipes(true);
+            snapOpen(wrapper);
+            triggerHaptic(15);
+          } else {
+            closeWrapper(wrapper, true);
+          }
+        }
+      };
+
+      // Pointer events for desktop and mobile touch
+      if (window.PointerEvent) {
+        row.addEventListener('pointerdown', (e) => {
+          if (e.pointerType === 'mouse' && e.button !== 0) return;
+          if (!handleStart(e.clientX, e.clientY, e.target)) return;
+
+          const onPointerMove = (moveEvt) => handleMove(moveEvt.clientX, moveEvt.clientY, moveEvt);
+          const onPointerUp = (upEvt) => {
+            document.removeEventListener('pointermove', onPointerMove);
+            document.removeEventListener('pointerup', onPointerUp);
+            document.removeEventListener('pointercancel', onPointerUp);
+            handleEnd(upEvt.clientX, upEvt.target);
+          };
+
+          document.addEventListener('pointermove', onPointerMove, { passive: false });
+          document.addEventListener('pointerup', onPointerUp, { passive: true });
+          document.addEventListener('pointercancel', onPointerUp, { passive: true });
+        });
+      } else {
+        row.addEventListener('touchstart', (e) => {
+          const touch = e.touches[0];
+          if (!touch || !handleStart(touch.clientX, touch.clientY, e.target)) return;
+
+          const onTouchMove = (moveEvt) => {
+            const t = moveEvt.touches[0];
+            if (t) handleMove(t.clientX, t.clientY, moveEvt);
+          };
+          const onTouchEnd = (endEvt) => {
+            document.removeEventListener('touchmove', onTouchMove);
+            document.removeEventListener('touchend', onTouchEnd);
+            document.removeEventListener('touchcancel', onTouchEnd);
+            const t = endEvt.changedTouches[0];
+            handleEnd(t ? t.clientX : 0, endEvt.target);
+          };
+
+          document.addEventListener('touchmove', onTouchMove, { passive: false });
+          document.addEventListener('touchend', onTouchEnd, { passive: true });
+          document.addEventListener('touchcancel', onTouchEnd, { passive: true });
+        }, { passive: true });
+      }
+    });
+  }
+
+  setupTargetSteppers(container = document) {
+    container.querySelectorAll('.btn-target-step[data-target]:not([data-stepper-bound])').forEach(btn => {
+      btn.setAttribute('data-stepper-bound', 'true');
+      let intervalId = null;
+      let timeoutId = null;
+
+      const performStep = () => {
+        const targetId = btn.dataset.target;
+        const step = parseFloat(btn.dataset.step) || 0;
+        const min = parseFloat(btn.dataset.min) || 0;
+        const max = parseFloat(btn.dataset.max) || 10000;
+        const inp = document.getElementById(targetId);
+        if (!inp) return;
+
+        let curVal = parseFloat(String(inp.value).replace(',', '.')) || 0;
+        let newVal = Math.max(min, Math.min(max, curVal + step));
+        newVal = Math.round(newVal * 10) / 10;
+        if (newVal !== curVal) {
+          inp.value = newVal;
+          inp.dispatchEvent(new Event('input', { bubbles: true }));
+          inp.dispatchEvent(new Event('change', { bubbles: true }));
+          triggerHaptic(10);
+        }
+      };
+
+      const clearTimers = () => {
+        if (timeoutId) { clearTimeout(timeoutId); timeoutId = null; }
+        if (intervalId) { clearInterval(intervalId); intervalId = null; }
+      };
+
+      btn.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        this.dismissActiveKeyboard();
+        performStep();
+        clearTimers();
+        timeoutId = setTimeout(() => {
+          intervalId = setInterval(performStep, 90);
+        }, 320);
+      });
+
+      btn.addEventListener('pointerup', clearTimers);
+      btn.addEventListener('pointerleave', clearTimers);
+      btn.addEventListener('pointercancel', clearTimers);
+    });
+  }
+
+  // --- Add Food Modal & Calculations ---
+  openAddFoodModal(prefillMealId = null, editEntryId = null) {
+    this.dismissActiveKeyboard();
+    if (!this.nutritionAddFoodModalBackdrop) return;
+    this._nutritionAddFoodOpenedAt = Date.now();
+    this.applyMacroColors();
+    this.editingNutritionEntryId = editEntryId || null;
+    this.setupTargetSteppers();
+
+    const editEntry = editEntryId ? this.nutritionTracker.getEntry(editEntryId) : null;
+    const meals = this.nutritionTracker.getMeals();
+    const targetMealId = editEntry ? editEntry.mealId : (prefillMealId || this.nutritionSelectedMealFilterId || (meals[0] ? meals[0].id : 'meal_breakfast'));
+
+    // Update modal title with group name
+    const selectedMeal = meals.find(m => m.id === targetMealId) || meals[0];
+    const titleEl = document.getElementById('nutritionAddFoodTitle');
+    if (titleEl) {
+      if (editEntry) {
+        titleEl.textContent = selectedMeal ? `Редактировать • ${selectedMeal.name}` : 'Редактировать запись';
+      } else if (selectedMeal) {
+        titleEl.textContent = `${this.t('nutrition_btn_add_food') || 'Добавить еду'} • ${selectedMeal.name}`;
+      } else {
+        titleEl.textContent = this.t('nutrition_btn_add_food') || 'Добавить еду';
+      }
+    }
+
+    const populateSelect = (selectEl, previewEl) => {
+      if (!selectEl) return;
+      selectEl.innerHTML = meals.map(m => `
+        <option value="${escapeHtml(m.id)}" ${m.id === targetMealId ? 'selected' : ''}>${escapeHtml(m.name)}</option>
+      `).join('');
+      selectEl.value = targetMealId;
+      if (previewEl && selectedMeal) {
+        previewEl.innerHTML = this.nutritionTracker.renderMealIcon(selectedMeal.icon, selectedMeal.name);
+      }
+    };
+
+    populateSelect(this.singleFoodMealSelect, this.singleMealPreviewIcon);
+    populateSelect(this.compositeMealSelect, this.compositeMealPreviewIcon);
+
+    if (editEntry) {
+      if (editEntry.foodType === 'composite') {
+        // Composite dish editing
+        if (this.compositeDishName) {
+          this.compositeDishName.value = editEntry.name || '';
+          if (editEntry.recipeId) this.compositeDishName.dataset.activeRecipeId = editEntry.recipeId;
+          else delete this.compositeDishName.dataset.activeRecipeId;
+        }
+        if (this.compositeDishSuggestions) this.compositeDishSuggestions.style.display = 'none';
+        this.currentCompositeIngredients = (editEntry.rawIngredients && editEntry.rawIngredients.length > 0)
+          ? editEntry.rawIngredients.map(ing => ({
+              name: ing.name || '',
+              rawWeight: ing.rawWeight || 100,
+              calories100g: ing.calories100g ?? ing.caloriesPer100g ?? (ing.rawWeight ? Math.round(((ing.calories || 0) / ing.rawWeight) * 100) : 0),
+              protein100g: ing.protein100g ?? ing.proteinPer100g ?? (ing.rawWeight ? Math.round((((ing.protein || 0) / ing.rawWeight) * 100) * 10) / 10 : 0),
+              fat100g: ing.fat100g ?? ing.fatPer100g ?? (ing.rawWeight ? Math.round((((ing.fat || 0) / ing.rawWeight) * 100) * 10) / 10 : 0),
+              carbs100g: ing.carbs100g ?? ing.carbsPer100g ?? (ing.rawWeight ? Math.round((((ing.carbs || 0) / ing.rawWeight) * 100) * 10) / 10 : 0),
+              isCollapsed: true
+            }))
+          : [{
+              name: editEntry.name || '',
+              rawWeight: editEntry.weightGrams || 100,
+              calories100g: Math.round(((editEntry.calories || 0) / (editEntry.weightGrams || 1)) * 100),
+              protein100g: Math.round((((editEntry.protein || 0) / (editEntry.weightGrams || 1)) * 100) * 10) / 10,
+              fat100g: Math.round((((editEntry.fat || 0) / (editEntry.weightGrams || 1)) * 100) * 10) / 10,
+              carbs100g: Math.round((((editEntry.carbs || 0) / (editEntry.weightGrams || 1)) * 100) * 10) / 10,
+              isCollapsed: true
+            }];
+        if (this.compositeCookedWeight) this.compositeCookedWeight.value = editEntry.cookedWeight || editEntry.weightGrams || '';
+        if (this.compositePortionEaten) this.compositePortionEaten.value = editEntry.portionWeight || editEntry.weightGrams || '';
+
+        this.renderCompositeIngredientsList();
+        this.recalculateCompositeDish();
+
+        if (this.tabFoodSingle && this.tabFoodComposite) {
+          this.tabFoodSingle.classList.remove('active');
+          this.tabFoodComposite.classList.add('active');
+          if (this.paneFoodSingle) this.paneFoodSingle.style.display = 'none';
+          if (this.paneFoodComposite) this.paneFoodComposite.style.display = 'block';
+        }
+      } else {
+        // Single food editing
+        if (this.singleFoodName) {
+          this.singleFoodName.value = editEntry.name || '';
+          if (editEntry.barcode) this.singleFoodName.dataset.scannedBarcode = editEntry.barcode;
+          else delete this.singleFoodName.dataset.scannedBarcode;
+        }
+        const w = editEntry.weightGrams || 100;
+        if (this.singleFoodWeight) this.singleFoodWeight.value = w;
+        if (editEntry.per100g) {
+          if (this.singleFoodKcal100) this.singleFoodKcal100.value = editEntry.per100g.calories || 0;
+          if (this.singleFoodProt100) this.singleFoodProt100.value = editEntry.per100g.protein || 0;
+          if (this.singleFoodFat100) this.singleFoodFat100.value = editEntry.per100g.fat || 0;
+          if (this.singleFoodCarb100) this.singleFoodCarb100.value = editEntry.per100g.carbs || 0;
+        } else {
+          if (this.singleFoodKcal100) this.singleFoodKcal100.value = Math.round(((editEntry.calories || 0) / w) * 100);
+          if (this.singleFoodProt100) this.singleFoodProt100.value = Math.round((((editEntry.protein || 0) / w) * 100) * 10) / 10;
+          if (this.singleFoodFat100) this.singleFoodFat100.value = Math.round((((editEntry.fat || 0) / w) * 100) * 10) / 10;
+          if (this.singleFoodCarb100) this.singleFoodCarb100.value = Math.round((((editEntry.carbs || 0) / w) * 100) * 10) / 10;
+        }
+        if (this.singleFoodSuggestions) this.singleFoodSuggestions.style.display = 'none';
+        this.recalculateSingleFoodPortion();
+
+        if (this.tabFoodSingle && this.tabFoodComposite) {
+          this.tabFoodSingle.classList.add('active');
+          this.tabFoodComposite.classList.remove('active');
+          if (this.paneFoodSingle) this.paneFoodSingle.style.display = 'block';
+          if (this.paneFoodComposite) this.paneFoodComposite.style.display = 'none';
+        }
+      }
+    } else {
+      // Reset single food fields
+      if (this.singleFoodName) {
+        this.singleFoodName.value = '';
+        delete this.singleFoodName.dataset.scannedBarcode;
+      }
+      if (this.singleFoodWeight) this.singleFoodWeight.value = '100';
+      if (this.singleFoodKcal100) this.singleFoodKcal100.value = '0';
+      if (this.singleFoodProt100) this.singleFoodProt100.value = '0';
+      if (this.singleFoodFat100) this.singleFoodFat100.value = '0';
+      if (this.singleFoodCarb100) this.singleFoodCarb100.value = '0';
+      if (this.singleFoodSuggestions) this.singleFoodSuggestions.style.display = 'none';
+
+      this.recalculateSingleFoodPortion();
+
+      // Reset composite fields
+      if (this.compositeDishName) {
+        this.compositeDishName.value = '';
+        delete this.compositeDishName.dataset.activeRecipeId;
+      }
+      if (this.compositeDishSuggestions) {
+        this.compositeDishSuggestions.style.display = 'none';
+      }
+      this.currentCompositeIngredients = [
+        { name: '', rawWeight: 100, calories100g: 0, protein100g: 0, fat100g: 0, carbs100g: 0, isCollapsed: false }
+      ];
+      if (this.compositeCookedWeight) this.compositeCookedWeight.value = '';
+      if (this.compositePortionEaten) this.compositePortionEaten.value = '';
+
+      this.renderCompositeIngredientsList();
+      this.recalculateCompositeDish();
+
+      // Default to Single Food tab
+      if (this.tabFoodSingle && this.tabFoodComposite) {
+        this.tabFoodSingle.classList.add('active');
+        this.tabFoodComposite.classList.remove('active');
+        if (this.paneFoodSingle) this.paneFoodSingle.style.display = 'block';
+        if (this.paneFoodComposite) this.paneFoodComposite.style.display = 'none';
+      }
+    }
+
+    this.nutritionAddFoodModalBackdrop.classList.add('open');
+    this.nutritionAddFoodModalBackdrop.setAttribute('aria-hidden', 'false');
+  }
+
+  closeAddFoodModal() {
+    this.editingNutritionEntryId = null;
+    const titleEl = document.getElementById('nutritionAddFoodTitle');
+    if (titleEl) {
+      titleEl.textContent = this.t('nutrition_btn_add_food') || 'Добавить еду';
+    }
+    if (this.singleFoodSuggestions) {
+      this.singleFoodSuggestions.style.display = 'none';
+    }
+    if (this.compositeDishSuggestions) {
+      this.compositeDishSuggestions.style.display = 'none';
+    }
+    if (this.nutritionAddFoodModalBackdrop) {
+      this.nutritionAddFoodModalBackdrop.classList.remove('open');
+      this.nutritionAddFoodModalBackdrop.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  recalculateSingleFoodPortion() {
+    const rawW = parseFloat((this.singleFoodWeight?.value || '').replace(',', '.'));
+    const w = isNaN(rawW) ? 0 : Math.max(0, rawW);
+    const c100 = Math.max(0, parseFloat(this.singleFoodKcal100?.value) || 0);
+    const p100 = Math.max(0, parseFloat(this.singleFoodProt100?.value) || 0);
+    const f100 = Math.max(0, parseFloat(this.singleFoodFat100?.value) || 0);
+    const cb100 = Math.max(0, parseFloat(this.singleFoodCarb100?.value) || 0);
+
+    if (this.singleFoodSummaryWeight) this.singleFoodSummaryWeight.textContent = Math.round(w);
+    if (this.singleFoodCalcKcal) this.singleFoodCalcKcal.textContent = Math.round((w * c100) / 100);
+    if (this.singleFoodCalcProt) this.singleFoodCalcProt.textContent = Math.round(((w * p100) / 100) * 10) / 10;
+    if (this.singleFoodCalcFat) this.singleFoodCalcFat.textContent = Math.round(((w * f100) / 100) * 10) / 10;
+    if (this.singleFoodCalcCarb) this.singleFoodCalcCarb.textContent = Math.round(((w * cb100) / 100) * 10) / 10;
+  }
+
+  confirmDeleteIngredient(targetIdx) {
+    const targetItem = this.currentCompositeIngredients[targetIdx];
+    if (!targetItem) return;
+    const nameLabel = targetItem.name ? `«${targetItem.name}»` : `Ингредиент ${targetIdx + 1}`;
+
+    this.showConfirmModal({
+      title: 'Удалить ингредиент?',
+      message: `Вы действительно хотите удалить ${nameLabel} из составного блюда?`,
+      icon: '🗑️',
+      confirmText: 'Удалить',
+      onConfirm: () => {
+        if (this.currentCompositeIngredients.length <= 1) {
+          this.showToast('Нужен хотя бы один ингредиент', 'ℹ️');
+          return;
+        }
+        this.currentCompositeIngredients.splice(targetIdx, 1);
+        this.renderCompositeIngredientsList();
+        this.recalculateCompositeDish();
+        triggerHaptic(20);
+        this.showToast(`Ингредиент ${nameLabel} удален`, '🗑️');
+      }
+    });
+  }
+
+  populateCompositeRecipe(recipe) {
+    if (!recipe) return;
+    if (this.compositeDishName) {
+      this.compositeDishName.value = recipe.name || '';
+      this.compositeDishName.dataset.activeRecipeId = recipe.id || '';
+    }
+
+    if (Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0) {
+      this.currentCompositeIngredients = recipe.ingredients.map(ing => ({
+        name: ing.name || '',
+        rawWeight: Number(ing.rawWeight) || 100,
+        calories100g: Number(ing.calories100g) || 0,
+        protein100g: Number(ing.protein100g) || 0,
+        fat100g: Number(ing.fat100g) || 0,
+        carbs100g: Number(ing.carbs100g) || 0,
+        isCollapsed: true // При загрузке рецепта ингредиенты аккуратно свернуты
+      }));
+    }
+
+    if (recipe.cookedWeight && this.compositeCookedWeight) {
+      this.compositeCookedWeight.value = recipe.cookedWeight;
+    }
+    if (recipe.portionWeight && this.compositePortionEaten) {
+      this.compositePortionEaten.value = recipe.portionWeight;
+    }
+
+    this.renderCompositeIngredientsList();
+    this.recalculateCompositeDish();
+
+    triggerHaptic([20, 50, 20]);
+    this.showToast(`Загружен рецепт: «${recipe.name}» (${this.currentCompositeIngredients.length} ингред.) 🥧`, '✨');
+  }
+
+  renderCompositeIngredientsList() {
+    if (!this.compositeIngredientsList) return;
+
+    const protColor = this.nutritionTracker?.getMacroColor('protein') || '#3b82f6';
+    const fatColor = this.nutritionTracker?.getMacroColor('fat') || '#f59e0b';
+    const carbColor = this.nutritionTracker?.getMacroColor('carbs') || '#10b981';
+    const protRgb = this.hexToRgb(protColor) || { r: 59, g: 130, b: 246 };
+    const fatRgb = this.hexToRgb(fatColor) || { r: 245, g: 158, b: 11 };
+    const carbRgb = this.hexToRgb(carbColor) || { r: 16, g: 185, b: 129 };
+
+    this.compositeIngredientsList.innerHTML = this.currentCompositeIngredients.map((ing, idx) => {
+      const isCollapsed = ing.isCollapsed !== false;
+      const w = Math.max(0, Number(ing.rawWeight) || 0);
+      const c100 = Number(ing.calories100g) || 0;
+      const p100 = Number(ing.protein100g) || 0;
+      const f100 = Number(ing.fat100g) || 0;
+      const cb100 = Number(ing.carbs100g) || 0;
+
+      const ingKcal = Math.round((w * c100) / 100);
+      const ingProt = Math.round(((w * p100) / 100) * 10) / 10;
+      const ingFat = Math.round(((w * f100) / 100) * 10) / 10;
+      const ingCarb = Math.round(((w * cb100) / 100) * 10) / 10;
+
+      return `
+        <div class="composite-ingredient-row-wrapper" data-idx="${idx}">
+          <!-- Swipe Action: Revealed on Swipe Left -->
+          <div class="comp-ing-swipe-actions-right">
+            <button type="button" class="comp-swipe-del-btn" data-idx="${idx}" title="Удалить ингредиент" aria-label="Удалить ингредиент">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              <span>Удалить</span>
+            </button>
+          </div>
+
+          <!-- Main Card (Collapsible & Swipeable) -->
+          <div class="composite-ingredient-row ${isCollapsed ? 'is-collapsed' : 'is-expanded'}" data-idx="${idx}">
+            <!-- Minimalist Compact Header (Always Visible / Click to Toggle) -->
+            <div class="comp-ing-compact-header" data-idx="${idx}" title="${isCollapsed ? 'Нажмите, чтобы развернуть' : 'Нажмите, чтобы свернуть'}">
+              <div class="comp-ing-num-badge">${idx + 1}</div>
+              <div class="comp-ing-compact-info">
+                <div class="comp-ing-compact-title">${escapeHtml(ing.name || `Ингредиент ${idx + 1}`)}</div>
+                <div class="comp-ing-compact-meta">
+                  <span class="comp-meta-chip meta-weight">⚖️ ${w} г</span>
+                  <span class="comp-meta-chip meta-kcal">🔥 ${ingKcal} ккал</span>
+                  <span class="comp-meta-macros" style="display: inline-flex; align-items: center; gap: 3px;">
+                    <span class="food-macro-pill prot" style="color: ${protColor}; background: rgba(${protRgb.r}, ${protRgb.g}, ${protRgb.b}, 0.15);">Б:${ingProt}</span>
+                    <span class="food-macro-pill fat" style="color: ${fatColor}; background: rgba(${fatRgb.r}, ${fatRgb.g}, ${fatRgb.b}, 0.15);">Ж:${ingFat}</span>
+                    <span class="food-macro-pill carb" style="color: ${carbColor}; background: rgba(${carbRgb.r}, ${carbRgb.g}, ${carbRgb.b}, 0.15);">У:${ingCarb}</span>
+                  </span>
+                </div>
+              </div>
+              <button type="button" class="comp-ing-toggle-btn" data-idx="${idx}" title="${isCollapsed ? 'Развернуть' : 'Свернуть'}" aria-label="Развернуть/Свернуть">
+                <svg class="comp-chevron-icon ${isCollapsed ? '' : 'is-expanded'}" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Expandable Body (Full Controls & Steppers) -->
+            <div class="comp-ing-expandable-body" style="${isCollapsed ? 'display: none;' : 'display: flex;'}">
+              <!-- Header: Index/Name + Barcode Scan + Delete -->
+              <div class="comp-ing-header-row">
+                <div class="comp-ing-name-wrap">
+                  <input type="text" class="form-input comp-ing-name" placeholder="Ингредиент ${idx + 1}" value="${escapeHtml(ing.name || '')}" autocomplete="off">
+                  <div class="food-search-suggestions comp-ing-suggestions" style="display: none;"></div>
+                </div>
+                <button type="button" class="btn-scan-barcode comp-ing-scan" title="Сканировать штрихкод">📷</button>
+                <button type="button" class="comp-ing-del" title="Удалить ингредиент">✕</button>
+              </div>
+
+              <!-- Raw Weight Section -->
+              <div class="comp-ing-weight-card">
+                <div class="comp-card-top">
+                  <span class="comp-card-label">⚖️ Сырой вес ингредиента</span>
+                  <span class="comp-card-badge">г</span>
+                </div>
+                <div class="comp-weight-controls">
+                  <div class="target-stepper-row comp-stepper-main">
+                    <button type="button" class="btn-target-step btn-step-minus comp-step-btn" data-field="rawWeight" data-step="-1" aria-label="Уменьшить вес">−</button>
+                    <input type="number" class="target-num-input comp-ing-raw-weight" placeholder="100" value="${ing.rawWeight ?? 100}" min="1" step="1" inputmode="decimal" onfocus="this.select()">
+                    <button type="button" class="btn-target-step btn-step-plus comp-step-btn" data-field="rawWeight" data-step="1" aria-label="Увеличить вес">+</button>
+                  </div>
+                  <div class="food-quick-chips comp-weight-chips">
+                    <button type="button" class="food-chip-btn comp-chip-add" data-add="1">+1</button>
+                    <button type="button" class="food-chip-btn comp-chip-add" data-add="5">+5</button>
+                    <button type="button" class="food-chip-btn comp-chip-add" data-add="10">+10</button>
+                    <button type="button" class="food-chip-btn comp-chip-add" data-add="50">+50</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Nutritional Values (Per 100g) -->
+              <div class="comp-macros-wrapper">
+                <div class="comp-macros-header-label">
+                  <span>⚡ Пищевая ценность (на 100 г):</span>
+                </div>
+                <div class="nutrition-targets-grid comp-targets-grid">
+                  <!-- Калории -->
+                  <div class="nutrition-target-card target-card-kcal">
+                    <div class="target-card-header">
+                      <span class="target-card-label">🔥 Ккал</span>
+                      <span class="target-card-badge">100г</span>
+                    </div>
+                    <div class="target-stepper-row">
+                      <button type="button" class="btn-target-step btn-step-minus comp-step-btn" data-field="calories100g" data-step="-5" aria-label="Уменьшить калории">−</button>
+                      <input type="number" class="target-num-input comp-ing-c100" placeholder="0" value="${ing.calories100g ?? 0}" min="0" step="1" inputmode="decimal">
+                      <button type="button" class="btn-target-step btn-step-plus comp-step-btn" data-field="calories100g" data-step="5" aria-label="Увеличить калории">+</button>
+                    </div>
+                  </div>
+
+                  <!-- Белки -->
+                  <div class="nutrition-target-card target-card-prot">
+                    <div class="target-card-header">
+                      <span class="target-card-label">🥩 Белки</span>
+                      <span class="target-card-badge">г</span>
+                    </div>
+                    <div class="target-stepper-row">
+                      <button type="button" class="btn-target-step btn-step-minus comp-step-btn" data-field="protein100g" data-step="-1" aria-label="Уменьшить белки">−</button>
+                      <input type="number" class="target-num-input comp-ing-prot" placeholder="0" value="${ing.protein100g ?? 0}" min="0" step="0.5" inputmode="decimal">
+                      <button type="button" class="btn-target-step btn-step-plus comp-step-btn" data-field="protein100g" data-step="1" aria-label="Увеличить белки">+</button>
+                    </div>
+                  </div>
+
+                  <!-- Жиры -->
+                  <div class="nutrition-target-card target-card-fat">
+                    <div class="target-card-header">
+                      <span class="target-card-label">🥑 Жиры</span>
+                      <span class="target-card-badge">г</span>
+                    </div>
+                    <div class="target-stepper-row">
+                      <button type="button" class="btn-target-step btn-step-minus comp-step-btn" data-field="fat100g" data-step="-1" aria-label="Уменьшить жиры">−</button>
+                      <input type="number" class="target-num-input comp-ing-fat" placeholder="0" value="${ing.fat100g ?? 0}" min="0" step="0.5" inputmode="decimal">
+                      <button type="button" class="btn-target-step btn-step-plus comp-step-btn" data-field="fat100g" data-step="1" aria-label="Увеличить жиры">+</button>
+                    </div>
+                  </div>
+
+                  <!-- Углеводы -->
+                  <div class="nutrition-target-card target-card-carb">
+                    <div class="target-card-header">
+                      <span class="target-card-label">🍞 Углеводы</span>
+                      <span class="target-card-badge">г</span>
+                    </div>
+                    <div class="target-stepper-row">
+                      <button type="button" class="btn-target-step btn-step-minus comp-step-btn" data-field="carbs100g" data-step="-1" aria-label="Уменьшить углеводы">−</button>
+                      <input type="number" class="target-num-input comp-ing-carb" placeholder="0" value="${ing.carbs100g ?? 0}" min="0" step="0.5" inputmode="decimal">
+                      <button type="button" class="btn-target-step btn-step-plus comp-step-btn" data-field="carbs100g" data-step="1" aria-label="Увеличить углеводы">+</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Compact collapse button -->
+              <button type="button" class="comp-ing-collapse-btn" data-idx="${idx}">
+                <span>▲ Свернуть ингредиент</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Bind row inputs & interactions
+    this.compositeIngredientsList.querySelectorAll('.composite-ingredient-row').forEach(row => {
+      const idx = parseInt(row.dataset.idx, 10);
+      const item = this.currentCompositeIngredients[idx];
+      if (!item) return;
+
+      const compactHeader = row.querySelector('.comp-ing-compact-header');
+      const toggleBtn = row.querySelector('.comp-ing-toggle-btn');
+      const collapseBtn = row.querySelector('.comp-ing-collapse-btn');
+      const expandableBody = row.querySelector('.comp-ing-expandable-body');
+      const chevronIcon = row.querySelector('.comp-chevron-icon');
+
+      const toggleCollapse = (forceState) => {
+        item.isCollapsed = forceState !== undefined ? forceState : !item.isCollapsed;
+        if (item.isCollapsed) {
+          row.classList.remove('is-expanded');
+          row.classList.add('is-collapsed');
+          if (expandableBody) expandableBody.style.display = 'none';
+          if (chevronIcon) chevronIcon.classList.remove('is-expanded');
+          if (compactHeader) compactHeader.setAttribute('title', 'Нажмите, чтобы развернуть');
+          if (toggleBtn) {
+            toggleBtn.setAttribute('title', 'Развернуть');
+            toggleBtn.setAttribute('aria-label', 'Развернуть');
+          }
+        } else {
+          row.classList.remove('is-collapsed');
+          row.classList.add('is-expanded');
+          if (expandableBody) expandableBody.style.display = 'flex';
+          if (chevronIcon) chevronIcon.classList.add('is-expanded');
+          if (compactHeader) compactHeader.setAttribute('title', 'Нажмите, чтобы свернуть');
+          if (toggleBtn) {
+            toggleBtn.setAttribute('title', 'Свернуть');
+            toggleBtn.setAttribute('aria-label', 'Свернуть');
+          }
+        }
+      };
+
+      if (compactHeader) {
+        compactHeader.addEventListener('click', (e) => {
+          if (e.target.closest('.comp-ing-toggle-btn')) return;
+          toggleCollapse();
+        });
+      }
+
+      if (toggleBtn) {
+        toggleBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleCollapse();
+        });
+      }
+
+      if (collapseBtn) {
+        collapseBtn.addEventListener('click', () => {
+          toggleCollapse(true);
+        });
+      }
+
+      const nameInput = row.querySelector('.comp-ing-name');
+      const scanBtn = row.querySelector('.comp-ing-scan');
+      const delBtn = row.querySelector('.comp-ing-del');
+      const weightInput = row.querySelector('.comp-ing-raw-weight');
+      const c100Input = row.querySelector('.comp-ing-c100');
+      const protInput = row.querySelector('.comp-ing-prot');
+      const fatInput = row.querySelector('.comp-ing-fat');
+      const carbInput = row.querySelector('.comp-ing-carb');
+
+      const updateCompactMeta = () => {
+        const w = Math.max(0, Number(item.rawWeight) || 0);
+        const c100 = Number(item.calories100g) || 0;
+        const p100 = Number(item.protein100g) || 0;
+        const f100 = Number(item.fat100g) || 0;
+        const cb100 = Number(item.carbs100g) || 0;
+
+        const ingKcal = Math.round((w * c100) / 100);
+        const ingProt = Math.round(((w * p100) / 100) * 10) / 10;
+        const ingFat = Math.round(((w * f100) / 100) * 10) / 10;
+        const ingCarb = Math.round(((w * cb100) / 100) * 10) / 10;
+
+        const titleEl = row.querySelector('.comp-ing-compact-title');
+        const weightChip = row.querySelector('.comp-meta-chip.meta-weight');
+        const kcalChip = row.querySelector('.comp-meta-chip.meta-kcal');
+        const macrosEl = row.querySelector('.comp-meta-macros');
+
+        if (titleEl) titleEl.textContent = item.name || `Ингредиент ${idx + 1}`;
+        if (weightChip) weightChip.textContent = `⚖️ ${w} г`;
+        if (kcalChip) kcalChip.textContent = `🔥 ${ingKcal} ккал`;
+        if (macrosEl) {
+          const protColor = this.nutritionTracker?.getMacroColor('protein') || '#3b82f6';
+          const fatColor = this.nutritionTracker?.getMacroColor('fat') || '#f59e0b';
+          const carbColor = this.nutritionTracker?.getMacroColor('carbs') || '#10b981';
+          const protRgb = this.hexToRgb(protColor) || { r: 59, g: 130, b: 246 };
+          const fatRgb = this.hexToRgb(fatColor) || { r: 245, g: 158, b: 11 };
+          const carbRgb = this.hexToRgb(carbColor) || { r: 16, g: 185, b: 129 };
+          macrosEl.innerHTML = `
+            <span class="food-macro-pill prot" style="color: ${protColor}; background: rgba(${protRgb.r}, ${protRgb.g}, ${protRgb.b}, 0.15);">Б:${ingProt}</span>
+            <span class="food-macro-pill fat" style="color: ${fatColor}; background: rgba(${fatRgb.r}, ${fatRgb.g}, ${fatRgb.b}, 0.15);">Ж:${ingFat}</span>
+            <span class="food-macro-pill carb" style="color: ${carbColor}; background: rgba(${carbRgb.r}, ${carbRgb.g}, ${carbRgb.b}, 0.15);">У:${ingCarb}</span>
+          `;
+        }
+      };
+
+      // Select all text on focus for easy mobile editing
+      row.querySelectorAll('input.target-num-input').forEach(input => {
+        input.addEventListener('focus', () => input.select());
+      });
+
+      const suggestionsEl = row.querySelector('.comp-ing-suggestions');
+      let compSearchTimer = null;
+      if (nameInput) {
+        nameInput.addEventListener('input', (e) => {
+          const val = e.target.value;
+          if (this.currentCompositeIngredients[idx]) {
+            this.currentCompositeIngredients[idx].name = val;
+          }
+          updateCompactMeta();
+          clearTimeout(compSearchTimer);
+          const q = (val || '').trim();
+          if (q.length < 2) {
+            if (suggestionsEl) suggestionsEl.style.display = 'none';
+            return;
+          }
+          compSearchTimer = setTimeout(async () => {
+            const results = await this.nutritionTracker.searchFood(q);
+            if (!suggestionsEl) return;
+            if (results && results.length > 0) {
+              const protColor = this.nutritionTracker?.getMacroColor('protein') || '#3b82f6';
+              const fatColor = this.nutritionTracker?.getMacroColor('fat') || '#f59e0b';
+              const carbColor = this.nutritionTracker?.getMacroColor('carbs') || '#10b981';
+              const protRgb = this.hexToRgb(protColor) || { r: 59, g: 130, b: 246 };
+              const fatRgb = this.hexToRgb(fatColor) || { r: 245, g: 158, b: 11 };
+              const carbRgb = this.hexToRgb(carbColor) || { r: 16, g: 185, b: 129 };
+
+              suggestionsEl.innerHTML = results.map(item => `
+                <div class="food-suggestion-item" data-food-id="${escapeHtml(item.id)}">
+                  <span><strong>${escapeHtml(item.name)}</strong></span>
+                  <div style="font-size: 11px; color: #64748b; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 3px;">
+                    <span>${item.caloriesPer100g} ккал •</span>
+                    <span class="food-macro-pill prot" style="color: ${protColor}; background: rgba(${protRgb.r}, ${protRgb.g}, ${protRgb.b}, 0.15);">Б:${item.proteinPer100g}</span>
+                    <span class="food-macro-pill fat" style="color: ${fatColor}; background: rgba(${fatRgb.r}, ${fatRgb.g}, ${fatRgb.b}, 0.15);">Ж:${item.fatPer100g}</span>
+                    <span class="food-macro-pill carb" style="color: ${carbColor}; background: rgba(${carbRgb.r}, ${carbRgb.g}, ${carbRgb.b}, 0.15);">У:${item.carbsPer100g}</span>
+                  </div>
+                </div>
+              `).join('');
+              suggestionsEl.querySelectorAll('.food-suggestion-item').forEach((sRow, sIdx) => {
+                sRow.addEventListener('click', () => {
+                  const selected = results[sIdx];
+                  if (selected) {
+                    this.applyScannedFoodToComposite(selected, idx);
+                    if (this.nutritionTracker && typeof this.nutritionTracker.saveCustomFood === 'function') {
+                      this.nutritionTracker.saveCustomFood(selected);
+                    }
+                    if (suggestionsEl) suggestionsEl.style.display = 'none';
+                  }
+                });
+              });
+              suggestionsEl.style.display = 'block';
+            } else {
+              suggestionsEl.style.display = 'none';
+            }
+          }, 300);
+        });
+
+        nameInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && suggestionsEl) {
+            suggestionsEl.style.display = 'none';
+          }
+        });
+
+        document.addEventListener('click', (e) => {
+          if (suggestionsEl && !suggestionsEl.contains(e.target) && e.target !== nameInput) {
+            suggestionsEl.style.display = 'none';
+          }
+        });
+      }
+
+      if (scanBtn) {
+        scanBtn.addEventListener('click', () => {
+          triggerHaptic(15);
+          this.startBarcodeScanner('composite', idx);
+        });
+      }
+
+      if (delBtn) {
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          triggerHaptic(15);
+          this.confirmDeleteIngredient(idx);
+        });
+      }
+
+      if (weightInput) {
+        weightInput.addEventListener('input', (e) => {
+          if (this.currentCompositeIngredients[idx]) {
+            const val = parseFloat(String(e.target.value).replace(',', '.')) || 0;
+            this.currentCompositeIngredients[idx].rawWeight = Math.max(0, val);
+            updateCompactMeta();
+            this.recalculateCompositeDish();
+          }
+        });
+      }
+
+      if (c100Input) {
+        c100Input.addEventListener('input', (e) => {
+          if (this.currentCompositeIngredients[idx]) {
+            const val = parseFloat(String(e.target.value).replace(',', '.')) || 0;
+            this.currentCompositeIngredients[idx].calories100g = Math.max(0, val);
+            this.currentCompositeIngredients[idx]._autoKcal = false;
+            updateCompactMeta();
+            this.recalculateCompositeDish();
+          }
+        });
+      }
+
+      const handleMacroChange = () => {
+        const cur = this.currentCompositeIngredients[idx];
+        if (!cur) return;
+
+        cur.protein100g = Math.max(0, parseFloat(String(protInput?.value || '0').replace(',', '.')) || 0);
+        cur.fat100g = Math.max(0, parseFloat(String(fatInput?.value || '0').replace(',', '.')) || 0);
+        cur.carbs100g = Math.max(0, parseFloat(String(carbInput?.value || '0').replace(',', '.')) || 0);
+
+        // If calories are 0 or were auto-calculated, calculate from macros: 4 * P + 9 * F + 4 * C
+        if (!cur.calories100g || cur._autoKcal) {
+          const autoKcal = Math.round(cur.protein100g * 4 + cur.fat100g * 9 + cur.carbs100g * 4);
+          if (autoKcal > 0) {
+            cur.calories100g = autoKcal;
+            cur._autoKcal = true;
+            if (c100Input) c100Input.value = autoKcal;
+          }
+        }
+
+        updateCompactMeta();
+        this.recalculateCompositeDish();
+      };
+
+      if (protInput) protInput.addEventListener('input', handleMacroChange);
+      if (fatInput) fatInput.addEventListener('input', handleMacroChange);
+      if (carbInput) carbInput.addEventListener('input', handleMacroChange);
+
+      // Bind row stepper buttons
+      row.querySelectorAll('.comp-step-btn').forEach(btn => {
+        let intervalId = null;
+        let timeoutId = null;
+
+        const performStep = () => {
+          const field = btn.dataset.field;
+          const step = parseFloat(btn.dataset.step) || 0;
+          let targetInp = null;
+          let isMacro = false;
+
+          if (field === 'rawWeight') targetInp = weightInput;
+          else if (field === 'calories100g') targetInp = c100Input;
+          else if (field === 'protein100g') { targetInp = protInput; isMacro = true; }
+          else if (field === 'fat100g') { targetInp = fatInput; isMacro = true; }
+          else if (field === 'carbs100g') { targetInp = carbInput; isMacro = true; }
+
+          if (!targetInp) return;
+
+          let curVal = parseFloat(String(targetInp.value).replace(',', '.')) || 0;
+          let newVal = Math.max(field === 'rawWeight' ? 1 : 0, Math.min(5000, curVal + step));
+          newVal = Math.round(newVal * 10) / 10;
+          if (newVal !== curVal) {
+            targetInp.value = newVal;
+            if (field === 'rawWeight' && this.currentCompositeIngredients[idx]) {
+              this.currentCompositeIngredients[idx].rawWeight = newVal;
+              updateCompactMeta();
+              this.recalculateCompositeDish();
+            } else if (field === 'calories100g' && this.currentCompositeIngredients[idx]) {
+              this.currentCompositeIngredients[idx].calories100g = newVal;
+              this.currentCompositeIngredients[idx]._autoKcal = false;
+              updateCompactMeta();
+              this.recalculateCompositeDish();
+            } else if (isMacro) {
+              handleMacroChange();
+            }
+            triggerHaptic(10);
+          }
+        };
+
+        const clearTimers = () => {
+          if (timeoutId) { clearTimeout(timeoutId); timeoutId = null; }
+          if (intervalId) { clearInterval(intervalId); intervalId = null; }
+        };
+
+        btn.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          this.dismissActiveKeyboard();
+          performStep();
+          clearTimers();
+          timeoutId = setTimeout(() => {
+            intervalId = setInterval(performStep, 90);
+          }, 320);
+        });
+
+        btn.addEventListener('pointerup', clearTimers);
+        btn.addEventListener('pointerleave', clearTimers);
+        btn.addEventListener('pointercancel', clearTimers);
+      });
+
+      // Bind weight quick chips
+      row.querySelectorAll('.comp-chip-add').forEach(chip => {
+        const handleChip = (e) => {
+          if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+          this.dismissActiveKeyboard();
+          triggerHaptic(15);
+          const addGrams = parseInt(chip.dataset.add, 10) || 0;
+          const curVal = parseFloat(weightInput?.value) || 0;
+          const newVal = Math.min(5000, curVal + addGrams);
+          if (weightInput) weightInput.value = newVal;
+          if (this.currentCompositeIngredients[idx]) {
+            this.currentCompositeIngredients[idx].rawWeight = newVal;
+            updateCompactMeta();
+            this.recalculateCompositeDish();
+          }
+        };
+        chip.addEventListener('pointerdown', handleChip);
+      });
+
+      const clearChip = row.querySelector('.comp-chip-clear');
+      if (clearChip && weightInput) {
+        let clearPressTimer = null;
+        let isLongPress = false;
+
+        const onClearDown = (e) => {
+          if (e) e.preventDefault();
+          this.dismissActiveKeyboard();
+          isLongPress = false;
+          clearPressTimer = setTimeout(() => {
+            isLongPress = true;
+            weightInput.value = 100;
+            if (this.currentCompositeIngredients[idx]) {
+              this.currentCompositeIngredients[idx].rawWeight = 100;
+              updateCompactMeta();
+              this.recalculateCompositeDish();
+            }
+            triggerHaptic(30);
+            this.showToast('Сброшено на 100 г', '⚖️');
+          }, 450);
+        };
+
+        const onClearUp = (e) => {
+          if (clearPressTimer) {
+            clearTimeout(clearPressTimer);
+            clearPressTimer = null;
+          }
+          if (!isLongPress) {
+            triggerHaptic(15);
+            weightInput.value = 0;
+            if (this.currentCompositeIngredients[idx]) {
+              this.currentCompositeIngredients[idx].rawWeight = 0;
+              updateCompactMeta();
+              this.recalculateCompositeDish();
+            }
+          }
+        };
+
+        clearChip.addEventListener('pointerdown', onClearDown);
+        clearChip.addEventListener('pointerup', onClearUp);
+        clearChip.addEventListener('pointercancel', () => {
+          if (clearPressTimer) { clearTimeout(clearPressTimer); clearPressTimer = null; }
+        });
+      }
+    });
+
+    // Attach swipe gestures to all composite ingredient rows
+    this.attachCompositeIngredientSwipeEvents();
+  }
+
+  // Attach touch and drag swipe gestures for composite ingredient rows (swipe left to reveal delete button)
+  attachCompositeIngredientSwipeEvents() {
+    if (!this.compositeIngredientsList) return;
+    const wrappers = this.compositeIngredientsList.querySelectorAll('.composite-ingredient-row-wrapper');
+    let activeOpenWrapper = null;
+
+    const snapOpen = (w) => {
+      if (!w) return;
+      const r = w.querySelector('.composite-ingredient-row');
+      if (r) {
+        r.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+        r.style.transform = 'translate3d(-84px, 0, 0)';
+      }
+      setTimeout(() => {
+        if (w.classList.contains('open') && !w.classList.contains('swiping')) {
+          if (r) {
+            r.style.transition = '';
+            r.style.transform = '';
+          }
+        }
+      }, 240);
+    };
+
+    const closeWrapper = (w, animated = true) => {
+      if (!w) return;
+      w.classList.remove('open', 'swiping');
+      const r = w.querySelector('.composite-ingredient-row');
+      if (animated) {
+        if (r) {
+          r.style.transition = 'transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1)';
+          r.style.transform = '';
+        }
+        setTimeout(() => {
+          if (!w.classList.contains('open') && !w.classList.contains('swiping')) {
+            if (r) r.style.transition = '';
+          }
+        }, 260);
+      } else {
+        if (r) {
+          r.style.transform = '';
+          r.style.transition = '';
+        }
+      }
+      if (activeOpenWrapper === w) activeOpenWrapper = null;
+    };
+
+    const closeAllSwipes = (animated = true) => {
+      wrappers.forEach(w => {
+        if (w.classList.contains('open') || w.classList.contains('swiping')) {
+          closeWrapper(w, animated);
+        }
+      });
+      activeOpenWrapper = null;
+    };
+
+    // Close open swipe on tap outside
+    const outsideTapHandler = (e) => {
+      if (activeOpenWrapper && !activeOpenWrapper.contains(e.target)) {
+        closeAllSwipes(true);
+      }
+    };
+    if (this._compOutsideTapHandler) {
+      document.removeEventListener('pointerdown', this._compOutsideTapHandler);
+    }
+    this._compOutsideTapHandler = outsideTapHandler;
+    document.addEventListener('pointerdown', this._compOutsideTapHandler, { passive: true });
+
+    wrappers.forEach(wrapper => {
+      const idx = parseInt(wrapper.dataset.idx, 10);
+      const row = wrapper.querySelector('.composite-ingredient-row');
+      const delSwipeBtn = wrapper.querySelector('.comp-swipe-del-btn');
+
+      if (delSwipeBtn && !delSwipeBtn._delBound) {
+        delSwipeBtn._delBound = true;
+        delSwipeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          triggerHaptic(20);
+          this.confirmDeleteIngredient(idx);
+        });
+      }
+
+      if (!row || row._swipeBound) return;
+      row._swipeBound = true;
+
+      let startX = 0;
+      let startY = 0;
+      let isDragging = false;
+      let isHorizontal = null;
+      let rafId = null;
+      const actionsBaseWidth = 84;
+      const openThreshold = -32;
+
+      const handleStart = (clientX, clientY, target) => {
+        if (target && target.closest('input, button, select, textarea, .food-search-suggestions, .comp-ing-toggle-btn')) {
+          return false;
+        }
+        if (activeOpenWrapper && activeOpenWrapper !== wrapper) {
+          closeAllSwipes(true);
+        }
+        startX = clientX;
+        startY = clientY;
+        isDragging = false;
+        isHorizontal = null;
+        wrapper.classList.add('swiping');
+        if (row) row.style.transition = 'none';
+        return true;
+      };
+
+      const handleMove = (clientX, clientY, e) => {
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+
+        if (isHorizontal === null) {
+          if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+            isHorizontal = Math.abs(dx) > Math.abs(dy);
+          }
+        }
+
+        if (!isHorizontal) return;
+
+        if (!isDragging) {
+          isDragging = true;
+          this.dismissActiveKeyboard();
+        }
+
+        if (e && e.cancelable) e.preventDefault();
+
+        const maxLeftSwipe = -actionsBaseWidth;
+        let translateX = dx;
+
+        if (wrapper.classList.contains('open')) {
+          translateX = maxLeftSwipe + dx;
+          if (translateX > 0) {
+            translateX = translateX * 0.2;
+          } else if (translateX < maxLeftSwipe) {
+            translateX = maxLeftSwipe + (translateX - maxLeftSwipe) * 0.25;
+          }
+        } else {
+          if (translateX < maxLeftSwipe) {
+            translateX = maxLeftSwipe + (translateX - maxLeftSwipe) * 0.25;
+          } else if (translateX > 30) {
+            translateX = 30 + (translateX - 30) * 0.2;
+          }
+        }
+
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => {
+          if (row) row.style.transform = `translate3d(${translateX}px, 0, 0)`;
+        });
+      };
+
+      const handleEnd = (clientX, target) => {
+        if (rafId) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+        }
+        wrapper.classList.remove('swiping');
+        if (row) row.style.transition = '';
+
+        const wasDragging = isDragging;
+        isDragging = false;
+
+        if (!wasDragging) {
+          if (wrapper.classList.contains('open') && (!target || !target.closest('.comp-ing-swipe-actions-right'))) {
+            closeAllSwipes(true);
+          }
+          return;
+        }
+
+        const dx = clientX - startX;
+        if (wrapper.classList.contains('open')) {
+          if (dx > 20) {
+            closeWrapper(wrapper, true);
+            triggerHaptic(15);
+          } else {
+            snapOpen(wrapper);
+          }
+        } else {
+          if (dx < openThreshold) {
+            closeAllSwipes(true);
+            wrapper.classList.add('open');
+            snapOpen(wrapper);
+            activeOpenWrapper = wrapper;
+            triggerHaptic(15);
+          } else {
+            if (row) row.style.transform = '';
+          }
+        }
+      };
+
+      row.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        if (!handleStart(e.clientX, e.clientY, e.target)) return;
+
+        const onPointerMove = (moveEv) => handleMove(moveEv.clientX, moveEv.clientY, moveEv);
+        const onPointerUp = (upEv) => {
+          window.removeEventListener('pointermove', onPointerMove);
+          window.removeEventListener('pointerup', onPointerUp);
+          window.removeEventListener('pointercancel', onPointerUp);
+          handleEnd(upEv.clientX, upEv.target);
+        };
+
+        window.addEventListener('pointermove', onPointerMove, { passive: false });
+        window.addEventListener('pointerup', onPointerUp);
+        window.addEventListener('pointercancel', onPointerUp);
+      });
+    });
+  }
+
+  recalculateCompositeDish() {
+    const cookedW = parseFloat(String(this.compositeCookedWeight?.value || '0').replace(',', '.')) || 0;
+    const portionW = parseFloat(String(this.compositePortionEaten?.value || '0').replace(',', '.')) || 0;
+
+    const calc = this.nutritionTracker.calculateCompositeDish(
+      this.currentCompositeIngredients,
+      cookedW,
+      portionW
+    );
+
+    if (this.compositeRawWeightTotal) this.compositeRawWeightTotal.textContent = Math.round(calc.rawTotalWeight);
+    if (this.compositeRawKcalTotal) {
+      const totalRawKcal = calc.ingredients.reduce((s, i) => s + (i.calories || 0), 0);
+      this.compositeRawKcalTotal.textContent = Math.round(totalRawKcal);
+    }
+    if (this.compositeRawProtTotal) {
+      const totalRawProt = calc.ingredients.reduce((s, i) => s + (i.protein || 0), 0);
+      this.compositeRawProtTotal.textContent = Math.round(totalRawProt * 10) / 10;
+    }
+    if (this.compositeRawFatTotal) {
+      const totalRawFat = calc.ingredients.reduce((s, i) => s + (i.fat || 0), 0);
+      this.compositeRawFatTotal.textContent = Math.round(totalRawFat * 10) / 10;
+    }
+    if (this.compositeRawCarbTotal) {
+      const totalRawCarb = calc.ingredients.reduce((s, i) => s + (i.carbs || 0), 0);
+      this.compositeRawCarbTotal.textContent = Math.round(totalRawCarb * 10) / 10;
+    }
+
+    const p = calc.portionNutrients;
+    if (this.compositeCalcKcal) this.compositeCalcKcal.textContent = p.calories;
+    if (this.compositeCalcProt) this.compositeCalcProt.textContent = p.protein;
+    if (this.compositeCalcFat) this.compositeCalcFat.textContent = p.fat;
+    if (this.compositeCalcCarb) this.compositeCalcCarb.textContent = p.carbs;
+
+    if (this.compositeSummaryWeight) {
+      this.compositeSummaryWeight.textContent = Math.round(p.weightGrams);
+    }
+    const summaryWeightTag = document.getElementById('compositeSummaryWeightTag');
+    if (summaryWeightTag) {
+      summaryWeightTag.textContent = `${Math.round(p.weightGrams)} г`;
+    }
+
+    if (this.compositePer100gHint) {
+      const p100 = calc.per100gCooked;
+      const protColor = this.nutritionTracker?.getMacroColor('protein') || '#3b82f6';
+      const fatColor = this.nutritionTracker?.getMacroColor('fat') || '#f59e0b';
+      const carbColor = this.nutritionTracker?.getMacroColor('carbs') || '#10b981';
+      this.compositePer100gHint.innerHTML = `(На 100 г готового блюда: ${p100.calories} ккал • <span style="color: ${protColor}; font-weight: 600;">Б: ${p100.protein}</span> • <span style="color: ${fatColor}; font-weight: 600;">Ж: ${p100.fat}</span> • <span style="color: ${carbColor}; font-weight: 600;">У: ${p100.carbs}</span>)`;
+    }
+  }
+
+  // --- Camera Barcode Scanner & Open Food Facts ---
+  async startBarcodeScanner(target = 'single', ingredientIndex = null) {
+    this.dismissActiveKeyboard();
+    if (!this.nutritionBarcodeScannerModalBackdrop) return;
+
+    this.scannerTargetMode = target;
+    this.scannerIngredientIndex = ingredientIndex;
+
+    this.nutritionBarcodeScannerModalBackdrop.classList.add('open');
+    this.nutritionBarcodeScannerModalBackdrop.setAttribute('aria-hidden', 'false');
+
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera API not available');
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: false
+      });
+
+      this.scannerMediaStream = stream;
+      if (this.nutritionScannerVideo) {
+        this.nutritionScannerVideo.srcObject = stream;
+        await this.nutritionScannerVideo.play();
+      }
+
+      // Check for torch capability
+      const videoTrack = stream.getVideoTracks()[0];
+      if (videoTrack) {
+        const capabilities = (typeof videoTrack.getCapabilities === 'function') ? videoTrack.getCapabilities() : {};
+        if (capabilities.torch && this.btnScannerTorch) {
+          this.btnScannerTorch.style.display = 'block';
+          this.scannerTorchActive = false;
+        } else if (this.btnScannerTorch) {
+          this.btnScannerTorch.style.display = 'none';
+        }
+      }
+
+      this.runBarcodeDetectionLoop();
+    } catch (err) {
+      console.warn('Barcode scanner camera error:', err);
+      this.showToast(this.t('nutrition_scanner_permission_denied') || 'Доступ к камере заблокирован', '📷');
+      this.stopBarcodeScanner();
+      this.promptManualBarcodeEntry();
+    }
+  }
+
+  runBarcodeDetectionLoop() {
+    if ('BarcodeDetector' in window) {
+      const formats = ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'qr_code'];
+      const detector = new window.BarcodeDetector({ formats });
+      let isDetecting = false;
+
+      this.scannerScanInterval = setInterval(async () => {
+        if (isDetecting || !this.nutritionScannerVideo || this.nutritionScannerVideo.readyState < 2) return;
+        isDetecting = true;
+        try {
+          const barcodes = await detector.detect(this.nutritionScannerVideo);
+          if (barcodes && barcodes.length > 0) {
+            const code = barcodes[0].rawValue;
+            if (code) {
+              this.onBarcodeScanned(code);
+            }
+          }
+        } catch (e) {
+          // Skip frame error
+        } finally {
+          isDetecting = false;
+        }
+      }, 250);
+      return;
+    }
+
+    // Fallback: camera preview is displayed; scanner remains active and user can use manual input or detector
+    this.scannerScanInterval = setInterval(() => {
+      if (!this.nutritionScannerVideo || this.nutritionScannerVideo.readyState < 2) return;
+    }, 400);
+  }
+
+  stopBarcodeScanner() {
+    if (this.scannerScanInterval) {
+      clearInterval(this.scannerScanInterval);
+      this.scannerScanInterval = null;
+    }
+    if (this.scannerMediaStream) {
+      this.scannerMediaStream.getTracks().forEach(t => t.stop());
+      this.scannerMediaStream = null;
+    }
+    if (this.nutritionScannerVideo) {
+      this.nutritionScannerVideo.srcObject = null;
+    }
+    if (this.nutritionBarcodeScannerModalBackdrop) {
+      this.nutritionBarcodeScannerModalBackdrop.classList.remove('open');
+      this.nutritionBarcodeScannerModalBackdrop.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  async onBarcodeScanned(barcode) {
+    triggerHaptic([30, 50, 30]);
+    this.stopBarcodeScanner();
+
+    this.showToast('Поиск в Open Food Facts... 🔍');
+
+    try {
+      const food = await this.nutritionTracker.lookupBarcode(barcode);
+      if (food) {
+        this.showToast(`Найдено: ${food.name}`, '🥗');
+        if (this.scannerTargetMode === 'composite' && this.scannerIngredientIndex != null) {
+          this.applyScannedFoodToComposite(food, this.scannerIngredientIndex);
+        } else {
+          this.applyScannedFoodToSingle(food);
+        }
+      } else {
+        this.showToast(this.t('nutrition_scanner_not_found') || 'Штрихкод не найден в базе. Введите данные вручную.', '⚠️');
+        if (this.scannerTargetMode === 'single' && this.singleFoodName) {
+          this.singleFoodName.value = `Продукт ${barcode}`;
+          this.singleFoodName.dataset.scannedBarcode = barcode;
+        }
+      }
+    } catch (e) {
+      this.showToast('Ошибка сети при поиске штрихкода', '⚠️');
+    }
+  }
+
+  applyScannedFoodToSingle(food) {
+    if (!food) return;
+    if (this.singleFoodName) {
+      this.singleFoodName.value = food.name;
+      this.singleFoodName.dataset.scannedBarcode = food.barcode || '';
+    }
+    if (this.singleFoodKcal100) this.singleFoodKcal100.value = food.caloriesPer100g || 0;
+    if (this.singleFoodProt100) this.singleFoodProt100.value = food.proteinPer100g || 0;
+    if (this.singleFoodFat100) this.singleFoodFat100.value = food.fatPer100g || 0;
+    if (this.singleFoodCarb100) this.singleFoodCarb100.value = food.carbsPer100g || 0;
+
+    this.recalculateSingleFoodPortion();
+  }
+
+  applyScannedFoodToComposite(food, idx) {
+    if (!food || !this.currentCompositeIngredients[idx]) return;
+    this.currentCompositeIngredients[idx].name = food.name;
+    this.currentCompositeIngredients[idx].calories100g = food.caloriesPer100g || 0;
+    this.currentCompositeIngredients[idx].protein100g = food.proteinPer100g || 0;
+    this.currentCompositeIngredients[idx].fat100g = food.fatPer100g || 0;
+    this.currentCompositeIngredients[idx].carbs100g = food.carbsPer100g || 0;
+    this.currentCompositeIngredients[idx].isCollapsed = true; // Сворачиваем в минималистичный блок после сканирования / выбора
+
+    this.renderCompositeIngredientsList();
+    this.recalculateCompositeDish();
+  }
+
+  promptManualBarcodeEntry() {
+    const promptText = this.t('nutrition_scanner_manual_prompt') || 'Введите цифры штрихкода (EAN-13 / UPC):';
+    const code = prompt(promptText);
+    if (code && code.trim()) {
+      this.onBarcodeScanned(code.trim());
+    }
+  }
+
+  // --- Nutrition Settings Modal ---
+  openNutritionSettingsModal() {
+    this.dismissActiveKeyboard();
+    if (!this.nutritionSettingsModalBackdrop) return;
+    this._nutritionSettingsModalOpenedAt = Date.now();
+
+    const set = this.nutritionTracker.getSettings();
+    if (this.modalSettingCalorieTarget) this.modalSettingCalorieTarget.value = set.calorieTarget || 2000;
+    if (this.modalSettingProteinTarget) this.modalSettingProteinTarget.value = set.proteinTarget || 80;
+    if (this.modalSettingFatTarget) this.modalSettingFatTarget.value = set.fatTarget || 70;
+    if (this.modalSettingCarbTarget) this.modalSettingCarbTarget.value = set.carbTarget || 250;
+
+    this.renderCategoryIconsPicker();
+    this.renderCustomMealsSettingsList();
+
+    this.nutritionSettingsModalBackdrop.classList.add('open');
+    this.nutritionSettingsModalBackdrop.setAttribute('aria-hidden', 'false');
+  }
+
+  closeNutritionSettingsModal() {
+    if (this.nutritionSettingsModalBackdrop) {
+      this.nutritionSettingsModalBackdrop.classList.remove('open');
+      this.nutritionSettingsModalBackdrop.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  // --- Nutrition Statistics Modal (Calendar 4 weeks & Weekday Frequency) ---
+  openNutritionStatsModal() {
+    this.dismissActiveKeyboard();
+    if (!this.nutritionStatsModalBackdrop || !this.nutritionTracker) return;
+    this._nutritionStatsModalOpenedAt = Date.now();
+
+    let savedTab = 'calendar';
+    try {
+      savedTab = localStorage.getItem('plan4u_nutrition_stats_tab') || 'calendar';
+    } catch (e) {}
+    this.switchNutritionStatsTab(savedTab, false);
+
+    this.renderNutritionStatsModal();
+
+    this.nutritionStatsModalBackdrop.classList.add('open');
+    this.nutritionStatsModalBackdrop.setAttribute('aria-hidden', 'false');
+  }
+
+  closeNutritionStatsModal() {
+    if (this.nutritionStatsModalBackdrop) {
+      this.nutritionStatsModalBackdrop.classList.remove('open');
+      this.nutritionStatsModalBackdrop.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  switchNutritionStatsTab(tabName, shouldSave = true) {
+    const isCalendar = tabName === 'calendar';
+    if (this.btnNutritionTabCalendar) {
+      this.btnNutritionTabCalendar.classList.toggle('active', isCalendar);
+      this.btnNutritionTabCalendar.setAttribute('aria-selected', isCalendar ? 'true' : 'false');
+    }
+    if (this.btnNutritionTabFrequency) {
+      this.btnNutritionTabFrequency.classList.toggle('active', !isCalendar);
+      this.btnNutritionTabFrequency.setAttribute('aria-selected', !isCalendar ? 'true' : 'false');
+    }
+    if (this.nutritionPaneCalendar) {
+      this.nutritionPaneCalendar.style.display = isCalendar ? 'block' : 'none';
+    }
+    if (this.nutritionPaneFrequency) {
+      this.nutritionPaneFrequency.style.display = !isCalendar ? 'block' : 'none';
+    }
+    if (shouldSave) {
+      try {
+        localStorage.setItem('plan4u_nutrition_stats_tab', tabName);
+      } catch (e) {}
+    }
+  }
+
+  renderNutritionStatsModal() {
+    if (!this.nutritionTracker) return;
+    const stats = this.nutritionTracker.calculateComplianceStats(4);
+
+    // 1. Metric highlights
+    const streakEl = document.getElementById('nutritionStatStreakVal');
+    const rateEl = document.getElementById('nutritionStatRateVal');
+    const avgEl = document.getElementById('nutritionStatAvgVal');
+
+    const dayUnit = window.Plan4UI18n ? Plan4UI18n.t('habit_days_unit', {}, this.currentLang) : 'дн.';
+    if (streakEl) streakEl.textContent = `${stats.currentStreak} ${dayUnit}`;
+    if (rateEl) rateEl.textContent = `${stats.overallRate}%`;
+    if (avgEl) avgEl.textContent = `${stats.avgCalories.toLocaleString()} ккал`;
+
+    // 2. Tab 1: 4-week Calendar
+    this.renderNutritionCalendarGrid(stats);
+
+    // 3. Tab 2: Weekday Frequency
+    this.renderNutritionFrequencyList(stats);
+  }
+
+  renderNutritionCalendarGrid(stats) {
+    const grid = document.getElementById('nutritionCalendarGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    const detailCard = document.getElementById('nutritionCalendarDetailCard');
+    const detailDate = document.getElementById('nutritionDetailDate');
+    const detailCal = document.getElementById('nutritionDetailCal');
+    const detailBadge = document.getElementById('nutritionDetailBadge');
+
+    const selectDay = (dayData, cellEl) => {
+      grid.querySelectorAll('.nutrition-calendar-cell.is-selected').forEach(c => c.classList.remove('is-selected'));
+      cellEl.classList.add('is-selected');
+
+      if (detailCard && detailDate && detailCal && detailBadge) {
+        detailCard.style.display = 'flex';
+        detailDate.textContent = this.formatDateReadable ? this.formatDateReadable(dayData.dateStr) : dayData.dateStr;
+        detailCal.textContent = `${dayData.actualCalories.toLocaleString()} / ${dayData.targetCalories.toLocaleString()} ккал (${dayData.percent}%)`;
+
+        detailBadge.className = 'nutrition-detail-badge';
+        if (dayData.isCompliant) {
+          detailBadge.textContent = 'В норме 🥑';
+          detailBadge.classList.add('is-compliant');
+        } else if (dayData.isOver) {
+          detailBadge.textContent = 'Превышение ⚠️';
+          detailBadge.classList.add('is-over');
+        } else if (dayData.hasEntries) {
+          detailBadge.textContent = 'Недобор 📉';
+          detailBadge.classList.add('is-under');
+        } else {
+          detailBadge.textContent = dayData.isFuture ? 'Будущий день' : 'Нет записей ○';
+          detailBadge.classList.add('is-empty');
+        }
+      }
+    };
+
+    let todayCell = null;
+    let todayData = null;
+
+    stats.days.forEach(day => {
+      const cell = document.createElement('div');
+      cell.className = 'nutrition-calendar-cell';
+      if (day.isCompliant) cell.classList.add('is-compliant');
+      if (day.isToday) cell.classList.add('is-today');
+      if (day.isFuture) cell.classList.add('is-future');
+
+      let innerHtml = `<span class="cell-date">${day.dayNum}</span>`;
+      if (day.isCompliant) {
+        innerHtml += `<span class="cell-avocado" aria-label="В норме">🥑</span>`;
+      }
+      cell.innerHTML = innerHtml;
+
+      if (!day.isFuture) {
+        cell.addEventListener('click', (e) => {
+          e.stopPropagation();
+          triggerHaptic(10);
+          selectDay(day, cell);
+        });
+      }
+
+      if (day.isToday) {
+        todayCell = cell;
+        todayData = day;
+      }
+
+      grid.appendChild(cell);
+    });
+
+    // Auto-select today or latest tracked past day
+    if (todayCell && todayData) {
+      selectDay(todayData, todayCell);
+    } else if (stats.days.length > 0) {
+      const lastPast = [...stats.days].filter(d => !d.isFuture).pop();
+      if (lastPast) {
+        const lastCell = grid.children[stats.days.indexOf(lastPast)];
+        if (lastCell) selectDay(lastPast, lastCell);
+      }
+    }
+  }
+
+  renderNutritionFrequencyList(stats) {
+    const list = document.getElementById('nutritionFrequencyList');
+    if (!list) return;
+    list.innerHTML = '';
+
+    // Insight alerts
+    const hardestAlert = document.getElementById('nutritionInsightHardest');
+    const hardestTitle = document.getElementById('nutritionInsightHardestTitle');
+    const hardestDesc = document.getElementById('nutritionInsightHardestDesc');
+
+    const bestAlert = document.getElementById('nutritionInsightBest');
+    const bestTitle = document.getElementById('nutritionInsightBestTitle');
+    const bestDesc = document.getElementById('nutritionInsightBestDesc');
+
+    if (stats.hardestDay && stats.hardestDay.totalDays > 0) {
+      if (hardestAlert) hardestAlert.style.display = 'flex';
+      if (hardestTitle) {
+        hardestTitle.textContent = `Сложнее всего: ${stats.hardestDay.fullName}`;
+      }
+      if (hardestDesc) {
+        const diffStr = stats.hardestDay.avgSurplus > 0 ? `+${stats.hardestDay.avgSurplus} ккал в ср.` : `${stats.hardestDay.avgCalories} ккал в ср.`;
+        hardestDesc.textContent = `Норма соблюдена лишь в ${stats.hardestDay.rate}% случаев (${stats.hardestDay.compliantDays} из ${stats.hardestDay.totalDays} дн. • ${diffStr})`;
+      }
+    } else if (hardestAlert) {
+      hardestAlert.style.display = 'none';
+    }
+
+    if (stats.bestDay && stats.bestDay.totalDays > 0 && stats.bestDay !== stats.hardestDay) {
+      if (bestAlert) bestAlert.style.display = 'flex';
+      if (bestTitle) {
+        bestTitle.textContent = `Легче всего: ${stats.bestDay.fullName}`;
+      }
+      if (bestDesc) {
+        bestDesc.textContent = `Успех ${stats.bestDay.rate}% (${stats.bestDay.compliantDays} из ${stats.bestDay.totalDays} дн. в норме)`;
+      }
+    } else if (bestAlert) {
+      bestAlert.style.display = 'none';
+    }
+
+    // Weekday rows
+    stats.weekdaysList.forEach(w => {
+      const row = document.createElement('div');
+      row.className = 'nutrition-freq-row';
+
+      let fillClass = 'is-low';
+      if (w.rate >= 75) fillClass = 'is-high';
+      else if (w.rate >= 50) fillClass = 'is-medium';
+
+      const surplusText = w.totalDays > 0 
+        ? `${w.compliantDays}/${w.totalDays} дн.`
+        : 'нет данных';
+
+      row.innerHTML = `
+        <div class="nutrition-freq-dow" title="${w.fullName}">${w.shortName}</div>
+        <div class="nutrition-freq-bar-track">
+          <div class="nutrition-freq-bar-fill ${fillClass}" style="width: ${w.rate}%;"></div>
+        </div>
+        <div class="nutrition-freq-rate">${w.totalDays > 0 ? w.rate + '%' : '—'}</div>
+        <div class="nutrition-freq-details">${surplusText}</div>
+      `;
+
+      row.addEventListener('click', () => {
+        triggerHaptic(10);
+        if (this.showToast && w.totalDays > 0) {
+          const sign = w.avgSurplus > 0 ? '+' : '';
+          this.showToast(`${w.fullName}: ${w.compliantDays} из ${w.totalDays} дн. в норме (${w.rate}%). Ср. калории: ${w.avgCalories} (${sign}${w.avgSurplus} ккал)`, '📊');
+        }
+      });
+
+      list.appendChild(row);
+    });
+  }
+
+  renderCategoryIconsPicker() {
+    if (!this.newMealIconPickerGrid || !this.nutritionTracker) return;
+    const icons = this.nutritionTracker.getCategoryIcons();
+    const currentSelected = this.newMealIconInput ? this.newMealIconInput.value : (icons[0] ? icons[0].src : '');
+
+    this.newMealIconPickerGrid.innerHTML = icons.map(icon => {
+      const isSel = icon.src === currentSelected;
+      return `
+        <div class="meal-icon-picker-item ${isSel ? 'is-selected' : ''}" data-icon-src="${escapeHtml(icon.src)}" title="${escapeHtml(icon.label)}" aria-label="${escapeHtml(icon.label)}">
+          <span class="picker-item-badge">✓</span>
+          <img src="${escapeHtml(icon.src)}" class="picker-item-img" alt="${escapeHtml(icon.label)}" loading="lazy">
+        </div>
+      `;
+    }).join('');
+
+    this.newMealIconPickerGrid.querySelectorAll('.meal-icon-picker-item').forEach(item => {
+      item.addEventListener('click', () => {
+        triggerHaptic(15);
+        const src = item.dataset.iconSrc;
+        if (src) {
+          if (this.newMealIconInput) this.newMealIconInput.value = src;
+          if (this.newMealSelectedPreviewImg) this.newMealSelectedPreviewImg.src = src;
+          this.newMealIconPickerGrid.querySelectorAll('.meal-icon-picker-item').forEach(el => el.classList.remove('is-selected'));
+          item.classList.add('is-selected');
+        }
+      });
+    });
+  }
+
+  renderCustomMealsSettingsList() {
+    if (!this.customMealsList || !this.nutritionTracker) return;
+    const meals = this.nutritionTracker.getMeals();
+    const availableIcons = this.nutritionTracker.getCategoryIcons();
+
+    this.customMealsList.innerHTML = meals.map(meal => `
+      <div class="custom-meal-row-wrapper" data-meal-id="${escapeHtml(meal.id)}">
+        <div class="custom-meal-swipe-actions-right">
+          <button type="button" class="swipe-action-btn action-edit" data-action="edit" data-meal-id="${escapeHtml(meal.id)}" title="${this.t('nutrition_edit_meal_title') || 'Редактировать'}" aria-label="Редактировать">
+            <svg class="swipe-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+          </button>
+          <button type="button" class="swipe-action-btn action-delete" data-action="delete" data-meal-id="${escapeHtml(meal.id)}" title="${this.t('delete') || 'Удалить'}" aria-label="Удалить">
+            <svg class="swipe-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="custom-meal-item">
+          <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+            <button type="button" class="meal-item-icon-btn btn-cycle-meal-icon" data-meal-id="${escapeHtml(meal.id)}" title="Нажмите, чтобы сменить картинку">
+              ${this.nutritionTracker.renderMealIcon(meal.icon, meal.name)}
+            </button>
+            <span style="font-weight: 700; font-size: 14px;">${escapeHtml(meal.name)}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="width: 18px; height: 18px; border-radius: 50%; background: ${meal.color || 'var(--primary-magenta, #d83a88)'}; display: inline-block; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    // Click icon to cycle through images
+    this.customMealsList.querySelectorAll('.btn-cycle-meal-icon').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.mealId;
+        const meal = this.nutritionTracker.getMeal(id);
+        if (!meal) return;
+        triggerHaptic(15);
+
+        const currentIdx = availableIcons.findIndex(ic => ic.src === meal.icon);
+        const nextIdx = (currentIdx + 1) % availableIcons.length;
+        const nextIcon = availableIcons[nextIdx];
+
+        this.nutritionTracker.updateMeal(id, { icon: nextIcon.src });
+        this.showToast(`Картинка изменена: ${nextIcon.label}`, '✨');
+        this.renderCustomMealsSettingsList();
+        this.renderNutritionModalContent();
+      });
+    });
+
+    // Attach swipe gesture and action buttons (Edit & Delete)
+    this.attachCustomMealsSwipeEvents();
+  }
+
+  // Attach touch and drag swipe gestures for custom meals rows (revealing Edit & Delete buttons)
+  attachCustomMealsSwipeEvents() {
+    if (!this.customMealsList) return;
+    const wrappers = this.customMealsList.querySelectorAll('.custom-meal-row-wrapper');
+    if (!wrappers.length) return;
+    let activeOpenWrapper = null;
+    const actionsWidth = 92;
+    const openThreshold = -30;
+
+    const snapOpen = (w) => {
+      if (!w) return;
+      w.classList.add('open');
+      activeOpenWrapper = w;
+      const r = w.querySelector('.custom-meal-item');
+      const a = w.querySelector('.custom-meal-swipe-actions-right');
+      if (r) {
+        r.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+        r.style.transform = 'translate3d(-92px, 0, 0)';
+      }
+      if (a) {
+        a.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+        a.style.transform = 'translate3d(0px, 0, 0)';
+      }
+      setTimeout(() => {
+        if (w.classList.contains('open') && !w.classList.contains('swiping')) {
+          if (r) { r.style.transition = ''; r.style.transform = ''; }
+          if (a) { a.style.transition = ''; a.style.transform = ''; }
+        }
+      }, 240);
+    };
+
+    const closeWrapper = (w, animated = true) => {
+      if (!w) return;
+      const r = w.querySelector('.custom-meal-item');
+      const a = w.querySelector('.custom-meal-swipe-actions-right');
+      if (animated) {
+        if (r) {
+          r.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+          r.style.transform = 'translate3d(0, 0, 0)';
+        }
+        if (a) {
+          a.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+          a.style.transform = 'translate3d(100%, 0, 0)';
+        }
+        w.classList.remove('open', 'swiping');
+        setTimeout(() => {
+          if (!w.classList.contains('open') && !w.classList.contains('swiping')) {
+            if (r) { r.style.transition = ''; r.style.transform = ''; }
+            if (a) { a.style.transition = ''; a.style.transform = ''; }
+          }
+        }, 240);
+      } else {
+        w.classList.remove('open', 'swiping');
+        if (r) { r.style.transform = ''; r.style.transition = ''; }
+        if (a) { a.style.transform = ''; a.style.transition = ''; }
+      }
+      if (activeOpenWrapper === w) activeOpenWrapper = null;
+    };
+
+    const closeAllSwipes = (animated = true) => {
+      wrappers.forEach(w => {
+        if (w.classList.contains('open') || w.classList.contains('swiping')) {
+          closeWrapper(w, animated);
+        }
+      });
+      activeOpenWrapper = null;
+    };
+
+    // Close on outside tap
+    const outsideTapHandler = (e) => {
+      if (activeOpenWrapper && !activeOpenWrapper.contains(e.target)) {
+        closeAllSwipes(true);
+      }
+    };
+    if (this._customMealsSwipeOutsideHandler) {
+      document.removeEventListener('pointerdown', this._customMealsSwipeOutsideHandler);
+    }
+    this._customMealsSwipeOutsideHandler = outsideTapHandler;
+    document.addEventListener('pointerdown', this._customMealsSwipeOutsideHandler, { passive: true });
+
+    // Handle button clicks inside swipe panel
+    wrappers.forEach(wrapper => {
+      const actionsRight = wrapper.querySelector('.custom-meal-swipe-actions-right');
+      if (actionsRight) {
+        actionsRight.querySelectorAll('.swipe-action-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const action = btn.dataset.action;
+            const mealId = btn.dataset.mealId || wrapper.dataset.mealId;
+            const meal = this.nutritionTracker.getMeal(mealId);
+            if (!meal) return;
+
+            triggerHaptic(20);
+            closeAllSwipes(false);
+
+            if (action === 'edit') {
+              this.openMealEditModal(mealId);
+            } else if (action === 'delete') {
+              const allMeals = this.nutritionTracker.getMeals();
+              if (allMeals.length <= 1) {
+                this.showToast(this.t('nutrition_cannot_delete_last_meal') || 'Нельзя удалить единственный приём пищи', '⚠️');
+                return;
+              }
+              const mealName = meal.name || 'Приём пищи';
+              const title = this.t('nutrition_delete_meal_title') || 'Удалить приём пищи?';
+              const msg = (this.t('nutrition_delete_meal_msg') || 'Вы действительно хотите удалить приём пищи «{name}»? Добавленные ранее записи сохранятся в истории.').replace('{name}', mealName);
+              const confirmBtnText = this.t('delete') || 'Удалить';
+
+              this.showConfirmModal({
+                title,
+                message: msg,
+                icon: '🗑️',
+                confirmText: confirmBtnText,
+                onConfirm: () => {
+                  this.nutritionTracker.deleteMeal(mealId);
+                  triggerHaptic(20);
+                  const toastText = (this.t('nutrition_toast_meal_deleted') || 'Приём пищи удалён') + `: ${mealName}`;
+                  this.showToast(toastText, '🗑️');
+                  this.renderCustomMealsSettingsList();
+                  this.renderNutritionModalContent();
+                  this.updateNutritionWidget();
+                }
+              });
+            }
+          });
+        });
+      }
+
+      // Touch / pointer gesture handling
+      const row = wrapper.querySelector('.custom-meal-item');
+      if (!row) return;
+
+      let startX = 0;
+      let startY = 0;
+      let isDragging = false;
+      let isHorizontal = null;
+      let rafId = null;
+
+      const handleStart = (clientX, clientY, target) => {
+        if (target && target.closest('.swipe-action-btn, .btn-cycle-meal-icon')) {
+          return false;
+        }
+        if (activeOpenWrapper && activeOpenWrapper !== wrapper) {
+          closeAllSwipes(true);
+        }
+        startX = clientX;
+        startY = clientY;
+        isDragging = false;
+        isHorizontal = null;
+        wrapper.classList.add('swiping');
+        if (row) row.style.transition = 'none';
+        if (actionsRight) actionsRight.style.transition = 'none';
+        return true;
+      };
+
+      const handleMove = (clientX, clientY, e) => {
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+
+        if (isHorizontal === null) {
+          if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
+            isHorizontal = Math.abs(dx) > Math.abs(dy);
+          }
+        }
+
+        if (!isHorizontal) return;
+
+        if (!isDragging) {
+          isDragging = true;
+          try { window.getSelection()?.removeAllRanges(); } catch (err) { }
+        }
+
+        if (e && e.cancelable) e.preventDefault();
+
+        const maxLeftSwipe = -actionsWidth;
+        let translateX = dx;
+        if (wrapper.classList.contains('open')) {
+          translateX = maxLeftSwipe + dx;
+          if (translateX > 0) {
+            translateX = translateX * 0.2;
+          } else if (translateX < maxLeftSwipe) {
+            translateX = maxLeftSwipe + (translateX - maxLeftSwipe) * 0.2;
+          }
+        } else {
+          if (translateX > 0) {
+            translateX = translateX * 0.2;
+          } else if (translateX < maxLeftSwipe) {
+            translateX = maxLeftSwipe + (translateX - maxLeftSwipe) * 0.25;
+          }
+        }
+
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => {
+          if (row) row.style.transform = `translate3d(${translateX}px, 0, 0)`;
+          if (actionsRight) {
+            const actionsOffset = Math.max(0, actionsWidth + translateX);
+            if (translateX < 0 || wrapper.classList.contains('open')) {
+              actionsRight.style.transform = `translate3d(${actionsOffset}px, 0, 0)`;
+            } else {
+              actionsRight.style.transform = 'translate3d(100%, 0, 0)';
+            }
+          }
+        });
+      };
+
+      const handleEnd = (clientX, target) => {
+        if (rafId) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+        }
+        wrapper.classList.remove('swiping');
+        if (row) row.style.transition = '';
+        if (actionsRight) actionsRight.style.transition = '';
+
+        const wasDragging = isDragging;
+        isDragging = false;
+
+        if (!wasDragging) {
+          if (wrapper.classList.contains('open') && (!target || !target.closest('.custom-meal-swipe-actions-right'))) {
+            closeAllSwipes(true);
+          }
+          return;
+        }
+
+        const dx = clientX - startX;
+        if (wrapper.classList.contains('open')) {
+          if (dx > 25) {
+            closeWrapper(wrapper, true);
+            triggerHaptic(15);
+          } else {
+            snapOpen(wrapper);
+          }
+        } else {
+          if (dx < openThreshold) {
+            closeAllSwipes(true);
+            snapOpen(wrapper);
+            triggerHaptic(15);
+          } else {
+            closeWrapper(wrapper, true);
+          }
+        }
+      };
+
+      if (window.PointerEvent) {
+        row.addEventListener('pointerdown', (e) => {
+          if (e.pointerType === 'mouse' && e.button !== 0) return;
+          if (!handleStart(e.clientX, e.clientY, e.target)) return;
+
+          const onPointerMove = (moveEvt) => handleMove(moveEvt.clientX, moveEvt.clientY, moveEvt);
+          const onPointerUp = (upEvt) => {
+            document.removeEventListener('pointermove', onPointerMove);
+            document.removeEventListener('pointerup', onPointerUp);
+            document.removeEventListener('pointercancel', onPointerUp);
+            handleEnd(upEvt.clientX, upEvt.target);
+          };
+
+          document.addEventListener('pointermove', onPointerMove, { passive: false });
+          document.addEventListener('pointerup', onPointerUp, { passive: true });
+          document.addEventListener('pointercancel', onPointerUp, { passive: true });
+        });
+      } else {
+        row.addEventListener('touchstart', (e) => {
+          const touch = e.touches[0];
+          if (!touch || !handleStart(touch.clientX, touch.clientY, e.target)) return;
+
+          const onTouchMove = (moveEvt) => {
+            const t = moveEvt.touches[0];
+            if (t) handleMove(t.clientX, t.clientY, moveEvt);
+          };
+          const onTouchEnd = (endEvt) => {
+            document.removeEventListener('touchmove', onTouchMove);
+            document.removeEventListener('touchend', onTouchEnd);
+            document.removeEventListener('touchcancel', onTouchEnd);
+            const t = endEvt.changedTouches[0];
+            handleEnd(t ? t.clientX : 0, endEvt.target);
+          };
+
+          document.addEventListener('touchmove', onTouchMove, { passive: false });
+          document.addEventListener('touchend', onTouchEnd, { passive: true });
+          document.addEventListener('touchcancel', onTouchEnd, { passive: true });
+        }, { passive: true });
+      }
+    });
+  }
+
+  // --- Meal Edit Modal (Name, Color & Food_Kategory Icon) ---
+  openMealEditModal(mealId = null) {
+    this.dismissActiveKeyboard();
+    if (!this.editMealModalBackdrop || !this.nutritionTracker) return;
+    this._editMealModalOpenedAt = Date.now();
+
+    const meal = mealId ? this.nutritionTracker.getMeal(mealId) : null;
+    const defaultIcon = 'assets/nutrition_icons/meal_icon_1.webp';
+    const selectedIcon = meal ? meal.icon : defaultIcon;
+    const initialColor = meal ? (meal.color || '#ef4444') : '#ef4444';
+
+    if (this.editMealModalTitle) {
+      this.editMealModalTitle.textContent = meal
+        ? (this.t('nutrition_edit_meal_title') || 'Редактировать приём пищи')
+        : (this.t('nutrition_add_meal_title') || 'Новая трапеза');
+    }
+
+    if (this.editMealIdInput) this.editMealIdInput.value = meal ? meal.id : '';
+    if (this.editMealNameInput) this.editMealNameInput.value = meal ? meal.name : '';
+    if (this.editMealColorInput) this.editMealColorInput.value = initialColor;
+    if (this.editMealSelectedPreview) this.editMealSelectedPreview.style.borderColor = initialColor;
+    if (this.editMealIconInput) this.editMealIconInput.value = selectedIcon;
+    if (this.editMealSelectedPreviewImg) {
+      this.editMealSelectedPreviewImg.src = selectedIcon;
+      this.editMealSelectedPreviewImg.alt = meal ? meal.name : 'Иконка';
+    }
+
+    this.renderMealColorSwatches(initialColor);
+
+    if (this.btnDeleteEditMeal) {
+      this.btnDeleteEditMeal.style.display = meal ? 'flex' : 'none';
+    }
+
+    if (this.btnSaveEditMeal) {
+      this.btnSaveEditMeal.textContent = meal
+        ? (this.t('btn_save') || 'Сохранить')
+        : (this.t('btn_add') || '+ Добавить');
+    }
+
+    // Populate icon picker grid
+    if (this.editMealIconPickerGrid) {
+      const icons = this.nutritionTracker.getCategoryIcons();
+      this.editMealIconPickerGrid.innerHTML = icons.map(icon => {
+        const isSel = icon.src === selectedIcon;
+        return `
+          <div class="meal-icon-picker-item ${isSel ? 'is-selected' : ''}" data-icon-src="${escapeHtml(icon.src)}" title="${escapeHtml(icon.label)}" aria-label="${escapeHtml(icon.label)}">
+            <span class="picker-item-badge">✓</span>
+            <img src="${escapeHtml(icon.src)}" class="picker-item-img" alt="${escapeHtml(icon.label)}" loading="lazy">
+          </div>
+        `;
+      }).join('');
+
+      this.editMealIconPickerGrid.querySelectorAll('.meal-icon-picker-item').forEach(item => {
+        item.addEventListener('click', () => {
+          triggerHaptic(15);
+          const src = item.dataset.iconSrc;
+          if (src) {
+            if (this.editMealIconInput) this.editMealIconInput.value = src;
+            if (this.editMealSelectedPreviewImg) this.editMealSelectedPreviewImg.src = src;
+            this.editMealIconPickerGrid.querySelectorAll('.meal-icon-picker-item').forEach(el => el.classList.remove('is-selected'));
+            item.classList.add('is-selected');
+          }
+        });
+      });
+    }
+
+    this.editMealModalBackdrop.classList.add('open');
+    this.editMealModalBackdrop.setAttribute('aria-hidden', 'false');
+    setTimeout(() => {
+      this.editMealNameInput?.focus();
+    }, 120);
+  }
+
+  closeMealEditModal() {
+    if (this.editMealModalBackdrop) {
+      this.editMealModalBackdrop.classList.remove('open');
+      this.editMealModalBackdrop.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  saveMealEditModal() {
+    if (!this.nutritionTracker) return;
+    const mealId = this.editMealIdInput?.value;
+
+    const name = (this.editMealNameInput?.value || '').trim();
+    if (!name) {
+      this.showToast(this.t('nutrition_enter_meal_name') || 'Введите название трапезы', '⚠️');
+      return;
+    }
+    const color = this.editMealColorInput?.value || '#d83a88';
+    const icon = (this.editMealIconInput?.value || '').trim() || 'assets/nutrition_icons/meal_icon_1.webp';
+
+    if (mealId) {
+      this.nutritionTracker.updateMeal(mealId, { name, color, icon });
+      triggerHaptic(20);
+      this.showToast(this.t('nutrition_toast_meal_updated') || 'Приём пищи обновлён ✨', '🥑');
+    } else {
+      const newMeal = this.nutritionTracker.addMeal({ name, color, icon });
+      triggerHaptic(20);
+      this.showToast((this.t('nutrition_toast_meal_added') || 'Трапеза добавлена ✨') + `: ${name}`, '✨');
+    }
+
+    this.closeMealEditModal();
+    this.renderCustomMealsSettingsList();
+    this.renderNutritionModalContent();
+    this.updateNutritionWidget();
+  }
+
+  renderMealColorSwatches(activeColor) {
+    if (!this.editMealColorsRow) return;
+    const presets = [
+      { hex: '#ef4444', label: 'Красный', darkText: false },
+      { hex: '#f97316', label: 'Оранжевый', darkText: false },
+      { hex: '#eab308', label: 'Жёлтый', darkText: true },
+      { hex: '#22c55e', label: 'Зелёный', darkText: false },
+      { hex: '#06b6d4', label: 'Голубой', darkText: false },
+      { hex: '#2563eb', label: 'Синий', darkText: false },
+      { hex: '#7c3aed', label: 'Фиолетовый', darkText: false },
+      { hex: '#475569', label: 'Тёмно-серый', darkText: false },
+      { hex: '#ebdcc9', label: 'Бежевый', darkText: true }
+    ];
+
+    let cur = (activeColor || '').toLowerCase();
+    if (cur === '#1e293b') cur = '#475569';
+    if (cur === '#f8fafc' || cur === '#ffffff') cur = '#ebdcc9';
+
+    const matched = presets.some(p => p.hex.toLowerCase() === cur);
+    const effectiveColor = matched ? cur : presets[0].hex.toLowerCase();
+
+    if (this.editMealColorInput) this.editMealColorInput.value = matched ? cur : presets[0].hex;
+    if (this.editMealSelectedPreview) {
+      this.editMealSelectedPreview.style.borderColor = matched ? cur : presets[0].hex;
+    }
+
+    this.editMealColorsRow.innerHTML = presets.map(p => {
+      const isSel = p.hex.toLowerCase() === effectiveColor;
+      const isNearWhite = p.darkText;
+      const checkColor = p.darkText ? '#0f172a' : '#ffffff';
+      return `
+        <button type="button" 
+                class="meal-color-swatch-circle ${isSel ? 'is-selected' : ''} ${isNearWhite ? 'is-near-white' : ''}" 
+                data-color="${p.hex}" 
+                style="background-color: ${p.hex}; color: ${p.hex};" 
+                title="${p.label}" 
+                aria-label="${p.label}">
+          <span class="swatch-check" style="color: ${checkColor};">✓</span>
+        </button>
+      `;
+    }).join('');
+
+    this.editMealColorsRow.querySelectorAll('.meal-color-swatch-circle').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        triggerHaptic(15);
+        const col = btn.dataset.color;
+        if (this.editMealColorInput) this.editMealColorInput.value = col;
+        if (this.editMealSelectedPreview) this.editMealSelectedPreview.style.borderColor = col;
+        this.editMealColorsRow.querySelectorAll('.meal-color-swatch-circle').forEach(b => b.classList.remove('is-selected'));
+        btn.classList.add('is-selected');
+      });
+    });
+  }
+
+  // --- Archive Stamp & Widget Updates ---
+  updateNutritionWidget() {
+    if (!this.widgetNutrition) return;
+    if (!this.nutritionTracker || !this.nutritionTracker.isEnabled()) {
+      this.widgetNutrition.style.display = 'none';
+      this.updateModulesHubState?.();
+      return;
+    }
+
+    this.widgetNutrition.style.display = 'flex';
+    const targetDate = this.selectedDate || this.getTodayDateString();
+    const stats = this.nutritionTracker.getStatsForDate(targetDate);
+
+    if (this.widgetNutritionRing) {
+      this.widgetNutritionRing.innerHTML = this.nutritionTracker.generateWidgetSvg(stats);
+    }
+
+    const titleText = `${this.t('nutrition_title')}: ${stats.totalCalories} / ${stats.targets.calories} ккал`;
+    this.widgetNutrition.title = titleText;
+    this.updateModulesHubState?.();
+  }
+
+  updateNutritionArchiveStamp() {
+    if (!this.notebookNutritionStamp) return;
+    if (!this.nutritionTracker || !this.nutritionTracker.isEnabled() || this.nutritionTracker.getSettings().showArchiveStamp === false) {
+      this.notebookNutritionStamp.style.display = 'none';
+      return;
+    }
+
+    const todayStr = this.getTodayDateString();
+    const isPastDay = this.selectedDate && this.selectedDate < todayStr;
+
+    // Show stamp exclusively on archive past days
+    if (!isPastDay) {
+      this.notebookNutritionStamp.style.display = 'none';
+      return;
+    }
+
+    const stats = this.nutritionTracker.getStatsForDate(this.selectedDate);
+    // Show only if food entries were made on that day
+    if (stats.entryCount === 0 && stats.totalCalories === 0) {
+      this.notebookNutritionStamp.style.display = 'none';
+      return;
+    }
+
+    this.notebookNutritionStamp.innerHTML = this.nutritionTracker.generateArchiveStampSvg(stats);
+    this.notebookNutritionStamp.style.display = 'block';
+  }
+
+  clearAllNutritionEntries() {
+    if (!this.nutritionTracker) return;
+    this.nutritionTracker.clearAllEntries();
+    this.updateNutritionWidget();
+    this.updateNutritionArchiveStamp();
+    this.updateModulesHubState?.();
+    this.renderNutritionModalContent();
+    this.showToast('Все записи питания удалены!', '🧹');
+  }
+
+  /* ============================================================================
    * ☀️ JOY TRACKER (ЗАМЕТИТЬ РАДОСТЬ) METHODS
    * ============================================================================ */
 
@@ -20456,1142 +24632,17 @@ class NotebookApp {
  * MAINE COON COZY COMPANION (TAMAGOTCHI) SYSTEM
  * ============================================================================
  */
-class MaineCoonPetSystem {
-  constructor(app) {
-    this.app = app;
-    this.audioCtx = null;
-    this.quotesIndex = 0;
-    this.isPurring = false;
-    this.isEating = false;
-
-    this.defaultData = {
-      name: 'Мейни',
-      color: 'ginger', // 'ginger' | 'silver' | 'mocha' | 'midnight'
-      level: 1,
-      xp: 20,
-      xpToNext: 100,
-      hunger: 80, // 0..100
-      happiness: 85, // 0..100
-      treats: 3, // Starter fish treats
-      goldenTreats: 1, // Starter golden treat
-      equippedAccessory: 'none', // 'none' | 'glasses' | 'scarf' | 'bowtie' | 'crown' | 'flower'
-      unlockedAccessories: ['none', 'glasses', 'scarf', 'bowtie', 'crown', 'flower'],
-      lastSaved: Date.now()
-    };
-
-    this.data = { ...this.defaultData };
-  }
-
-  async init() {
-    await this.loadData();
-    this.applyTimeDecay();
-    this.initElements();
-    this.initEventListeners();
-    this.preloadAudio();
-    this.renderMiniCompanion();
-    this.renderFullModal();
-    this.startIdleQuotesCycle();
-    this.startDecayInterval();
-  }
-
-  // Preload purr audio in memory to eliminate play latency/stutter
-  preloadAudio() {
-    try {
-      if (!this.purrAudioElement) {
-        this.purrAudioElement = new Audio('assets/purr.wav');
-        this.purrAudioElement.preload = 'auto';
-        this.purrAudioElement.volume = 0.5;
-      }
-    } catch (e) { }
-  }
-
-  // Periodic natural decay (every 60s)
-  startDecayInterval() {
-    setInterval(() => {
-      this.applyTimeDecay();
-      this.updateGaugeUI();
-      this.renderMiniCompanion();
-    }, 60000);
-  }
-
-  // Natural needs decay across real-world time (exactly drops from 100% to 10% in 12 hours: 7.5%/hour)
-  applyTimeDecay() {
-    const now = Date.now();
-    const last = this.data.lastSaved || now;
-    const elapsedHours = (now - last) / (1000 * 60 * 60);
-
-    if (elapsedHours > 0.016) { // ~1 min elapsed
-      const hungerLoss = elapsedHours * 7.5; // 90% in 12 hours (100% -> 10%)
-      const happyLoss = elapsedHours * 7.5; // 90% in 12 hours (100% -> 10%)
-
-      this.data.hunger = Math.max(10, Math.min(100, Math.round((this.data.hunger - hungerLoss) * 10) / 10));
-      this.data.happiness = Math.max(10, Math.min(100, Math.round((this.data.happiness - happyLoss) * 10) / 10));
-      this.data.lastSaved = now;
-      this.saveData(true);
-    }
-  }
-
-  // Audio Player for natural cozy purr (plays pristine assets/purr.wav) and long rhythmic vibration in rhythm
-  playPurr() {
-    // 1. Long rhythmic vibration in sync with cat's purr beat (total ~2.8s)
-    this.triggerPurrVibration();
-
-    if (this.app?.settings?.soundEnabled === false) return;
-    try {
-      if (!this.purrAudioElement) {
-        this.preloadAudio();
-      }
-      if (this.purrAudioElement) {
-        this.purrAudioElement.currentTime = 0;
-        const playPromise = this.purrAudioElement.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(() => { });
-        }
-      }
-    } catch (e) { }
-  }
-
-  // Feline purring vibration rhythm (long wave with rhythmic vibration pulses in sync with purr cycles)
-  triggerPurrVibration() {
-    try {
-      const purrVibePattern = [
-        180, 50, 200, 60, 220, 60, 200, 50, 180, 70,
-        190, 50, 210, 60, 240, 60, 210, 50, 190, 70,
-        180, 50, 200, 60, 220, 60, 180
-      ];
-      triggerHaptic(purrVibePattern);
-    } catch (e) { }
-  }
-
-  // Load and save state with debounced asynchronous I/O
-  async loadData() {
-    try {
-      const saved = localStorage.getItem('plan4u_pet_data') || localStorage.getItem('todo_notebook_pet_companion');
-      if (saved) {
-        this.data = { ...this.defaultData, ...JSON.parse(saved) };
-      } else if (window.Plan4UStorage) {
-        const fileData = await Plan4UStorage.loadFile('pet.json', null);
-        if (fileData) {
-          this.data = { ...this.defaultData, ...fileData };
-        }
-      }
-    } catch (e) {
-      console.warn('Error loading pet data:', e);
-    }
-  }
-
-  saveData(debounced = false) {
-    if (debounced) {
-      clearTimeout(this._savePetDebounceTimer);
-      this._savePetDebounceTimer = setTimeout(() => {
-        this.flushSaveData();
-      }, 500);
-      return;
-    }
-    this.flushSaveData();
-  }
-
-  flushSaveData() {
-    clearTimeout(this._savePetDebounceTimer);
-    try {
-      this.data.lastSaved = Date.now();
-      const jsonStr = JSON.stringify(this.data);
-      localStorage.setItem('plan4u_pet_data', jsonStr);
-      localStorage.setItem('todo_notebook_pet_companion', jsonStr);
-      if (window.Plan4UStorage) {
-        Plan4UStorage.saveFile('pet.json', this.data);
-      }
-    } catch (e) {
-      console.warn('Error saving pet data:', e);
-    }
-  }
-
-  // Pet state export snapshot
-  getPetSnapshot() {
-    return JSON.parse(JSON.stringify(this.data || this.defaultData));
-  }
-
-  // Restore pet state from snapshot
-  restorePetData(petData) {
-    if (!petData || typeof petData !== 'object') return;
-    this.data = { ...this.defaultData, ...petData };
-    this.flushSaveData();
-    this._renderedStageKey = null;
-    this._renderedMiniColor = null;
-    this.renderMiniCompanion();
-    this.updateGaugeUI();
-  }
-
-  initElements() {
-    this.petAnchor = document.getElementById('notebookPetAnchor');
-    this.petMiniAvatar = document.getElementById('petMiniAvatar');
-    this.petMiniTreatsCount = document.getElementById('petMiniTreatsCount');
-    this.petMiniSpeech = document.getElementById('petMiniSpeech');
-    this.petMiniSpeechText = document.getElementById('petMiniSpeechText');
-
-    this.petModalBackdrop = document.getElementById('petModalBackdrop');
-    this.petModalCloseBtn = document.getElementById('petModalCloseBtn');
-    this.petModalDoneBtn = document.getElementById('petModalDoneBtn');
-
-    this.petModalNameTitle = document.getElementById('petModalNameTitle');
-    this.btnPetRename = document.getElementById('btnPetRename');
-    this.petLevelBadge = document.getElementById('petLevelBadge');
-    this.petXpBarFill = document.getElementById('petXpBarFill');
-    this.petXpText = document.getElementById('petXpText');
-
-    this.petInteractiveStage = document.getElementById('petInteractiveStage');
-    this.petSettingsGearBtn = document.getElementById('petSettingsGearBtn');
-    this.petSettingsPopup = document.getElementById('petSettingsPopup');
-    this.petPopupCloseBtn = document.getElementById('petPopupCloseBtn');
-
-    this.petThoughtBubble = document.getElementById('petThoughtBubble');
-    this.petThoughtText = document.getElementById('petThoughtText');
-    this.petCharacterStage = document.getElementById('petCharacterStage');
-    this.petParticlesLayer = document.getElementById('petParticlesLayer');
-
-    this.petHungerStatus = document.getElementById('petHungerStatus');
-    this.petHungerBarFill = document.getElementById('petHungerBarFill');
-    this.petHungerVal = document.getElementById('petHungerVal');
-
-    this.petHappinessStatus = document.getElementById('petHappinessStatus');
-    this.petHappinessBarFill = document.getElementById('petHappinessBarFill');
-    this.petHappinessVal = document.getElementById('petHappinessVal');
-
-    this.btnPetFeed = document.getElementById('btnPetFeed');
-    this.btnPetGoldenFeed = document.getElementById('btnPetGoldenFeed');
-    this.petFishCountLabel = document.getElementById('petFishCountLabel');
-    this.petGoldenCountLabel = document.getElementById('petGoldenCountLabel');
-  }
-
-  initEventListeners() {
-    // 1. Mini companion click on notebook sheet -> Open Modal
-    if (this.petAnchor) {
-      this.petAnchor.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        triggerHaptic(20);
-        this.playPurr();
-        this.openPetModal();
-      });
-    }
-
-    // 2. Modal Close
-    if (this.petModalCloseBtn) {
-      this.petModalCloseBtn.addEventListener('click', () => this.closePetModal());
-    }
-    if (this.petModalDoneBtn) {
-      this.petModalDoneBtn.addEventListener('click', () => this.closePetModal());
-    }
-    if (this.petModalBackdrop) {
-      let startedOnPetBackdrop = false;
-      this.petModalBackdrop.addEventListener('pointerdown', (e) => {
-        startedOnPetBackdrop = (e.target === this.petModalBackdrop);
-      });
-      this.petModalBackdrop.addEventListener('click', (e) => {
-        if (Date.now() - (this._petModalOpenedAt || 0) < 400) return;
-        if (startedOnPetBackdrop && e.target === this.petModalBackdrop) {
-          this.closePetModal();
-        }
-        startedOnPetBackdrop = false;
-      });
-    }
-
-    // 3. Rename
-    if (this.btnPetRename) {
-      this.btnPetRename.addEventListener('click', () => this.renamePet());
-    }
-
-    // 4. Feed buttons
-    if (this.btnPetFeed) {
-      this.btnPetFeed.addEventListener('click', () => this.feedFish());
-    }
-    if (this.btnPetGoldenFeed) {
-      this.btnPetGoldenFeed.addEventListener('click', () => this.feedGolden());
-    }
-
-    // 5. Gear button for coat color sub-menu / popup
-    if (this.petSettingsGearBtn && this.petSettingsPopup) {
-      this.petSettingsGearBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        triggerHaptic(15);
-        this.petSettingsPopup.classList.toggle('show');
-      });
-    }
-
-    if (this.petPopupCloseBtn && this.petSettingsPopup) {
-      this.petPopupCloseBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        triggerHaptic(10);
-        this.petSettingsPopup.classList.remove('show');
-      });
-    }
-
-    // Close popup on outside click
-    document.addEventListener('pointerdown', (e) => {
-      if (this.petSettingsPopup && this.petSettingsPopup.classList.contains('show')) {
-        if (!this.petSettingsPopup.contains(e.target) && e.target !== this.petSettingsGearBtn && !this.petSettingsGearBtn?.contains(e.target)) {
-          this.petSettingsPopup.classList.remove('show');
-        }
-      }
-    });
-
-    // Gauge click tester (toggles between 10% [sleeping/danger], 45% [warning], 100% [full])
-    if (this.petHungerVal) {
-      this.petHungerVal.style.cursor = 'pointer';
-      this.petHungerVal.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.data.hunger = this.data.hunger <= 10 ? 45 : (this.data.hunger <= 45 ? 100 : 10);
-        this.saveData();
-        this.updateGaugeUI();
-      });
-    }
-    if (this.petHappinessVal) {
-      this.petHappinessVal.style.cursor = 'pointer';
-      this.petHappinessVal.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.data.happiness = this.data.happiness <= 10 ? 45 : (this.data.happiness <= 45 ? 100 : 10);
-        this.saveData();
-        this.updateGaugeUI();
-      });
-    }
-
-    // 6. Interactive Petting: ONLY when clicking/swiping directly on the cat (#petCharacterStage)
-    if (this.petCharacterStage) {
-      let isPetting = false;
-      let lastPetTime = 0;
-
-      const triggerPetAction = (clientX, clientY) => {
-        const now = Date.now();
-        if (now - lastPetTime < 220) return;
-        lastPetTime = now;
-        this.petCat(clientX, clientY);
-      };
-
-      this.petCharacterStage.addEventListener('pointerdown', (e) => {
-        e.stopPropagation();
-        isPetting = true;
-        triggerPetAction(e.clientX, e.clientY);
-      });
-
-      this.petCharacterStage.addEventListener('pointermove', (e) => {
-        if (isPetting) {
-          triggerPetAction(e.clientX, e.clientY);
-        }
-      });
-
-      window.addEventListener('pointerup', () => { isPetting = false; });
-      window.addEventListener('pointercancel', () => { isPetting = false; });
-    }
-
-    // 7. Color Chips
-    const colorChips = document.querySelectorAll('.pet-color-chip');
-    colorChips.forEach(chip => {
-      chip.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const color = chip.dataset.color;
-        if (!color) return;
-        triggerHaptic(15);
-        colorChips.forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-
-        this.data.color = color;
-        this.saveData();
-        this.renderMiniCompanion();
-        this.renderFullModal();
-        this.playPurr();
-        this.setThought(this.getLocalizedText('color_changed') || 'Мурр! 🐾✨');
-
-        if (this.petSettingsPopup) {
-          setTimeout(() => {
-            this.petSettingsPopup.classList.remove('show');
-          }, 350);
-        }
-      });
-    });
-  }
-
-  openPetModal() {
-    if (this.app) this.app.dismissActiveKeyboard();
-    else if (document.activeElement && typeof document.activeElement.blur === 'function') document.activeElement.blur();
-    if (!this.petModalBackdrop) return;
-
-    this._petModalOpenedAt = Date.now();
-    this.petModalBackdrop.classList.add('open');
-    this.petModalBackdrop.setAttribute('aria-hidden', 'false');
-
-    this.renderFullModal();
-    if (this.petSettingsPopup) {
-      this.petSettingsPopup.classList.remove('show');
-    }
-  }
-
-  closePetModal() {
-    this.flushSaveData();
-    if (this.petModalBackdrop) {
-      this.petModalBackdrop.classList.remove('open');
-      this.petModalBackdrop.setAttribute('aria-hidden', 'true');
-    }
-    if (this.petSettingsPopup) {
-      this.petSettingsPopup.classList.remove('show');
-    }
-  }
-
-  // Hook triggered when any task is completed in the notebook
-  onTaskCompleted(task) {
-    const isPriority = task && (task.priority === 'важный' || task.priority === 'очень важно');
-    const isMaineQuest = task && (task.isMaineQuest || task.isSecretQuest);
-    const xpGain = isMaineQuest ? 50 : (isPriority ? 30 : 10);
-    const fishGain = isMaineQuest ? 1 : (isPriority ? 0 : 1);
-    const goldenGain = (isMaineQuest || isPriority) ? 1 : 0;
-
-    this.data.xp += xpGain;
-    this.data.treats += fishGain;
-    this.data.goldenTreats += goldenGain;
-    this.data.hunger = Math.min(100, this.data.hunger + (isMaineQuest ? 8 : 4));
-    this.data.happiness = Math.min(100, this.data.happiness + (isMaineQuest ? 15 : 5));
-
-    // Spawn Flying Treat Animation
-    this.spawnFlyingTreat((isPriority || isMaineQuest) ? '🥫' : '🟤');
-
-    // Show Speech Bubble on Mini Companion (100% feline)
-    const quotes = isMaineQuest
-      ? ['МУРРР! 🥫🐾', 'Лапкой проверено! ✨', 'Мур-мур! Золото! 🥫', 'Мяу! Прелесть! 🐾💖']
-      : (isPriority
-        ? ['МУРРР! 🥫✨', 'Мяу-мяу! ⭐', 'Муррр! 🐾']
-        : ['Мяу! 🟤', 'Мурр! 🐾', 'Мяу-мяу! ✨']);
-    const quote = quotes[Math.floor(Math.random() * quotes.length)];
-    this.showMiniSpeech(quote);
-
-    this.checkLevelUp();
-    this.saveData(true);
-    this.renderMiniCompanion();
-    this.renderFullModal();
-  }
-
-  // Flying Treat Visual Effect from screen to bottom anchor
-  spawnFlyingTreat(icon = '🟤') {
-    try {
-      const anchorRect = this.petAnchor ? this.petAnchor.getBoundingClientRect() : null;
-      const targetX = anchorRect ? anchorRect.left + 20 : window.innerWidth - 80;
-      const targetY = anchorRect ? anchorRect.top + 20 : window.innerHeight - 80;
-
-      const particle = document.createElement('div');
-      particle.className = 'flying-treat-particle';
-      particle.textContent = icon;
-      particle.style.left = `${window.innerWidth / 2 - 15}px`;
-      particle.style.top = `${window.innerHeight / 2 - 40}px`;
-      particle.style.transform = 'scale(1.4)';
-      document.body.appendChild(particle);
-
-      requestAnimationFrame(() => {
-        particle.style.transform = `translate(${targetX - (window.innerWidth / 2 - 15)}px, ${targetY - (window.innerHeight / 2 - 40)}px) scale(0.6)`;
-        particle.style.opacity = '0.9';
-      });
-
-      setTimeout(() => {
-        particle.remove();
-        if (this.petAnchor) {
-          this.petAnchor.style.transform = 'scale(1.22)';
-          setTimeout(() => { this.petAnchor.style.transform = ''; }, 200);
-        }
-      }, 750);
-    } catch (e) { }
-  }
-
-  showMiniSpeech(text) {
-    if (!this.petMiniSpeech || !this.petMiniSpeechText) return;
-    this.petMiniSpeechText.textContent = text;
-    this.petMiniSpeech.classList.add('visible');
-    clearTimeout(this._miniSpeechTimer);
-    this._miniSpeechTimer = setTimeout(() => {
-      this.petMiniSpeech.classList.remove('visible');
-    }, 3200);
-  }
-
-  setThought(text) {
-    if (this.petThoughtText) {
-      this.petThoughtText.textContent = text;
-    }
-  }
-
-  // Petting interaction
-  petCat(clientX = null, clientY = null) {
-    this.data.happiness = Math.min(100, this.data.happiness + 3);
-    this.data.xp += 2;
-    this.checkLevelUp();
-    this.saveData(true);
-
-    this.playPurr();
-    triggerHaptic(20);
-
-    // Visual Purr state on character
-    if (this.petCharacterStage) {
-      this.petCharacterStage.classList.add('purring');
-      clearTimeout(this._purrTimer);
-      this._purrTimer = setTimeout(() => {
-        this.petCharacterStage.classList.remove('purring');
-      }, 1200);
-    }
-
-    // Heart particles
-    this.spawnHeartParticle(clientX, clientY);
-
-    // 100% feline purr thoughts
-    const purrThoughts = [
-      'Муррррр... Мяу! 💖',
-      'Мур-мур-мур... 🐾',
-      'Мрррр... ✨',
-      'Мяууу... Мурр! 💕',
-      'Муррр-мяу! 🌸'
-    ];
-    this.setThought(purrThoughts[Math.floor(Math.random() * purrThoughts.length)]);
-    this.updateGaugeUI();
-  }
-
-  spawnHeartParticle(clientX = null, clientY = null) {
-    if (!this.petParticlesLayer) return;
-    // Cap maximum active particles on stage to prevent DOM pileup
-    if (this.petParticlesLayer.childElementCount > 6) {
-      this.petParticlesLayer.firstElementChild?.remove();
-    }
-
-    const stageRect = this.petInteractiveStage.getBoundingClientRect();
-    const x = clientX ? (clientX - stageRect.left) : (stageRect.width / 2);
-    const y = clientY ? (clientY - stageRect.top) : (stageRect.height / 2);
-
-    const heart = document.createElement('div');
-    heart.className = 'pet-heart-particle';
-    const emojis = ['💖', '✨', '🐾', '💕', '⭐'];
-    heart.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-    heart.style.left = `${Math.max(10, Math.min(stageRect.width - 30, x - 10))}px`;
-    heart.style.top = `${Math.max(10, Math.min(stageRect.height - 30, y - 10))}px`;
-    heart.style.setProperty('--rand-x', (Math.random() * 2 - 1).toFixed(2));
-
-    this.petParticlesLayer.appendChild(heart);
-    setTimeout(() => { heart.remove(); }, 1100);
-  }
-
-  // Animation: Flying treat from clicked button directly into cat's mouth
-  animateFeedToMouth(sourceBtn, icon = '🟤') {
-    try {
-      if (!this.petCharacterStage) return;
-      const btn = sourceBtn || this.btnPetFeed;
-      const btnRect = btn ? btn.getBoundingClientRect() : { left: window.innerWidth / 2, top: window.innerHeight - 100, width: 40, height: 40 };
-      const catRect = this.petCharacterStage.getBoundingClientRect();
-
-      const startX = btnRect.left + btnRect.width / 2 - 15;
-      const startY = btnRect.top + btnRect.height / 2 - 15;
-      // Cat muzzle position in SVG center
-      const targetX = catRect.left + catRect.width / 2 - 15;
-      const targetY = catRect.top + catRect.height * 0.54 - 15;
-
-      const item = document.createElement('div');
-      item.className = 'flying-feed-item';
-      item.textContent = icon;
-      item.style.left = `${startX}px`;
-      item.style.top = `${startY}px`;
-      item.style.transform = 'scale(1.35) rotate(0deg)';
-      document.body.appendChild(item);
-
-      requestAnimationFrame(() => {
-        item.style.transform = `translate(${targetX - startX}px, ${targetY - startY}px) scale(0.68) rotate(25deg)`;
-      });
-
-      setTimeout(() => {
-        item.style.opacity = '0';
-        setTimeout(() => item.remove(), 120);
-
-        // Cat starts eating when the food reaches the mouth
-        if (this.petCharacterStage) {
-          this.petCharacterStage.classList.add('eating');
-          this.playEatingSound();
-          setTimeout(() => { this.petCharacterStage.classList.remove('eating'); }, 950);
-        }
-
-        // Crumb / sparkle effect around muzzle
-        for (let i = 0; i < 3; i++) {
-          setTimeout(() => {
-            this.spawnHeartParticle(targetX + 15, targetY + 15);
-          }, i * 90);
-        }
-      }, 460);
-    } catch (e) { }
-  }
-
-  // Play cute munching / "Ням-ням" sound with Web Audio API synthesis
-  playEatingSound() {
-    if (this.app?.settings?.soundEnabled === false) return;
-    try {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = this.audioCtx || new AudioCtx();
-      this.audioCtx = ctx;
-      if (ctx.state === 'suspended') {
-        ctx.resume();
-      }
-
-      // Rhythmic sequence of cute "Nom-Nom-Nom" / "Ням-Ням" bites with crunch clicks
-      const bites = [
-        { time: 0.00, freqStart: 380, freqEnd: 240, dur: 0.12, crunchFreq: 950 },
-        { time: 0.17, freqStart: 420, freqEnd: 260, dur: 0.13, crunchFreq: 1100 },
-        { time: 0.35, freqStart: 460, freqEnd: 290, dur: 0.15, crunchFreq: 1250 }
-      ];
-
-      bites.forEach(bite => {
-        const startTime = ctx.currentTime + bite.time;
-
-        // 1. Tonal "Nom/Ням" mouth formant resonance
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(bite.freqStart, startTime);
-        osc.frequency.exponentialRampToValueAtTime(bite.freqEnd, startTime + bite.dur);
-
-        gain.gain.setValueAtTime(0.24, startTime);
-        gain.gain.exponentialRampToValueAtTime(0.005, startTime + bite.dur);
-
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(startTime);
-        osc.stop(startTime + bite.dur);
-
-        // 2. Crisp food crunch/smack click
-        const clickOsc = ctx.createOscillator();
-        const clickGain = ctx.createGain();
-        clickOsc.type = 'sine';
-        clickOsc.frequency.setValueAtTime(bite.crunchFreq, startTime);
-        clickOsc.frequency.exponentialRampToValueAtTime(140, startTime + 0.045);
-
-        clickGain.gain.setValueAtTime(0.18, startTime);
-        clickGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.045);
-
-        clickOsc.connect(clickGain);
-        clickGain.connect(ctx.destination);
-        clickOsc.start(startTime);
-        clickOsc.stop(startTime + 0.045);
-      });
-
-      // Synchronized munching vibration pulses
-      triggerHaptic([25, 45, 25, 45, 30]);
-    } catch (e) {
-      console.warn('Eating audio error:', e);
-    }
-  }
-
-  // Feeding action: Normal treat (Маленький коричневый камушек / сухой корм 🟤)
-  // Feeding action: Normal treat (Маленький коричневый камушек / сухой корм 🟤)
-  feedFish() {
-    if (this.data.treats <= 0) {
-      triggerHaptic([10, 40]);
-      const msg = this.app.t('pet_no_brown_treats') || 'Нет камушков! Выполняйте дела в блокноте, чтобы заработать угощение 🟤';
-      this.app.showToast(msg, '🟤');
-      this.setThought('Мяу? 🥺🐾');
-      return;
-    }
-
-    this.data.treats--;
-    // Balanced for 5 pebbles a day (+15% each = +75% total)
-    this.data.hunger = Math.min(100, Math.max(10, this.data.hunger + 15));
-    this.data.happiness = Math.min(100, Math.max(10, this.data.happiness + 5));
-    this.data.xp += 15;
-
-    triggerHaptic([20, 30]);
-
-    // Animate pebble flying from feed button to mouth
-    this.animateFeedToMouth(this.btnPetFeed, '🟤');
-
-    this.setThought('Хрум-хрум-хрум! Муррр! 🟤✨');
-    this.checkLevelUp();
-    this.saveData(true);
-    this.renderMiniCompanion();
-    this.renderFullModal();
-  }
-
-  // Feeding action: Golden gourmet canned treat 🥫 (+25% hunger + 50% happiness)
-  feedGolden() {
-    if (this.data.goldenTreats <= 0) {
-      triggerHaptic([10, 40]);
-      const msg = this.app.t('pet_no_golden_treats') || 'Нет золотых консервов! Закрывайте важные дела дня, чтобы заработать 🥫';
-      this.app.showToast(msg, '🥫');
-      this.setThought('Мррр? 🥺🥫');
-      return;
-    }
-
-    this.data.goldenTreats--;
-    this.data.hunger = Math.min(100, Math.max(10, this.data.hunger + 25));
-    this.data.happiness = Math.min(100, Math.max(10, this.data.happiness + 50));
-    this.data.xp += 50;
-
-    triggerHaptic([30, 60, 30]);
-
-    // Animate canned treat flying from golden feed button to mouth
-    this.animateFeedToMouth(this.btnPetGoldenFeed, '🥫');
-
-    this.setThought('Чав-чав-хрум! МУРРРР! 🥫✨');
-    this.checkLevelUp();
-    this.saveData(true);
-    this.renderMiniCompanion();
-    this.renderFullModal();
-  }
-
-  checkLevelUp() {
-    if (this.data.xp >= this.data.xpToNext) {
-      this.data.xp = this.data.xp - this.data.xpToNext;
-      this.data.level++;
-      this.data.xpToNext = Math.round(this.data.xpToNext * 1.45);
-
-      triggerHaptic([40, 80, 40]);
-      this.app.showToast(this.app.t('pet_level_up', { name: this.data.name, level: this.data.level }), '🏆');
-      this.setThought(`МЯУ! Муррр-муррр! ⭐🐾`);
-    }
-  }
-
-  renamePet() {
-    const current = this.data.name || this.app.t('pet_default_name') || 'Мейни';
-    const newName = prompt(this.app.t('pet_rename_prompt') || 'Введите имя для вашего котёнка-мейнкуна:', current);
-    if (newName && newName.trim()) {
-      this.data.name = newName.trim().slice(0, 20);
-      this.saveData();
-      this.renderFullModal();
-      this.setThought(`Мяу! 💖`);
-      triggerHaptic(20);
-    }
-  }
-
-  // Periodic motivational quotes (100% feline sounds)
-  startIdleQuotesCycle() {
-    setInterval(() => {
-      if (!this.petThoughtText) return;
-      const isSleeping = (this.data.hunger <= 10 || this.data.happiness <= 10);
-      if (isSleeping) {
-        this.setThought('Хррр-пссс... 💤 (спит)');
-        return;
-      }
-      const pool = [
-        'Мур-мур-мур... 🐾',
-        'Мяу! ✨',
-        'Мрррр... 💕',
-        'Мяу-мяу! 🌸',
-        'Муррр... 🐾',
-        'Мяяяу... 🌟',
-        'Фррр-мяу! 🐱'
-      ];
-      this.quotesIndex = (this.quotesIndex + 1) % pool.length;
-      this.setThought(pool[this.quotesIndex]);
-    }, 18000);
-  }
-
-  updateXpUI() {
-    if (this.petLevelBadge) this.petLevelBadge.textContent = `Ур. ${this.data.level}`;
-    const xpPercent = Math.min(100, Math.round((this.data.xp / this.data.xpToNext) * 100));
-    if (this.petXpBarFill) this.petXpBarFill.style.width = `${xpPercent}%`;
-    if (this.petXpText) this.petXpText.textContent = `${this.data.xp} / ${this.data.xpToNext} XP`;
-  }
-
-  updateGaugeUI() {
-    this.updateXpUI();
-
-    // Never fall below 10%
-    this.data.hunger = Math.max(10, Math.min(100, this.data.hunger));
-    this.data.happiness = Math.max(10, Math.min(100, this.data.happiness));
-
-    // 1. Hunger Gauge: Blue by default, warning at <60%, red danger at <30%
-    if (this.petHungerBarFill) {
-      this.petHungerBarFill.style.width = `${this.data.hunger}%`;
-      this.petHungerBarFill.classList.toggle('warning', this.data.hunger < 60 && this.data.hunger >= 30);
-      this.petHungerBarFill.classList.toggle('danger', this.data.hunger < 30);
-    }
-    if (this.petHungerVal) this.petHungerVal.textContent = `${this.data.hunger}%`;
-
-    // 2. Happiness Gauge: Green by default, warning at <60%, red danger at <30%
-    if (this.petHappinessBarFill) {
-      this.petHappinessBarFill.style.width = `${this.data.happiness}%`;
-      this.petHappinessBarFill.classList.toggle('warning', this.data.happiness < 60 && this.data.happiness >= 30);
-      this.petHappinessBarFill.classList.toggle('danger', this.data.happiness < 30);
-    }
-    if (this.petHappinessVal) this.petHappinessVal.textContent = `${this.data.happiness}%`;
-
-    // 3. Sleeping state when hunger or happiness drops to minimum (<= 10%)
-    const isSleeping = this.data.hunger <= 10 || this.data.happiness <= 10;
-
-    if (this.petHungerStatus) {
-      if (isSleeping) this.petHungerStatus.textContent = this.app.t('pet_status_sleeping');
-      else if (this.data.hunger >= 75) this.petHungerStatus.textContent = this.app.t('pet_status_full');
-      else if (this.data.hunger >= 40) this.petHungerStatus.textContent = this.app.t('pet_status_hungry_mild');
-      else this.petHungerStatus.textContent = this.app.t('pet_status_hungry_severe');
-    }
-
-    if (this.petHappinessStatus) {
-      if (isSleeping) this.petHappinessStatus.textContent = this.app.t('pet_status_sleep_sound');
-      else if (this.data.happiness >= 75) this.petHappinessStatus.textContent = this.app.t('pet_status_purring');
-      else if (this.data.happiness >= 40) this.petHappinessStatus.textContent = this.app.t('pet_status_happy');
-      else this.petHappinessStatus.textContent = this.app.t('pet_status_lonely');
-    }
-
-    // Toggle sleeping animation & SVG pose (with memoized rendering)
-    const stageKey = `${this.data.color}_${isSleeping}`;
-    if (this.petCharacterStage) {
-      this.petCharacterStage.classList.toggle('is-sleeping', isSleeping);
-      if (this._renderedStageKey !== stageKey) {
-        this._renderedStageKey = stageKey;
-        this.petCharacterStage.innerHTML = this.generateMaineCoonSVG(this.data.color, false, isSleeping);
-      }
-    }
-  }
-
-  renderMiniCompanion() {
-    if (this.petMiniAvatar && this._renderedMiniColor !== this.data.color) {
-      this._renderedMiniColor = this.data.color;
-      this.petMiniAvatar.innerHTML = this.generateMaineCoonSVG(this.data.color, true);
-    }
-    const badge = document.getElementById('petMiniTreatsBadge');
-    if (badge) {
-      badge.style.display = (this.data.treats > 0) ? 'flex' : 'none';
-    }
-    if (this.petMiniTreatsCount) {
-      this.petMiniTreatsCount.textContent = this.data.treats;
-    }
-  }
-
-  renderFullModal() {
-    if (this.petModalNameTitle) this.petModalNameTitle.textContent = this.data.name;
-    if (this.petLevelBadge) this.petLevelBadge.textContent = this.app.t('pet_level_badge', { level: this.data.level });
-
-    const xpPercent = Math.min(100, Math.round((this.data.xp / this.data.xpToNext) * 100));
-    if (this.petXpBarFill) this.petXpBarFill.style.width = `${xpPercent}%`;
-    if (this.petXpText) this.petXpText.textContent = `${this.data.xp} / ${this.data.xpToNext} XP`;
-
-    const isSleeping = this.data.hunger <= 10 || this.data.happiness <= 10;
-    const stageKey = `${this.data.color}_${isSleeping}`;
-    if (this.petCharacterStage && this._renderedStageKey !== stageKey) {
-      this._renderedStageKey = stageKey;
-      this.petCharacterStage.innerHTML = this.generateMaineCoonSVG(this.data.color, false, isSleeping);
-    }
-
-    if (this.petFishCountLabel) {
-      this.petFishCountLabel.textContent = this.app.t('pet_treat_count', { count: this.data.treats });
-    }
-    if (this.petGoldenCountLabel) {
-      this.petGoldenCountLabel.textContent = this.app.t('pet_treat_count', { count: this.data.goldenTreats });
-    }
-
-    this.updateGaugeUI();
-
-    // Sync active color chip
-    const colorChips = document.querySelectorAll('.pet-color-chip');
-    colorChips.forEach(chip => {
-      chip.classList.toggle('active', chip.dataset.color === this.data.color);
-    });
-  }
-
-  getLocalizedText(key) {
-    const lang = this.app?.settings?.lang || 'ru';
-    const dict = {
-      ru: {
-        no_fish: 'Нет камушков! Выполняйте дела в блокноте, чтобы заработать угощение 🟤',
-        no_golden: 'Нет золотых консервов! Закрывайте важные дела дня, чтобы заработать 🥫',
-        color_changed: 'Мурр! 🐾✨'
-      },
-      uk: {
-        no_fish: 'Немає камінчиків! Виконуйте справи у блокноті, щоб заробити ласощі 🟤',
-        no_golden: 'Немає золотих консервів! Закривайте важливі справи дня, щоб заробити 🥫',
-        color_changed: 'Мурр! 🐾✨'
-      },
-      en: {
-        no_fish: 'No little brown pebbles left! Complete tasks in your notebook to earn dry food 🟤',
-        no_golden: 'No golden treats! Complete priority tasks of the day to earn 🥫',
-        color_changed: 'Purr! 🐾✨'
-      }
-    };
-    return (dict[lang] && dict[lang][key]) || dict.ru[key] || '';
-  }
-
-  /**
-   * MAINE COON VECTOR SVG RENDERER
-   * Highly detailed, cute, stylized Maine Coon with lynx ear tufts, bushy plume tail,
-   * fluffy bib/mane, forehead tabby "M", and expressive feline eyes.
-   */
-  generateMaineCoonSVG(colorScheme = 'ginger', isMini = false, isSleeping = false) {
-    const palettes = {
-      ginger: {
-        furMain: '#f97316',
-        furGrad: '#c2410c',
-        furLight: '#fed7aa',
-        furDark: '#9a3412',
-        bib: '#fffbeb',
-        earInner: '#fbcfe8',
-        earTuft: '#7c2d12',
-        eyes: '#10b981',
-        eyeHighlight: '#ffffff',
-        nose: '#fb7185',
-        markings: '#9a3412'
-      },
-      white: {
-        furMain: '#ffffff',
-        furGrad: '#e2e8f0',
-        furLight: '#ffffff',
-        furDark: '#94a3b8',
-        bib: '#f8fafc',
-        earInner: '#fed7e2',
-        earTuft: '#cbd5e1',
-        eyes: '#0284c7',
-        eyeHighlight: '#ffffff',
-        nose: '#fb7185',
-        markings: '#cbd5e1'
-      },
-      tiger: {
-        furMain: '#b45309',
-        furGrad: '#78350f',
-        furLight: '#fef3c7',
-        furDark: '#451a03',
-        bib: '#fefce8',
-        earInner: '#fed7aa',
-        earTuft: '#291102',
-        eyes: '#16a34a',
-        eyeHighlight: '#ffffff',
-        nose: '#e11d48',
-        markings: '#291102'
-      },
-      silver: {
-        furMain: '#94a3b8',
-        furGrad: '#475569',
-        furLight: '#e2e8f0',
-        furDark: '#334155',
-        bib: '#ffffff',
-        earInner: '#fce7f3',
-        earTuft: '#1e293b',
-        eyes: '#0284c7',
-        eyeHighlight: '#ffffff',
-        nose: '#f43f5e',
-        markings: '#334155'
-      },
-      midnight: {
-        furMain: '#1e293b',
-        furGrad: '#0f172a',
-        furLight: '#475569',
-        furDark: '#020617',
-        bib: '#334155',
-        earInner: '#64748b',
-        earTuft: '#020617',
-        eyes: '#eab308',
-        eyeHighlight: '#ffffff',
-        nose: '#475569',
-        markings: '#020617'
-      },
-      cream: {
-        furMain: '#fed7aa',
-        furGrad: '#fb923c',
-        furLight: '#fff7ed',
-        furDark: '#ea580c',
-        bib: '#ffffff',
-        earInner: '#fed7e2',
-        earTuft: '#c2410c',
-        eyes: '#14b8a6',
-        eyeHighlight: '#ffffff',
-        nose: '#f43f5e',
-        markings: '#ea580c'
-      },
-      mocha: {
-        furMain: '#78350f',
-        furGrad: '#451a03',
-        furLight: '#fef3c7',
-        furDark: '#291102',
-        bib: '#fef9c3',
-        earInner: '#fed7aa',
-        earTuft: '#1c0a00',
-        eyes: '#f59e0b',
-        eyeHighlight: '#ffffff',
-        nose: '#be123c',
-        markings: '#291102'
-      },
-      siamese: {
-        furMain: '#fef3c7',
-        furGrad: '#d97706',
-        furLight: '#ffffff',
-        furDark: '#451a03',
-        bib: '#ffffff',
-        earInner: '#fed7aa',
-        earTuft: '#291102',
-        eyes: '#0284c7',
-        eyeHighlight: '#ffffff',
-        nose: '#881337',
-        markings: '#451a03'
-      },
-      calico: {
-        furMain: '#ea580c',
-        furGrad: '#1e293b',
-        furLight: '#ffffff',
-        furDark: '#0f172a',
-        bib: '#ffffff',
-        earInner: '#fbcfe8',
-        earTuft: '#0f172a',
-        eyes: '#10b981',
-        eyeHighlight: '#ffffff',
-        nose: '#fb7185',
-        markings: '#0f172a'
-      }
-    };
-
-    const p = palettes[colorScheme] || palettes.ginger;
-    const uid = Math.random().toString(36).slice(2, 7);
-
-    return `
-      <svg viewBox="0 0 200 200" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="overflow: visible;">
-        <defs>
-          <linearGradient id="mcFurGrad_${uid}" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stop-color="${p.furMain}"/>
-            <stop offset="100%" stop-color="${p.furGrad}"/>
-          </linearGradient>
-          <linearGradient id="mcBibGrad_${uid}" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stop-color="#ffffff"/>
-            <stop offset="100%" stop-color="${p.bib}"/>
-          </linearGradient>
-          <linearGradient id="mcEyeGrad_${uid}" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stop-color="${p.eyes}"/>
-            <stop offset="100%" stop-color="#064e3b"/>
-          </linearGradient>
-          <filter id="mcShadow_${uid}" x="-10%" y="-10%" width="120%" height="120%">
-            <feDropShadow dx="0" dy="4" stdDeviation="3" flood-opacity="0.16"/>
-          </filter>
-        </defs>
-
-        <!-- Shadow on Floor -->
-        <ellipse cx="100" cy="184" rx="58" ry="10" fill="rgba(0,0,0,0.12)"/>
-
-        <!-- 1. Fluffy Plume Maine Coon Tail (Normal upright position & sway in all states) -->
-        <g class="mc-tail" style="filter: url(#mcShadow_${uid});">
-          <path d="M56 160 C30 152, 6 128, 12 92 C16 68, 38 60, 48 76 C56 88, 44 116, 52 136 C56 146, 64 154, 70 162 Z" 
-                fill="url(#mcFurGrad_${uid})" stroke="${p.furDark}" stroke-width="1.8" stroke-linejoin="round"/>
-          <!-- Fluffy Tail Tufts -->
-          <path d="M12 92 C2 108, 10 134, 30 148" stroke="${p.markings}" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.65"/>
-          <path d="M22 80 C26 94, 28 116, 42 130" stroke="${p.markings}" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.65"/>
-          <path d="M48 76 C42 88, 36 104, 46 118" stroke="${p.furLight}" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.75"/>
-        </g>
-
-        <!-- 2. Body Group -->
-        <g class="mc-body-group">
-          <!-- Back Paws & Hips -->
-          <ellipse cx="64" cy="164" rx="22" ry="14" fill="url(#mcFurGrad_${uid})" stroke="${p.furDark}" stroke-width="1.6"/>
-          <ellipse cx="136" cy="164" rx="22" ry="14" fill="url(#mcFurGrad_${uid})" stroke="${p.furDark}" stroke-width="1.6"/>
-
-          <!-- Main Torso -->
-          <path d="M68 120 C64 145, 68 174, 100 176 C132 174, 136 145, 132 120 C128 105, 72 105, 68 120 Z" 
-                fill="url(#mcFurGrad_${uid})" stroke="${p.furDark}" stroke-width="1.8"/>
-
-          <!-- Luxurious Fluffy Maine Coon Mane / Bib -->
-          <path d="M72 114 C62 128, 66 146, 80 156 C88 162, 94 168, 100 172 C106 168, 112 162, 120 156 C134 146, 138 128, 128 114 C120 126, 108 132, 100 132 C92 132, 80 126, 72 114 Z" 
-                fill="url(#mcBibGrad_${uid})" stroke="${p.furDark}" stroke-width="1.2"/>
-
-          <!-- Fluffy fur layers on bib -->
-          <path d="M84 126 C76 138, 86 148, 100 158 C114 148, 124 138, 116 126" stroke="${p.furLight}" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-
-          <!-- Front Paws -->
-          <ellipse cx="86" cy="178" rx="10" ry="7" fill="${p.bib}" stroke="${p.furDark}" stroke-width="1.4"/>
-          <ellipse cx="114" cy="178" rx="10" ry="7" fill="${p.bib}" stroke="${p.furDark}" stroke-width="1.4"/>
-          <!-- Paw Claws/Toe Separators -->
-          <path d="M83 176 L83 182 M89 176 L89 182" stroke="${p.furDark}" stroke-width="1.2" stroke-linecap="round"/>
-          <path d="M111 176 L111 182 M117 176 L117 182" stroke="${p.furDark}" stroke-width="1.2" stroke-linecap="round"/>
-        </g>
-
-        <!-- 3. Head & Ears Group -->
-        <g class="mc-head-group">
-          <!-- Left Lynx Ear with Tuft -->
-          <g class="mc-ear-tuft-left">
-            <polygon points="56,84 66,32 94,68" fill="url(#mcFurGrad_${uid})" stroke="${p.furDark}" stroke-width="1.8"/>
-            <polygon points="62,80 70,42 90,68" fill="${p.earInner}"/>
-            <!-- Lynx Pointed Ear Tuft -->
-            <path d="M66 32 C64 20, 60 14, 56 8 C62 16, 68 22, 69 34" fill="${p.earTuft}" stroke="${p.earTuft}" stroke-width="1.4" stroke-linecap="round"/>
-          </g>
-
-          <!-- Right Lynx Ear with Tuft -->
-          <g class="mc-ear-tuft-right">
-            <polygon points="144,84 134,32 106,68" fill="url(#mcFurGrad_${uid})" stroke="${p.furDark}" stroke-width="1.8"/>
-            <polygon points="138,80 130,42 110,68" fill="${p.earInner}"/>
-            <!-- Lynx Pointed Ear Tuft -->
-            <path d="M134 32 C136 20, 140 14, 144 8 C138 16, 132 22, 131 34" fill="${p.earTuft}" stroke="${p.earTuft}" stroke-width="1.4" stroke-linecap="round"/>
-          </g>
-
-          <!-- Head Silhouette with Fluffy Cheeks -->
-          <path d="M64 78 C52 92, 50 114, 68 126 C82 134, 118 134, 132 126 C150 114, 148 92, 136 78 C126 66, 74 66, 64 78 Z" 
-                fill="url(#mcFurGrad_${uid})" stroke="${p.furDark}" stroke-width="1.8"/>
-
-          <!-- Fluffy Cheek Fur Wisps -->
-          <path d="M50 106 L42 112 L52 116 L44 122 L58 124" stroke="${p.furDark}" stroke-width="1.4" fill="none" stroke-linecap="round"/>
-          <path d="M150 106 L158 112 L148 116 L156 122 L142 124" stroke="${p.furDark}" stroke-width="1.4" fill="none" stroke-linecap="round"/>
-
-          <!-- Forehead Tabby "M" Marking (Maine Coon Signature) -->
-          <g opacity="0.75">
-            <path d="M88 68 L94 80 L100 72 L106 80 L112 68" stroke="${p.markings}" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M92 62 L100 66 L108 62" stroke="${p.markings}" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-          </g>
-
-          <!-- Expressive Eyes or Sleeping Closed Arcs -->
-          ${isSleeping ? `
-          <g class="mc-eye-sleeping">
-            <path d="M72 100 Q82 110 92 100" stroke="${p.furDark}" stroke-width="2.8" fill="none" stroke-linecap="round"/>
-            <path d="M108 100 Q118 110 128 100" stroke="${p.furDark}" stroke-width="2.8" fill="none" stroke-linecap="round"/>
-            <path d="M76 96 Q82 103 88 96" stroke="${p.furLight}" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0.8"/>
-            <path d="M112 96 Q118 103 124 96" stroke="${p.furLight}" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0.8"/>
-          </g>
-          <g class="sleep-zzz-svg-group" opacity="0.95">
-            <text x="32" y="52" font-size="18" font-weight="900" fill="#6366f1" font-family="sans-serif">z</text>
-            <text x="44" y="36" font-size="24" font-weight="900" fill="#818cf8" font-family="sans-serif">Z</text>
-            <text x="60" y="18" font-size="30" font-weight="900" fill="#a5b4fc" font-family="sans-serif">Z</text>
-          </g>
-          ` : `
-          <g class="mc-eye-lid">
-            <!-- Left Eye -->
-            <ellipse cx="82" cy="98" rx="10.5" ry="12.5" fill="url(#mcEyeGrad_${uid})" stroke="${p.furDark}" stroke-width="1.6"/>
-            <!-- Left Pupil -->
-            <ellipse cx="83" cy="98" rx="4.5" ry="8.5" fill="#0f172a"/>
-            <!-- Highlights -->
-            <circle cx="79" cy="93" r="3.2" fill="${p.eyeHighlight}"/>
-            <circle cx="85" cy="103" r="1.5" fill="${p.eyeHighlight}"/>
-
-            <!-- Right Eye -->
-            <ellipse cx="118" cy="98" rx="10.5" ry="12.5" fill="url(#mcEyeGrad_${uid})" stroke="${p.furDark}" stroke-width="1.6"/>
-            <!-- Right Pupil -->
-            <ellipse cx="117" cy="98" rx="4.5" ry="8.5" fill="#0f172a"/>
-            <!-- Highlights -->
-            <circle cx="115" cy="93" r="3.2" fill="${p.eyeHighlight}"/>
-            <circle cx="121" cy="103" r="1.5" fill="${p.eyeHighlight}"/>
-          </g>`}
-
-          <!-- Cute Muzzle (Cream base) -->
-          <ellipse cx="100" cy="116" rx="16" ry="10" fill="${p.bib}" opacity="0.95"/>
-
-          <!-- Pink Nose -->
-          <polygon points="96,110 104,110 100,115" fill="${p.nose}" stroke="${p.furDark}" stroke-width="0.8"/>
-
-          <!-- Sweet Mouth Line -->
-          <path d="M94 118 Q100 122 100 115 Q100 122 106 118" stroke="${p.furDark}" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-
-          <!-- Long Realistic Whiskers -->
-          <g stroke="#ffffff" stroke-width="1.4" opacity="0.85" stroke-linecap="round">
-            <!-- Left Whiskers -->
-            <line x1="92" y1="114" x2="48" y2="108"/>
-            <line x1="91" y1="117" x2="44" y2="118"/>
-            <line x1="92" y1="120" x2="52" y2="128"/>
-            <!-- Right Whiskers -->
-            <line x1="108" y1="114" x2="152" y2="108"/>
-            <line x1="109" y1="117" x2="156" y2="118"/>
-            <line x1="108" y1="120" x2="148" y2="128"/>
-          </g>
-
-          <!-- Eyebrow Whisker Tufts -->
-          <path d="M78 86 Q72 80 68 76" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0.8"/>
-          <path d="M122 86 Q128 80 132 76" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0.8"/>
-        </g>
-      </svg>
-    `;
-  }
+// MaineCoonPetSystem is modularized into pet_system.js
+if (typeof MaineCoonPetSystem === 'undefined') {
+  var MaineCoonPetSystem = window.MaineCoonPetSystem;
 }
 
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', () => {
   window.app = new NotebookApp();
+  window.clearAllNutritionEntries = () => {
+    if (window.app) return window.app.clearAllNutritionEntries();
+  };
 });
 
 

@@ -1,0 +1,1563 @@
+/* ==========================================================================
+   CALENDAR MODAL (AESTHETIC NOTEBOOK PLANNER)
+   ========================================================================== */
+.calendar-modal-sheet {
+  max-width: 480px;
+  max-height: min(92dvh, calc(100% - 16px - env(safe-area-inset-top, 0px))) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  margin: 0 auto;
+}
+
+.calendar-modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 6px max(56px, calc(32px + env(safe-area-inset-bottom, 24px))) 6px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1 1 auto;
+  min-height: 0;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  box-sizing: border-box;
+}
+
+.calendar-modal-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.calendar-modal-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.calendar-modal-content::-webkit-scrollbar-thumb {
+  background: rgba(var(--primary-rgb, 216, 58, 136), 0.25);
+  border-radius: 4px;
+}
+
+.calendar-month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  background: #fdfbf7;
+  border: 1.5px solid #ece4d8;
+  border-radius: 14px;
+}
+
+.calendar-nav-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid #e7e0d5;
+  background: #ffffff;
+  color: #44403c;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.calendar-nav-btn:hover {
+  background: #fff0f7;
+  border-color: var(--primary-magenta);
+  color: var(--primary-magenta);
+  transform: scale(1.06);
+}
+
+.calendar-month-title {
+  font-family: var(--font-note);
+  font-size: 16px;
+  font-weight: 700;
+  color: #1c1917;
+  letter-spacing: 0.2px;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  text-align: center;
+  padding: 0 2px;
+}
+
+.calendar-weekdays span {
+  font-size: 11px;
+  font-weight: 800;
+  color: #a8a29e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.calendar-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+  padding: 2px;
+}
+
+.calendar-day-cell {
+  height: 42px;
+  border-radius: 10px;
+  border: 1.5px solid #f0ede6;
+  background: #ffffff;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  color: #292524;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.calendar-day-cell:hover:not(.other-month) {
+  background: #fdf2f8;
+  border-color: var(--primary-magenta);
+  transform: scale(1.05);
+}
+
+.calendar-day-cell.other-month {
+  color: #d6d3d1;
+  background: #fafaf9;
+  border-color: transparent;
+  opacity: 0.5;
+}
+
+.calendar-day-cell.today {
+  border-color: #3b82f6;
+  font-weight: 800;
+}
+
+.calendar-day-cell.today::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #3b82f6;
+}
+
+.calendar-day-cell.selected {
+  background: var(--primary-magenta) !important;
+  border-color: var(--primary-magenta) !important;
+  color: #ffffff !important;
+  font-weight: 800;
+  box-shadow: 0 3px 8px rgba(var(--primary-rgb, 216, 58, 136), 0.4);
+}
+
+.calendar-day-cell.has-tasks .day-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--primary-magenta);
+  margin-top: 2px;
+}
+
+.calendar-day-cell.selected .day-dot {
+  background: #ffffff;
+}
+
+.calendar-day-cell.has-joy::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #f59e0b;
+}
+
+.calendar-day-cell.selected.has-joy::after {
+  background: #ffffff;
+}
+
+/* Notebook Calendar Habit Badge (Top-left habit status) */
+.calendar-habit-badge {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
+  box-sizing: border-box;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.calendar-habit-badge.completed {
+  background: #10b981;
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.45);
+}
+
+.calendar-habit-badge.completed svg {
+  width: 6.5px;
+  height: 6.5px;
+  stroke: #ffffff;
+  stroke-width: 3.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  display: block;
+}
+
+.calendar-habit-badge.missed {
+  border: 1.4px solid #cbd5e1;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+/* Selected calendar day state overrides */
+.calendar-day-cell.selected .calendar-habit-badge.completed {
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.calendar-day-cell.selected .calendar-habit-badge.completed svg {
+  stroke: #059669;
+}
+
+.calendar-day-cell.selected .calendar-habit-badge.missed {
+  border-color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Notebook Calendar Nutrition Avocado (Bottom-left corner for archive days) */
+.calendar-nutrition-avocado {
+  position: absolute;
+  bottom: 2px;
+  left: 3px;
+  font-size: 10px;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 2;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.12));
+  transition: transform 0.15s ease;
+  user-select: none;
+}
+
+.calendar-day-cell:hover .calendar-nutrition-avocado {
+  transform: scale(1.18);
+}
+
+.calendar-day-cell.selected .calendar-nutrition-avocado {
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.4));
+}
+
+.calendar-day-cell.other-month .calendar-nutrition-avocado {
+  opacity: 0.55;
+}
+
+.calendar-date-info {
+  background: #fdfbf7;
+  border: 1.5px solid #ece4d8;
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-top: 4px;
+}
+
+.calendar-info-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 3px;
+}
+
+.calendar-info-date {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #1c1917;
+}
+
+.calendar-info-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.calendar-info-badge.not-today {
+  background: #fff0f7;
+  color: var(--primary-magenta);
+  border: 1px solid rgba(var(--primary-rgb, 216, 58, 136), 0.25);
+}
+
+.calendar-info-stats {
+  font-size: 12px;
+  color: #78716c;
+  font-weight: 600;
+}
+
+.calendar-actions-row {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 8px;
+  margin-top: 6px;
+  margin-bottom: 6px;
+  flex-shrink: 0;
+}
+
+.btn-calendar-today {
+  padding: 11px 12px;
+  background: #f5f5f4;
+  border: 1.5px solid #e7e5e4;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--font-ui);
+  color: #44403c;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.btn-calendar-today:hover {
+  background: #e7e5e4;
+  color: #1c1917;
+}
+
+.btn-calendar-confirm {
+  padding: 11px 16px;
+  background: var(--primary-magenta);
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 800;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(var(--primary-rgb, 216, 58, 136), 0.3);
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-calendar-confirm:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+/* Watch Archive Section */
+.watch-archive-toggle-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  margin: 14px 14px 6px 65px;
+  background: #fdfaf6;
+  border: 1.5px dashed #e2dad0;
+  border-radius: 10px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.watch-archive-toggle-bar:hover {
+  background: #f5efe6;
+}
+
+.watch-archive-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #78716c;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.watch-archive-arrow {
+  font-size: 11px;
+  color: #78716c;
+  transition: transform 0.2s ease;
+}
+
+.watch-archive-toggle-bar.open .watch-archive-arrow {
+  transform: rotate(180deg);
+}
+
+.archive-date-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #94a3b8;
+  margin-left: 6px;
+}
+
+/* Dark Theme Overrides for Calendar & Watch Archive */
+.app-frame.theme-dark .calendar-month-nav,
+.app-frame.theme-dark .calendar-date-info {
+  background: #171b26;
+  border-color: #2d3546;
+}
+
+.app-frame.theme-dark .calendar-month-title,
+.app-frame.theme-dark .calendar-info-date {
+  color: #f1f5f9;
+}
+
+.app-frame.theme-dark .calendar-nav-btn {
+  background: #1e2433;
+  border-color: #333d4e;
+  color: #f1f5f9;
+}
+
+.app-frame.theme-dark .calendar-day-cell {
+  background: #1a1f2c;
+  border-color: #2b3345;
+  color: #f1f5f9;
+}
+
+.app-frame.theme-dark .calendar-day-cell.other-month {
+  background: #12151f;
+  color: #4b5563;
+  border-color: transparent;
+}
+
+.app-frame.theme-dark .btn-calendar-today {
+  background: #1e2433;
+  border-color: #333d4e;
+  color: #f1f5f9;
+}
+
+.app-frame.theme-dark .calendar-habit-badge.missed {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Trophy Widget Pulsing Aura */
+.trophy-icon {
+  width: 25px;
+  height: 25px;
+  transition: transform 0.2s ease;
+}
+
+.widget-circle:hover .trophy-icon {
+  transform: scale(1.1) rotate(-4deg);
+}
+
+.widget-circle.has-unclaimed {
+  border-color: #f59e0b !important;
+  animation: trophyAuraPulse 1.8s infinite ease-in-out;
+  position: relative;
+}
+
+@keyframes trophyAuraPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.75), 0 0 10px 2px rgba(245, 158, 11, 0.4);
+    transform: scale(1);
+  }
+
+  50% {
+    box-shadow: 0 0 0 10px rgba(245, 158, 11, 0), 0 0 22px 6px rgba(245, 158, 11, 0.7);
+    transform: scale(1.06);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0), 0 0 10px 2px rgba(245, 158, 11, 0.4);
+    transform: scale(1);
+  }
+}
+
+.app-frame.theme-dark .widget-circle.has-unclaimed {
+  border-color: #fbbf24 !important;
+  animation: trophyAuraPulseDark 1.8s infinite ease-in-out;
+}
+
+@keyframes trophyAuraPulseDark {
+  0% {
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.85), 0 0 14px 3px rgba(251, 191, 36, 0.5);
+    transform: scale(1);
+  }
+
+  50% {
+    box-shadow: 0 0 0 12px rgba(251, 191, 36, 0), 0 0 26px 8px rgba(251, 191, 36, 0.8);
+    transform: scale(1.06);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0), 0 0 14px 3px rgba(251, 191, 36, 0.5);
+    transform: scale(1);
+  }
+}
+
+#widgetStreak.has-unclaimed {
+  border-color: #f59e0b !important;
+  z-index: 6;
+}
+
+#widgetStreak.has-unclaimed .widget-flame-icon {
+  display: inline-block;
+  animation: streakFlameShimmer 1.2s infinite alternate ease-in-out;
+}
+
+@keyframes streakFlameShimmer {
+  0% {
+    transform: scale(1) rotate(0deg);
+    filter: drop-shadow(0 0 2px rgba(245, 158, 11, 0.4));
+  }
+  50% {
+    transform: scale(1.2) rotate(-5deg);
+    filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.95)) drop-shadow(0 0 14px rgba(239, 68, 68, 0.6));
+  }
+  100% {
+    transform: scale(1.12) rotate(4deg);
+    filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.85));
+  }
+}
+
+#widgetStreak.has-unclaimed .widget-streak-num {
+  font-weight: 800;
+  color: #b45309;
+}
+
+.app-frame.theme-dark #widgetStreak.has-unclaimed .widget-streak-num {
+  color: #fbbf24;
+}
+
+/* ==========================================================================
+   ACHIEVEMENTS MODAL (2-COLUMN GRID & REWARDS)
+   ========================================================================== */
+.achievements-sheet {
+  max-width: 500px;
+}
+
+.achievements-header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.achievements-count-badge {
+  font-size: 11.5px;
+  font-weight: 800;
+  font-family: var(--font-ui);
+  padding: 3px 9px;
+  border-radius: 8px;
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.achievements-modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 2px 0 6px 0;
+  max-height: 68vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.achievements-progress-overview {
+  background: #fdfbf7;
+  border: 1.5px solid #ece4d8;
+  border-radius: 14px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.achievements-progress-bar-bg {
+  width: 100%;
+  height: 8px;
+  background: #e7e0d5;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.achievements-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b 0%, var(--primary-magenta) 100%);
+  border-radius: 6px;
+  transition: width 0.4s ease;
+}
+
+.achievements-progress-percent {
+  font-size: 12px;
+  font-weight: 700;
+  color: #78716c;
+  align-self: flex-end;
+}
+
+/* Search Bar */
+.achievements-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1.5px solid #ece4d8;
+  border-radius: 12px;
+  padding: 8px 12px;
+  box-shadow: 0 1.5px 4px rgba(0, 0, 0, 0.03);
+}
+
+.achievements-search-icon {
+  font-size: 15px;
+  line-height: 1;
+  color: #a8a29e;
+}
+
+.achievements-search-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  width: 100%;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: #1e2229;
+}
+
+.achievements-search-input::placeholder {
+  color: #a8a29e;
+}
+
+.achievements-filter-tabs {
+  display: flex;
+  background: #f5f5f4;
+  border: 1.5px solid #e7e5e4;
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.achievements-filter-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.achievement-tab-btn {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 9px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 700;
+  color: #78716c;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.achievement-tab-btn.active {
+  background: #ffffff;
+  color: #1c1917;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.achievement-card {
+  background: #ffffff;
+  border: 1.5px solid #ece5dc;
+  border-radius: 14px;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 130px;
+  position: relative;
+  content-visibility: auto;
+  contain-intrinsic-size: 0 130px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.achievement-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+}
+
+.achievement-card.unlocked {
+  border-color: #f59e0b;
+  background: linear-gradient(145deg, #ffffff 0%, #fffbf0 100%);
+  box-shadow: 0 3px 10px rgba(245, 158, 11, 0.14);
+  cursor: pointer;
+}
+
+.achievement-card.unlocked.aura-glow {
+  border-color: #f59e0b !important;
+  animation: achievementAuraBreath 2s ease-in-out infinite;
+  z-index: 2;
+  position: relative;
+}
+
+@keyframes achievementAuraBreath {
+  0% {
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.4), 0 0 12px rgba(245, 158, 11, 0.3), 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: rgba(245, 158, 11, 0.75);
+    transform: translateY(0);
+  }
+
+  50% {
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.8), 0 0 28px 8px rgba(245, 158, 11, 0.65), 0 8px 25px rgba(245, 158, 11, 0.4);
+    border-color: #f59e0b;
+    transform: translateY(-2.5px);
+  }
+
+  100% {
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.4), 0 0 12px rgba(245, 158, 11, 0.3), 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: rgba(245, 158, 11, 0.75);
+    transform: translateY(0);
+  }
+}
+
+.app-frame.theme-dark .achievement-card.unlocked.aura-glow {
+  animation: achievementAuraBreathDark 2s ease-in-out infinite;
+  border-color: #fbbf24 !important;
+}
+
+@keyframes achievementAuraBreathDark {
+  0% {
+    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.5), 0 0 14px rgba(251, 191, 36, 0.35), 0 4px 14px rgba(0, 0, 0, 0.3);
+    border-color: rgba(251, 191, 36, 0.8);
+    transform: translateY(0);
+  }
+
+  50% {
+    box-shadow: 0 0 0 5px rgba(251, 191, 36, 0.9), 0 0 32px 10px rgba(251, 191, 36, 0.75), 0 8px 30px rgba(251, 191, 36, 0.45);
+    border-color: #fbbf24;
+    transform: translateY(-2.5px);
+  }
+
+  100% {
+    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.5), 0 0 14px rgba(251, 191, 36, 0.35), 0 4px 14px rgba(0, 0, 0, 0.3);
+    border-color: rgba(251, 191, 36, 0.8);
+    transform: translateY(0);
+  }
+}
+
+.achievement-card.locked {
+  background: #fdfdfc;
+  opacity: 0.85;
+}
+
+.achievement-icon-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.achievement-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.achievement-status-badge {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.achievement-card.unlocked .achievement-status-badge {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.achievement-card.locked .achievement-status-badge {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.achievement-title {
+  font-family: var(--font-note);
+  font-size: 13px;
+  font-weight: 700;
+  color: #1c1917;
+  line-height: 1.25;
+  margin-bottom: 4px;
+}
+
+.achievement-desc {
+  font-size: 11px;
+  color: #78716c;
+  line-height: 1.35;
+  margin-bottom: 8px;
+  flex: 1;
+}
+
+.achievement-progress-box {
+  margin-top: auto;
+}
+
+.achievement-progress-bar-bg {
+  width: 100%;
+  height: 5px;
+  background: #e7e5e4;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.achievement-progress-bar-fill {
+  height: 100%;
+  background: var(--primary-magenta);
+  border-radius: 6px;
+  transition: width 0.3s ease;
+}
+
+.achievement-card.unlocked .achievement-progress-bar-fill {
+  background: #f59e0b;
+}
+
+.achievement-progress-text {
+  font-size: 10px;
+  font-weight: 700;
+  color: #a8a29e;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Dark Theme Overrides for Achievements */
+.app-frame.theme-dark .achievements-progress-overview {
+  background: #171b26;
+  border-color: #2d3546;
+}
+
+.app-frame.theme-dark .achievements-progress-bar-bg {
+  background: #283042;
+}
+
+.app-frame.theme-dark .achievements-progress-percent {
+  color: #94a3b8;
+}
+
+.app-frame.theme-dark .achievements-filter-tabs {
+  background: #12151f;
+  border-color: #2b3345;
+}
+
+.app-frame.theme-dark .achievement-tab-btn {
+  color: #94a3b8;
+}
+
+.app-frame.theme-dark .achievement-tab-btn.active {
+  background: #1e2433;
+  color: #ffffff;
+}
+
+.app-frame.theme-dark .achievement-card {
+  background: #1a1f2c;
+  border-color: #2b3345;
+}
+
+.app-frame.theme-dark .achievement-card.unlocked {
+  background: linear-gradient(145deg, #1e2433 0%, #26201b 100%);
+  border-color: #f59e0b;
+  box-shadow: 0 3px 12px rgba(245, 158, 11, 0.2);
+}
+
+.app-frame.theme-dark .achievement-card.locked {
+  background: #141824;
+  border-color: #242c3d;
+}
+
+.app-frame.theme-dark .achievement-title {
+  color: #f1f5f9;
+}
+
+.app-frame.theme-dark .achievement-desc {
+  color: #94a3b8;
+}
+
+.app-frame.theme-dark .achievement-progress-bar-bg {
+  background: #283042;
+}
+
+.app-frame.theme-dark .achievement-card.locked .achievement-status-badge {
+  background: #1e2433;
+  color: #94a3b8;
+  border-color: #333d4e;
+}
+
+/* ==========================================================================
+   LANGUAGE PICKER & DROPDOWN SUBMENU
+   ========================================================================== */
+.settings-section-lang {
+  position: relative;
+  z-index: 30;
+}
+
+.settings-section-lang.dropdown-open,
+.settings-section-lang:focus-within {
+  z-index: 100;
+}
+
+.lang-picker-wrapper {
+  position: relative;
+  display: inline-block;
+  z-index: 40;
+}
+
+.lang-picker-wrapper.open {
+  z-index: 110;
+}
+
+.setting-row-flex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.lang-circle-badge-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 10px 4px 6px;
+  background: #ffffff;
+  border: 1.5px solid #e7e0d5;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1.5px 5px rgba(0, 0, 0, 0.05);
+  user-select: none;
+}
+
+.lang-circle-badge-btn:hover,
+.lang-circle-badge-btn.open {
+  border-color: var(--primary-magenta);
+  background: #fff5fa;
+  box-shadow: 0 3px 10px rgba(216, 58, 136, 0.15);
+  transform: translateY(-1px);
+}
+
+.lang-circle-text {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--primary-magenta);
+  color: #ffffff;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 5px rgba(216, 58, 136, 0.3);
+}
+
+.lang-circle-chevron {
+  font-size: 9px;
+  color: #78716c;
+  transition: transform 0.2s ease;
+}
+
+.lang-circle-badge-btn.open .lang-circle-chevron {
+  transform: rotate(180deg);
+}
+
+/* Dropdown sub-menu */
+.lang-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 175px;
+  background: #ffffff;
+  border: 1.5px solid #ece4d8;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  padding: 5px;
+  display: none;
+  flex-direction: column;
+  gap: 3px;
+  z-index: 1050;
+  animation: langDropdownFade 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lang-dropdown-menu.show {
+  display: flex;
+}
+
+@keyframes langDropdownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.lang-dropdown-opt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  color: #292524;
+  transition: all 0.15s ease;
+  width: 100%;
+}
+
+.lang-dropdown-opt:hover {
+  background: #fff0f7;
+  color: var(--primary-magenta);
+}
+
+.lang-dropdown-opt.active {
+  background: #fdf2f8;
+  color: var(--primary-magenta);
+  font-weight: 700;
+}
+
+.lang-flag {
+  font-size: 16px;
+  margin-right: 6px;
+  line-height: 1;
+}
+
+.lang-name {
+  flex: 1;
+  text-align: left;
+}
+
+.lang-code-tag {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #f5f5f4;
+  color: #78716c;
+  margin-right: 6px;
+}
+
+.lang-dropdown-opt.active .lang-code-tag {
+  background: var(--primary-magenta);
+  color: #ffffff;
+}
+
+.lang-check-icon {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--primary-magenta);
+  opacity: 0;
+  transform: scale(0.5);
+  transition: all 0.15s ease;
+}
+
+.lang-dropdown-opt.active .lang-check-icon {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Dark theme overrides for language picker */
+.app-frame.theme-dark .lang-circle-badge-btn {
+  background: #1e2433;
+  border-color: #333d4e;
+}
+
+.app-frame.theme-dark .lang-circle-badge-btn:hover,
+.app-frame.theme-dark .lang-circle-badge-btn.open {
+  background: #2a1e30;
+  border-color: var(--primary-magenta);
+}
+
+.app-frame.theme-dark .lang-dropdown-menu {
+  background: #171c26;
+  border-color: #2e3748;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+.app-frame.theme-dark .lang-dropdown-opt {
+  color: #f1f5f9;
+}
+
+.app-frame.theme-dark .lang-dropdown-opt:hover {
+  background: #2b1d38;
+  color: #f472b6;
+}
+
+.app-frame.theme-dark .lang-dropdown-opt.active {
+  background: #36172e;
+  color: #f472b6;
+}
+
+.app-frame.theme-dark .lang-code-tag {
+  background: #242c3d;
+  color: #94a3b8;
+}
+
+/* ==========================================================================
+   IN-APP CONFIRMATION MODAL
+   ========================================================================== */
+.modal-backdrop.confirmation-backdrop {
+  z-index: 10000 !important;
+  background: rgba(15, 18, 26, 0.65) !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.modal-backdrop.confirmation-backdrop .modal-sheet.confirmation-sheet {
+  max-width: 350px;
+  width: calc(100% - 36px);
+  text-align: center;
+  padding: 24px 20px 20px 20px;
+  border-radius: 20px !important;
+  background: #ffffff;
+  border: 1.5px solid #ece4d8;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+  transform: scale(0.7) translateY(24px) !important;
+  margin: auto;
+  transform-origin: center center;
+  transition: transform 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+
+.modal-backdrop.confirmation-backdrop .modal-sheet.confirmation-sheet::after {
+  display: none !important;
+}
+
+.modal-backdrop.confirmation-backdrop.open .modal-sheet.confirmation-sheet {
+  animation: modalCenterSpringIn 0.48s cubic-bezier(0.2, 0.8, 0.25, 1) forwards !important;
+  transform: scale(1) !important;
+}
+
+.confirm-icon-box {
+  width: 52px;
+  height: 52px;
+  background: #fef2f2;
+  border: 2px solid #fecaca;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px auto;
+}
+
+.confirm-icon {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.confirm-title {
+  font-family: var(--font-note);
+  font-size: 19px;
+  font-weight: 700;
+  color: #1e2229;
+  margin-bottom: 8px;
+}
+
+.confirm-message {
+  font-size: 13.5px;
+  color: #64748b;
+  line-height: 1.45;
+  margin-bottom: 20px;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.confirm-cancel-btn {
+  flex: 1;
+  padding: 11px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.btn-danger-confirm {
+  flex: 1.2;
+  padding: 11px;
+  border-radius: 12px;
+  border: none;
+  background: #dc2626;
+  color: #ffffff;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+  transition: all 0.15s ease;
+}
+
+.btn-danger-confirm:hover {
+  background: #b91c1c;
+  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-danger-confirm:active {
+  transform: scale(0.97);
+}
+
+/* Dark Theme Overrides for Confirmation Modal */
+.app-frame.theme-dark .confirmation-sheet {
+  background: #1a1f2c;
+  border: 1.5px solid #2d3546;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+
+.app-frame.theme-dark .confirm-icon-box {
+  background: #2a1b1b;
+  border-color: #5c2424;
+}
+
+.app-frame.theme-dark .confirm-title {
+  color: #f1f5f9;
+}
+
+.app-frame.theme-dark .confirm-message {
+  color: #94a3b8;
+}
+
+/* ==========================================================================
+   FULLSCREEN & MOBILE RESPONSIVENESS
+   ========================================================================== */
+@media (max-width: 520px),
+all and (display-mode: standalone),
+all and (display-mode: fullscreen) {
+
+  html,
+  body {
+    width: 100%;
+    height: 100%;
+    min-height: 100dvh;
+    padding: 0;
+    margin: 0;
+    background: #ffffff;
+    overflow-x: hidden;
+  }
+
+  body.theme-dark {
+    background: #14171f;
+  }
+
+  .app-viewport {
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .app-frame {
+    width: 100%;
+    max-width: 100%;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    min-height: 100dvh;
+    height: 100%;
+    flex: 1;
+  }
+
+  .top-widgets-bar {
+    flex-shrink: 0;
+    padding-top: max(14px, env(safe-area-inset-top, 0px));
+    padding-left: max(14px, env(safe-area-inset-left, 0px));
+    padding-right: max(14px, env(safe-area-inset-right, 0px));
+  }
+
+  .tabs-substrate-container {
+    flex-shrink: 0 !important;
+  }
+
+  .week-days-bar,
+  .habit-row {
+    flex-shrink: 0;
+    padding-left: max(14px, env(safe-area-inset-left, 0px));
+    padding-right: max(14px, env(safe-area-inset-right, 0px));
+  }
+
+  .tabs-scroll-container {
+    flex-shrink: 0 !important;
+    min-height: 58px !important;
+    height: auto !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 10 !important;
+    overflow: hidden !important;
+  }
+
+  .folder-tabs-bar {
+    display: flex !important;
+    height: 52px !important;
+    align-items: flex-end !important;
+    visibility: visible !important;
+  }
+
+  .folder-tab {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  .notebook-sheet {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .bottom-add-btn-bar {
+    padding-bottom: max(16px, calc(10px + env(safe-area-inset-bottom, 16px)));
+  }
+
+  .notebook-content {
+    padding-bottom: max(96px, calc(80px + env(safe-area-inset-bottom, 16px)));
+  }
+
+  .fab-wrapper {
+    position: fixed !important;
+    bottom: max(24px, calc(16px + env(safe-area-inset-bottom, 0px))) !important;
+    left: max(20px, calc(16px + env(safe-area-inset-left, 0px))) !important;
+    right: auto !important;
+    width: 56px !important;
+    height: 56px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    z-index: 95 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    contain: layout;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+
+  .fab-stickers-wrapper {
+    position: fixed !important;
+    bottom: max(24px, calc(16px + env(safe-area-inset-bottom, 0px))) !important;
+    left: 50% !important;
+    transform: translateX(-50%) translateZ(0) !important;
+    -webkit-transform: translateX(-50%) translateZ(0) !important;
+    right: auto !important;
+    width: 56px !important;
+    height: 56px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    z-index: 95 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    contain: layout;
+  }
+
+  .notebook-pet-anchor {
+    position: fixed !important;
+    bottom: max(24px, calc(16px + env(safe-area-inset-bottom, 0px))) !important;
+    right: max(20px, calc(16px + env(safe-area-inset-right, 0px))) !important;
+    left: auto !important;
+    width: 56px !important;
+    height: 56px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    z-index: 95 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    contain: layout;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+
+  .fab-joy-wrapper {
+    position: fixed !important;
+    bottom: max(24px, calc(16px + env(safe-area-inset-bottom, 0px))) !important;
+    left: calc(66.667% - 15px) !important;
+    transform: translateX(-50%) translateZ(0) !important;
+    -webkit-transform: translateX(-50%) translateZ(0) !important;
+    right: auto !important;
+    width: 56px !important;
+    height: 56px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    z-index: 95 !important;
+    display: none !important;
+    align-items: center !important;
+    justify-content: center !important;
+    contain: layout;
+  }
+
+  .has-joy-fab .fab-wrapper {
+    left: max(16px, calc(10px + env(safe-area-inset-left, 0px))) !important;
+  }
+
+  .has-joy-fab .fab-stickers-wrapper {
+    left: calc(33.333% + 15px) !important;
+    transform: translateX(-50%) translateZ(0) !important;
+    -webkit-transform: translateX(-50%) translateZ(0) !important;
+  }
+
+  .has-joy-fab .fab-joy-wrapper {
+    display: flex !important;
+    left: calc(66.667% - 15px) !important;
+    transform: translateX(-50%) translateZ(0) !important;
+    -webkit-transform: translateX(-50%) translateZ(0) !important;
+  }
+
+  .has-joy-fab .notebook-pet-anchor {
+    right: max(16px, calc(10px + env(safe-area-inset-right, 0px))) !important;
+  }
+
+  .modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
+
+  .modal-sheet:not(.confirmation-sheet):not(.finance-sheet):not(.finance-cat-edit-sheet):not(.finance-entry-sheet):not(.nutrition-sheet):not(.nutrition-add-food-sheet):not(.nutrition-settings-sheet) {
+    max-height: calc(100dvh - 36px - env(safe-area-inset-top, 0px) + 50px);
+    margin-bottom: -100px !important;
+    padding-bottom: calc(max(28px, calc(16px + env(safe-area-inset-bottom, 16px))) + 100px) !important;
+    border-radius: 22px 22px 0 0;
+  }
+
+  .modal-actions {
+    padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .btn-cancel,
+  .btn-submit {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .settings-content,
+  .achievements-modal-content,
+  .joy-modal-content,
+  .joy-jar-content,
+  .joy-sticker-picker-content {
+    padding-bottom: max(20px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .calendar-modal-content {
+    padding-bottom: max(60px, calc(36px + env(safe-area-inset-bottom, 28px))) !important;
+  }
+
+  .calendar-day-cell {
+    height: 38px;
+    font-size: 13px;
+  }
+
+  .calendar-days-grid {
+    gap: 4px;
+  }
+
+  .calendar-date-info {
+    padding: 10px 12px;
+  }
+}
+
+/* ==========================================================================
+   IMAGE LIGHTBOX MODAL
+   ========================================================================== */
+#imageLightboxBackdrop {
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 12, 18, 0.92);
+  z-index: 300;
+  padding: 16px;
+}
+
+.lightbox-content {
+  position: relative;
+  max-width: 92vw;
+  max-height: 85vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: zoomInLightbox 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes zoomInLightbox {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+#lightboxImg {
+  max-width: 90vw;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.65);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  display: block;
+}
+
+.lightbox-close-btn {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: #ffffff;
+  color: #1e293b;
+  font-size: 22px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, background 0.2s ease;
+  z-index: 10;
+}
+
+.lightbox-close-btn:hover {
+  transform: scale(1.1);
+  background: #f1f5f9;
+}

@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bad+Script&family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700;800;900&family=Marck+Script&family=Neucha&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&family=Roboto+Slab:wght@400;600;700;900&display=auto" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=0.7.39">
+  <link rel="stylesheet" href="style.css?v=0.7.47">
   <script>
     (function() {
       try {
@@ -97,6 +97,12 @@
             <button class="widget-circle widget-finance" id="widgetFinance" title="Финансы" aria-label="Финансы">
               <div class="widget-finance-ring-container" id="widgetFinanceRing"></div>
               <span class="widget-finance-symbol" id="widgetFinanceSymbol">₴</span>
+            </button>
+
+            <!-- Nutrition & Macro Tracker Circle -->
+            <button class="widget-circle widget-nutrition" id="widgetNutrition" title="Питание" aria-label="Питание" data-i18n-title="nutrition_title">
+              <div class="widget-nutrition-ring-container" id="widgetNutritionRing"></div>
+              <span class="widget-nutrition-icon">🥑</span>
             </button>
 
             <!-- Cycle Tracker Circle -->
@@ -227,6 +233,11 @@
 
         <!-- Archive Day Finance Stamp (Bottom-right of paper sheet) -->
         <div class="notebook-finance-stamp" id="notebookFinanceStamp" role="button" tabindex="0" title="Финансовые растраты дня" aria-label="Финансы за день" style="display: none;">
+          <!-- Rendered dynamically by JS -->
+        </div>
+
+        <!-- Archive Day Nutrition Stamp (Bottom-center-left of paper sheet) -->
+        <div class="notebook-nutrition-stamp" id="notebookNutritionStamp" role="button" tabindex="0" title="Питание за день" aria-label="Питание за день" style="display: none;">
           <!-- Rendered dynamically by JS -->
         </div>
 
@@ -1120,7 +1131,7 @@
                       <input type="range" id="cycleDefaultLengthRange" min="20" max="45" step="1" value="28" class="range-slider">
                     </div>
 
-                    <button type="button" class="btn-primary-block" id="btnOpenCycleFromSettings" style="margin-top: 6px; background: linear-gradient(135deg, #ec4899, #db2777); color: #fff; font-weight: 700; border: none; border-radius: 10px; padding: 10px 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; box-shadow: 0 3px 10px rgba(219, 39, 119, 0.25);">
+                    <button type="button" class="btn-primary-block settings-module-action-btn" id="btnOpenCycleFromSettings">
                       <span data-i18n="cycle_open_btn">🍒 Открыть календарь цикла</span>
                     </button>
                   </div>
@@ -1175,9 +1186,107 @@
                       <input type="number" id="financeInitialBalanceInput" step="any" placeholder="0" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border-color, #e2e8f0); background: var(--card-bg, #fff); color: var(--text-color, #1e293b); font-weight: 600;">
                     </div>
 
-                    <button type="button" class="btn-primary-block" id="btnOpenFinanceFromSettings" style="margin-top: 8px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-weight: 700; border: none; border-radius: 10px; padding: 10px 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; box-shadow: 0 3px 10px rgba(16, 185, 129, 0.25);">
+                    <button type="button" class="btn-primary-block settings-module-action-btn" id="btnOpenFinanceFromSettings">
                       <span data-i18n="finance_open_btn">💰 Открыть окно финансов</span>
                     </button>
+                  </div>
+                </div>
+
+                <!-- Модуль: Питание и КБЖУ -->
+                <div class="settings-module-card" id="moduleCardNutrition">
+                  <div class="settings-module-header" id="moduleHeaderNutrition">
+                    <div class="settings-module-info">
+                      <div class="settings-module-name">🥑 <span data-i18n="nutrition_settings_title">Дневник питания (калории и БЖУ)</span></div>
+                      <div class="settings-module-desc" data-i18n="nutrition_toggle_enable_desc">Кольцо приёмов пищи, 3 шкалы БЖУ с переполнением, калькулятор блюд и сканер штрихкодов</div>
+                    </div>
+                    <div class="settings-module-controls">
+                      <label class="toggle-switch" title="Включить / выключить модуль">
+                        <input type="checkbox" id="toggleNutritionTracker">
+                        <span class="toggle-slider"></span>
+                      </label>
+                      <button type="button" class="btn-module-expand" id="btnExpandNutritionModule" title="Развернуть" aria-label="Развернуть" aria-expanded="false">
+                        <svg class="module-expand-chevron" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Разворачивающийся блок поднастроек -->
+                  <div class="settings-module-body" id="nutritionSubSettings" style="display: none;">
+                    <div class="setting-toggle-row">
+                      <div class="setting-toggle-info">
+                        <div class="setting-toggle-label" data-i18n="nutrition_toggle_stamp">Печать питания в архивных днях</div>
+                        <div class="setting-toggle-desc" data-i18n="nutrition_toggle_stamp_desc">Крафтовый штамп калорий внизу листа бумаги</div>
+                      </div>
+                      <label class="toggle-switch">
+                        <input type="checkbox" id="toggleNutritionStamp" checked>
+                        <span class="toggle-slider"></span>
+                      </label>
+                    </div>
+
+                    <!-- Суточные нормы -->
+                    <div class="nutrition-targets-block">
+                      <div class="settings-group-title" data-i18n="nutrition_daily_targets_title">Суточные нормы</div>
+                      <div class="nutrition-targets-cards-grid">
+                        <!-- Калории -->
+                        <div class="nutrition-target-card target-card-kcal">
+                          <div class="target-card-header">
+                            <span class="target-card-label">🔥 <span data-i18n="nutrition_calories_short">Калории</span></span>
+                            <span class="target-card-badge" data-i18n="nutrition_kcal_short">ккал</span>
+                          </div>
+                          <div class="target-stepper-row">
+                            <button type="button" class="btn-target-step btn-step-minus" data-target="nutritionSettingCalories" data-step="-50" data-min="500" data-max="10000" aria-label="Уменьшить калории">−</button>
+                            <input type="number" id="nutritionSettingCalories" class="target-num-input" value="2000" min="500" max="10000" step="50" inputmode="numeric">
+                            <button type="button" class="btn-target-step btn-step-plus" data-target="nutritionSettingCalories" data-step="50" data-min="500" data-max="10000" aria-label="Увеличить калории">+</button>
+                          </div>
+                        </div>
+
+                        <!-- Белки -->
+                        <div class="nutrition-target-card target-card-prot">
+                          <div class="target-card-header">
+                            <span class="target-card-label">🥩 <span data-i18n="nutrition_macro_protein">Белки</span></span>
+                            <span class="target-card-badge" data-i18n="nutrition_gram_short">г</span>
+                          </div>
+                          <div class="target-stepper-row">
+                            <button type="button" class="btn-target-step btn-step-minus" data-target="nutritionSettingProtein" data-step="-5" data-min="10" data-max="500" aria-label="Уменьшить белки">−</button>
+                            <input type="number" id="nutritionSettingProtein" class="target-num-input" value="80" min="10" max="500" step="5" inputmode="numeric">
+                            <button type="button" class="btn-target-step btn-step-plus" data-target="nutritionSettingProtein" data-step="5" data-min="10" data-max="500" aria-label="Увеличить белки">+</button>
+                          </div>
+                        </div>
+
+                        <!-- Жиры -->
+                        <div class="nutrition-target-card target-card-fat">
+                          <div class="target-card-header">
+                            <span class="target-card-label">🥑 <span data-i18n="nutrition_macro_fat">Жиры</span></span>
+                            <span class="target-card-badge" data-i18n="nutrition_gram_short">г</span>
+                          </div>
+                          <div class="target-stepper-row">
+                            <button type="button" class="btn-target-step btn-step-minus" data-target="nutritionSettingFat" data-step="-5" data-min="10" data-max="500" aria-label="Уменьшить жиры">−</button>
+                            <input type="number" id="nutritionSettingFat" class="target-num-input" value="70" min="10" max="500" step="5" inputmode="numeric">
+                            <button type="button" class="btn-target-step btn-step-plus" data-target="nutritionSettingFat" data-step="5" data-min="10" data-max="500" aria-label="Увеличить жиры">+</button>
+                          </div>
+                        </div>
+
+                        <!-- Углеводы -->
+                        <div class="nutrition-target-card target-card-carb">
+                          <div class="target-card-header">
+                            <span class="target-card-label">🍞 <span data-i18n="nutrition_macro_carbs">Углеводы</span></span>
+                            <span class="target-card-badge" data-i18n="nutrition_gram_short">г</span>
+                          </div>
+                          <div class="target-stepper-row">
+                            <button type="button" class="btn-target-step btn-step-minus" data-target="nutritionSettingCarbs" data-step="-5" data-min="20" data-max="1000" aria-label="Уменьшить углеводы">−</button>
+                            <input type="number" id="nutritionSettingCarbs" class="target-num-input" value="250" min="20" max="1000" step="5" inputmode="numeric">
+                            <button type="button" class="btn-target-step btn-step-plus" data-target="nutritionSettingCarbs" data-step="5" data-min="20" data-max="1000" aria-label="Увеличить углеводы">+</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button type="button" class="btn-primary-block settings-module-action-btn" id="btnOpenNutritionFromSettings">
+                      <span data-i18n="nutrition_open_btn">🥑 Открыть дневник питания</span>
+                    </button>
+
                   </div>
                 </div>
 
@@ -1221,7 +1330,7 @@
                       </label>
                     </div>
 
-                    <button type="button" class="btn-primary-block" id="btnOpenJoyJarFromSettings" style="margin-top: 6px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; font-weight: 700; border: none; border-radius: 10px; padding: 10px 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; box-shadow: 0 3px 10px rgba(245, 158, 11, 0.25);">
+                    <button type="button" class="btn-primary-block settings-module-action-btn" id="btnOpenJoyJarFromSettings">
                       <span data-i18n="joy_open_jar_btn">🫙 Открыть банку радости</span>
                     </button>
                   </div>
@@ -1255,7 +1364,7 @@
                       Сохранение базы дел в файл <b>Plan4U_Database.json</b> прямо на вашем Google Диске:
                     </div>
 
-                    <button type="button" class="btn-primary-block" id="btnSaveToGoogleDrive" style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: #ffffff; font-weight: 700; border: none; border-radius: 10px; padding: 11px 12px; cursor: pointer; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.25); display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px;">
+                    <button type="button" class="btn-primary-block" id="btnSaveToGoogleDrive" style="background: #2563eb; color: #ffffff; font-weight: 700; border: none; border-radius: 8px; padding: 11px 12px; cursor: pointer; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.25); display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px;">
                       <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#ffffff" d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
                       <span>📁 Сохранить на Google Диск</span>
                     </button>
@@ -1278,9 +1387,7 @@
           <div style="text-align: center; font-size: 11px; color: #94a3b8; margin-top: 12px; font-weight: 600; letter-spacing: 0.3px;" data-i18n="app_version_footer">
             Plan4U • Версия 0.3.13
           </div>
-          <div style="margin-top: 8px; text-align: center;">
-            <button type="button" id="btnForceCacheReset" style="background: none; border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 8px; font-size: 11px; color: #64748b; padding: 5px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">🔄 Сбросить кэш и обновить</button>
-          </div>
+
 
           <div class="modal-actions" style="margin-top: 10px;">
             <button type="button" class="btn-submit" id="settingsDoneBtn" style="width: 100%;" data-i18n="btn_done">Готово</button>
@@ -1994,6 +2101,639 @@
         </div>
       </div>
 
+      <!-- Nutrition & Macro Tracker Main Modal -->
+      <div class="modal-backdrop" id="nutritionModalBackdrop" aria-hidden="true">
+        <div class="modal-sheet modal-sheet-scrollable nutrition-sheet" role="dialog" aria-modal="true" aria-labelledby="nutritionModalTitle">
+          <div class="modal-header">
+            <div class="nutrition-header-title-box">
+              <h2 id="nutritionModalTitle">🥑 <span data-i18n="nutrition_title">Питание</span></h2>
+            </div>
+            <div class="nutrition-header-right">
+              <button type="button" class="btn-nutrition-circle-action btn-nutrition-stats-btn" id="btnNutritionStats" title="Статистика питания" data-i18n-title="nutrition_stats_btn" aria-label="Статистика питания" data-i18n-aria="nutrition_stats_btn">
+                <svg class="stats-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--primary-magenta, #d83a88)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="20" x2="18" y2="9"></line>
+                  <line x1="12" y1="20" x2="12" y2="4"></line>
+                  <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+              </button>
+              <button type="button" class="btn-nutrition-add-cat" id="btnNutritionAddCategory" title="Добавить трапезу" data-i18n-title="nutrition_add_category_btn" aria-label="Добавить трапезу" data-i18n-aria="nutrition_add_category_btn">
+                <svg class="plus-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--primary-magenta, #d83a88)" stroke-width="3.8" stroke-linecap="round">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+              </button>
+              <button type="button" class="modal-close-btn" id="nutritionCloseBtn" aria-label="Закрыть">&times;</button>
+            </div>
+          </div>
+
+
+          <!-- Hero Section: Left Donut Ring + Right 3 Vertical Macro Bars -->
+          <div class="nutrition-hero-section">
+            <!-- Left Column: Donut Ring (Offset to Left) -->
+            <div class="nutrition-ring-column">
+              <div class="nutrition-donut-wrapper" id="nutritionDonutWrapper">
+                <div id="nutritionDonutContainer">
+                  <!-- SVG Ring injected by JS -->
+                </div>
+                <!-- Interactive Center -->
+                <div class="nutrition-donut-center" id="nutritionDonutCenter" role="button" tabindex="0" title="Нажмите для сброса фильтра">
+                  <div class="nutrition-donut-val" id="nutritionDonutCenterVal">0</div>
+                  <div class="nutrition-donut-target" id="nutritionDonutCenterTarget">/ 2000 ккал</div>
+                  <div class="nutrition-donut-sub" id="nutritionDonutCenterSub">за день</div>
+                </div>
+              </div>
+              
+              <!-- Filter Badge (shown when a specific meal is clicked) -->
+              <div class="nutrition-selected-meal-badge" id="nutritionSelectedMealBadge" style="display: none;">
+                <span class="nutrition-filter-icon" id="nutritionFilterIcon">🍳</span>
+                <span class="nutrition-filter-name" id="nutritionFilterName">Обед</span>
+                <button type="button" class="btn-clear-meal-filter" id="btnClearMealFilter" title="Показать всё за день">&times;</button>
+              </div>
+            </div>
+
+            <!-- Right Column: 3 Vertical Bars (Ж, Б, У) with Overflow Line & Hunger Scale -->
+            <div class="nutrition-macros-column">
+              <!-- Horizontal Hunger & Norm Scale with 10-Step Cat Evolution -->
+              <div class="nutrition-hunger-scale-box" id="nutritionHungerScaleBox" role="region" aria-label="Шкала сытости и режима питания">
+                <div class="hunger-scale-track" id="hungerScaleTrack" title="Шкала сытости (удерживайте кота для выбора цвета)">
+                  <!-- 10 Steps Ticks (step = 10%) -->
+                  <div class="hunger-scale-ticks" id="hungerScaleTicks" aria-hidden="true">
+                    <span class="hunger-tick" style="left: 0%;"></span>
+                    <span class="hunger-tick" style="left: 10%;"></span>
+                    <span class="hunger-tick" style="left: 20%;"></span>
+                    <span class="hunger-tick" style="left: 30%;"></span>
+                    <span class="hunger-tick" style="left: 40%;"></span>
+                    <span class="hunger-tick hunger-tick-center" style="left: 50%;"></span>
+                    <span class="hunger-tick" style="left: 60%;"></span>
+                    <span class="hunger-tick" style="left: 70%;"></span>
+                    <span class="hunger-tick" style="left: 80%;"></span>
+                    <span class="hunger-tick" style="left: 90%;"></span>
+                    <span class="hunger-tick" style="left: 100%;"></span>
+                  </div>
+                  <div class="hunger-scale-zone hunger-zone-left" title="Голод / дефицит нормы"></div>
+                  <div class="hunger-scale-center-notch" title="Норма сытости (5-6 стикер)"></div>
+                  <div class="hunger-scale-zone hunger-zone-right" title="Сытость / перебор нормы"></div>
+                  <div class="hunger-scale-fill" id="hungerScaleFill" style="width: 50%;"></div>
+                  <div class="hunger-scale-slider" id="hungerScaleSlider" style="left: 50%;">
+                    <div class="hunger-scale-cat-box anim-happy-bounce" id="hungerScaleCatBox" role="button" tabindex="0" title="Удерживайте для выбора цвета кота">
+                      <img class="hunger-scale-cat-layer hunger-cat-layer-a" id="hungerScaleCatA" alt="Cat A" draggable="false" />
+                      <img class="hunger-scale-cat-layer hunger-cat-layer-b" id="hungerScaleCatB" alt="Cat B" draggable="false" />
+                    </div>
+                  </div>
+                </div>
+                <!-- Cat Color Submenu (Long-press on cat) -->
+                <div class="hunger-cat-color-popup" id="hungerCatColorPopup" style="display: none;">
+                  <div class="hunger-cat-color-header">
+                    <div class="hunger-cat-color-title">
+                      <span>🐱 Выбор цвета кота</span>
+                    </div>
+                    <button type="button" class="hunger-cat-color-close" id="btnHungerCatColorClose" aria-label="Закрыть">&times;</button>
+                  </div>
+                  <div class="hunger-cat-color-grid" id="hungerCatColorList">
+                    <!-- Dynamic 6 color cards with 5th sticker -->
+                  </div>
+                </div>
+                <!-- Interactive Cartoon Speech Bubble on Click/Hover -->
+                <div class="hunger-scale-bubble" id="hungerScaleBubble" style="display: none;">
+                  <div class="hunger-bubble-icon" id="hungerBubbleIcon"></div>
+                  <div class="hunger-bubble-body">
+                    <div class="hunger-bubble-title" id="hungerBubbleTitle"></div>
+                    <div class="hunger-bubble-desc" id="hungerBubbleDesc"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="nutrition-macro-bars-container" id="nutritionMacroBarsContainer">
+                <!-- 3 Vertical Bars injected by JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Meals Breakdown List -->
+          <div class="nutrition-meals-section">
+            <!-- Horizontal Scroll Meal Filter Bar (Icons only) -->
+            <div class="nutrition-meals-filter-bar" id="nutritionMealsFilterBar" role="tablist" aria-label="Фильтр приёмов пищи"></div>
+            <div class="nutrition-meals-list" id="nutritionMealsList">
+              <!-- Rendered dynamically by JS -->
+            </div>
+            <div class="nutrition-empty-hint" id="nutritionEmptyHint" style="display: none;">
+              <div class="nutrition-empty-text" data-i18n="nutrition_no_entries_today">Пока нет записей о еде за этот день</div>
+            </div>
+          </div>
+
+          <!-- Floating/Sticky Bottom Add Button -->
+          <div class="nutrition-bottom-bar" id="nutritionBottomBar" style="display: none;">
+            <button type="button" class="btn-nutrition-add-food" id="btnNutritionAddFood" aria-label="Добавить еду">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              <span data-i18n="nutrition_btn_add_food">Добавить еду</span>
+            </button>
+          </div>
+
+          <!-- Archive Actions (When viewing a past date) -->
+          <div class="nutrition-archive-actions" id="nutritionArchiveActions" style="display: none;">
+            <div class="nutrition-archive-banner">
+              <span>📜 Архивный просмотр</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Food Modal (Single Food & Composite Dish) -->
+      <div class="modal-backdrop" id="nutritionAddFoodModalBackdrop" aria-hidden="true">
+        <div class="modal-sheet modal-sheet-scrollable nutrition-add-food-sheet" role="dialog" aria-modal="true" aria-labelledby="nutritionAddFoodTitle">
+          <div class="modal-header">
+            <h2 id="nutritionAddFoodTitle" data-i18n="nutrition_btn_add_food">Добавить еду</h2>
+            <button type="button" class="modal-close-btn" id="nutritionAddFoodCloseBtn" aria-label="Закрыть">&times;</button>
+          </div>
+
+          <!-- Top Segmented Control (2 Tabs) -->
+          <div class="nutrition-food-tabs" role="tablist">
+            <button type="button" class="nutrition-food-tab-btn active" id="tabFoodSingle" data-tab="single">
+              🍏 <span data-i18n="nutrition_tab_single">Отдельное блюдо</span>
+            </button>
+            <button type="button" class="nutrition-food-tab-btn" id="tabFoodComposite" data-tab="composite">
+              🍲 <span data-i18n="nutrition_tab_composite">Составное блюдо</span>
+            </button>
+          </div>
+
+          <!-- Pane 1: Single Food -->
+          <div class="nutrition-food-pane active" id="paneFoodSingle">
+            <div class="form-group" style="position: relative;">
+              <label for="singleFoodName">Название продукта / блюда</label>
+              <div class="input-with-action">
+                <input type="text" id="singleFoodName" class="form-input" placeholder="Например: Яблоко, Гречка..." data-i18n-placeholder="nutrition_food_name_placeholder" autocomplete="off">
+                <button type="button" class="btn-scan-barcode" id="btnScanBarcodeSingle" title="Сканировать штрихкод">
+                  📷 <span data-i18n="nutrition_scan_barcode_btn">Штрихкод</span>
+                </button>
+              </div>
+              <div class="food-search-suggestions" id="singleFoodSuggestions" style="display: none;"></div>
+            </div>
+
+            <!-- Hidden meal select (prefilled by active group) -->
+            <div style="display: none;">
+              <span class="meal-select-icon-preview" id="singleMealPreviewIcon"></span>
+              <select id="singleFoodMealSelect" class="form-select"></select>
+            </div>
+
+            <div class="form-group">
+              <label for="singleFoodWeight" data-i18n="nutrition_weight_label">Вес порции (г)</label>
+              <input type="number" id="singleFoodWeight" class="form-input" value="100" min="0" step="1" inputmode="numeric" onfocus="this.select()">
+              
+              <!-- Quick increment chips (+1, +5, +10, +50, +100) -->
+              <div class="food-quick-chips" id="foodQuickChips">
+                <button type="button" class="food-chip-btn food-chip-btn-clear" data-action="clear" title="Сбросить (0 г)" data-i18n-title="nutrition_chip_clear_title">C</button>
+                <button type="button" class="food-chip-btn" data-add="1">+1</button>
+                <button type="button" class="food-chip-btn" data-add="5">+5</button>
+                <button type="button" class="food-chip-btn" data-add="10">+10</button>
+                <button type="button" class="food-chip-btn" data-add="50">+50</button>
+                <button type="button" class="food-chip-btn" data-add="100">+100</button>
+              </div>
+            </div>
+
+            <!-- Nutrients Per 100g (Editable) -->
+            <div class="nutrition-per100g-box">
+              <div class="nutrition-per100g-title" data-i18n="nutrition_per100g_title">Пищевая ценность на 100 г:</div>
+              <div class="nutrition-targets-cards-grid">
+                <!-- Калории -->
+                <div class="nutrition-target-card target-card-kcal">
+                  <div class="target-card-header">
+                    <span class="target-card-label">🔥 <span data-i18n="nutrition_calories_short">Калории</span></span>
+                    <span class="target-card-badge" data-i18n="nutrition_kcal_short">ккал</span>
+                  </div>
+                  <div class="target-stepper-row">
+                    <button type="button" class="btn-target-step btn-step-minus" data-target="singleFoodKcal100" data-step="-5" data-min="0" data-max="5000" aria-label="Уменьшить калории">−</button>
+                    <input type="number" id="singleFoodKcal100" class="target-num-input" value="0" min="0" max="5000" step="1" inputmode="decimal" onfocus="this.select()">
+                    <button type="button" class="btn-target-step btn-step-plus" data-target="singleFoodKcal100" data-step="5" data-min="0" data-max="5000" aria-label="Увеличить калории">+</button>
+                  </div>
+                </div>
+
+                <!-- Белки -->
+                <div class="nutrition-target-card target-card-prot">
+                  <div class="target-card-header">
+                    <span class="target-card-label">🥩 <span data-i18n="nutrition_macro_protein">Белки</span></span>
+                    <span class="target-card-badge" data-i18n="nutrition_gram_short">г</span>
+                  </div>
+                  <div class="target-stepper-row">
+                    <button type="button" class="btn-target-step btn-step-minus" data-target="singleFoodProt100" data-step="-1" data-min="0" data-max="500" aria-label="Уменьшить белки">−</button>
+                    <input type="number" id="singleFoodProt100" class="target-num-input" value="0" min="0" max="500" step="0.1" inputmode="decimal" onfocus="this.select()">
+                    <button type="button" class="btn-target-step btn-step-plus" data-target="singleFoodProt100" data-step="1" data-min="0" data-max="500" aria-label="Увеличить белки">+</button>
+                  </div>
+                </div>
+
+                <!-- Жиры -->
+                <div class="nutrition-target-card target-card-fat">
+                  <div class="target-card-header">
+                    <span class="target-card-label">🥑 <span data-i18n="nutrition_macro_fat">Жиры</span></span>
+                    <span class="target-card-badge" data-i18n="nutrition_gram_short">г</span>
+                  </div>
+                  <div class="target-stepper-row">
+                    <button type="button" class="btn-target-step btn-step-minus" data-target="singleFoodFat100" data-step="-1" data-min="0" data-max="500" aria-label="Уменьшить жиры">−</button>
+                    <input type="number" id="singleFoodFat100" class="target-num-input" value="0" min="0" max="500" step="0.1" inputmode="decimal" onfocus="this.select()">
+                    <button type="button" class="btn-target-step btn-step-plus" data-target="singleFoodFat100" data-step="1" data-min="0" data-max="500" aria-label="Увеличить жиры">+</button>
+                  </div>
+                </div>
+
+                <!-- Углеводы -->
+                <div class="nutrition-target-card target-card-carb">
+                  <div class="target-card-header">
+                    <span class="target-card-label">🍞 <span data-i18n="nutrition_macro_carbs">Углеводы</span></span>
+                    <span class="target-card-badge" data-i18n="nutrition_gram_short">г</span>
+                  </div>
+                  <div class="target-stepper-row">
+                    <button type="button" class="btn-target-step btn-step-minus" data-target="singleFoodCarb100" data-step="-1" data-min="0" data-max="500" aria-label="Уменьшить углеводы">−</button>
+                    <input type="number" id="singleFoodCarb100" class="target-num-input" value="0" min="0" max="500" step="0.1" inputmode="decimal" onfocus="this.select()">
+                    <button type="button" class="btn-target-step btn-step-plus" data-target="singleFoodCarb100" data-step="1" data-min="0" data-max="500" aria-label="Увеличить углеводы">+</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Live Calculated Values for Portion -->
+            <div class="nutrition-portion-summary-card">
+              <div class="portion-summary-title">В порции (<span id="singleFoodSummaryWeight">100</span> г):</div>
+              <div class="portion-summary-chips">
+                <div class="portion-chip cal"><span class="chip-num" id="singleFoodCalcKcal">0</span> ккал</div>
+                <div class="portion-chip prot">Б: <span class="chip-num" id="singleFoodCalcProt">0</span> г</div>
+                <div class="portion-chip fat">Ж: <span class="chip-num" id="singleFoodCalcFat">0</span> г</div>
+                <div class="portion-chip carb">У: <span class="chip-num" id="singleFoodCalcCarb">0</span> г</div>
+              </div>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 16px;">
+              <button type="button" class="btn-primary-block" id="btnSaveSingleFood">
+                <span data-i18n="nutrition_save_food_btn">Добавить в дневник</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Pane 2: Composite Dish (Кулинарный калькулятор) -->
+          <div class="nutrition-food-pane" id="paneFoodComposite" style="display: none;">
+            <!-- Hidden meal select (prefilled by active group) -->
+            <div style="display: none;">
+              <span class="meal-select-icon-preview" id="compositeMealPreviewIcon"></span>
+              <select id="compositeMealSelect" class="form-select"></select>
+            </div>
+
+            <div class="form-group" style="position: relative;">
+              <label for="compositeDishName">Название составного блюда</label>
+              <input type="text" id="compositeDishName" class="form-input" placeholder="Например: Мой яблочный пирог, Курица в сливках..." autocomplete="off">
+              <div class="food-search-suggestions" id="compositeDishSuggestions" style="display: none;"></div>
+            </div>
+
+            <!-- Ingredients List -->
+            <div class="composite-ingredients-box">
+              <div class="composite-ingredients-header">
+                <span class="box-title">Ингредиенты (сырой вес)</span>
+                <button type="button" class="btn-add-ingredient" id="btnAddCompositeIngredient">
+                  <span data-i18n="nutrition_ingredient_add">+ Ингредиент</span>
+                </button>
+              </div>
+              <div class="composite-ingredients-list" id="compositeIngredientsList">
+                <!-- Ingredients rows rendered dynamically -->
+              </div>
+            </div>
+
+            <!-- Raw Totals Row -->
+            <div class="composite-raw-summary" id="compositeRawSummary">
+              <span>⚖️ Сырой вес: <strong id="compositeRawWeightTotal">0</strong> г</span>
+              <span class="composite-raw-macros-line">
+                <span>🔥 <strong id="compositeRawKcalTotal">0</strong> ккал</span> • 
+                <span style="color: var(--macro-color-prot, #3b82f6);">Б: <strong id="compositeRawProtTotal">0</strong></span> • 
+                <span style="color: var(--macro-color-fat, #f59e0b);">Ж: <strong id="compositeRawFatTotal">0</strong></span> • 
+                <span style="color: var(--macro-color-carb, #10b981);">У: <strong id="compositeRawCarbTotal">0</strong></span>
+              </span>
+            </div>
+
+            <!-- Cooking Yield (Готовый вес & Порция) -->
+            <div class="composite-cooking-yield-box">
+              <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                  <label for="compositeCookedWeight" data-i18n="nutrition_cooked_weight_label">Вес готового блюда (г)</label>
+                  <div class="target-stepper-row">
+                    <button type="button" class="btn-target-step btn-step-minus" data-target="compositeCookedWeight" data-step="-10" data-min="1" aria-label="Уменьшить вес готового блюда">−</button>
+                    <input type="number" id="compositeCookedWeight" class="target-num-input" placeholder="Вес блюда" min="1" step="5" inputmode="decimal" onfocus="this.select()">
+                    <button type="button" class="btn-target-step btn-step-plus" data-target="compositeCookedWeight" data-step="10" data-min="1" aria-label="Увеличить вес готового блюда">+</button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="compositePortionEaten" data-i18n="nutrition_portion_eaten_label">Съеденная порция (г)</label>
+                  <div class="target-stepper-row">
+                    <button type="button" class="btn-target-step btn-step-minus" data-target="compositePortionEaten" data-step="-10" data-min="1" aria-label="Уменьшить съеденную порцию">−</button>
+                    <input type="number" id="compositePortionEaten" class="target-num-input" placeholder="Порция" min="1" step="5" inputmode="decimal" onfocus="this.select()">
+                    <button type="button" class="btn-target-step btn-step-plus" data-target="compositePortionEaten" data-step="10" data-min="1" aria-label="Увеличить съеденную порцию">+</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Portion Calculated Result -->
+            <div class="nutrition-portion-summary-card">
+              <div class="portion-summary-title">В порции (<span id="compositeSummaryWeight">0</span> г):</div>
+              <div class="portion-summary-chips">
+                <div class="portion-chip cal"><span class="chip-num" id="compositeCalcKcal">0</span> ккал</div>
+                <div class="portion-chip prot">Б: <span class="chip-num" id="compositeCalcProt">0</span> г</div>
+                <div class="portion-chip fat">Ж: <span class="chip-num" id="compositeCalcFat">0</span> г</div>
+                <div class="portion-chip carb">У: <span class="chip-num" id="compositeCalcCarb">0</span> г</div>
+              </div>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 16px;">
+              <button type="button" class="btn-primary-block" id="btnSaveCompositeFood">
+                <span data-i18n="nutrition_save_food_btn">Добавить в дневник</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Camera Barcode Scanner Modal -->
+      <div class="modal-backdrop nutrition-scanner-backdrop" id="nutritionBarcodeScannerModalBackdrop" aria-hidden="true">
+        <div class="scanner-container">
+          <div class="scanner-header">
+            <div class="scanner-title" data-i18n="nutrition_scanner_title">Сканирование штрихкода</div>
+            <div class="scanner-header-actions">
+              <button type="button" class="btn-scanner-torch" id="btnScannerTorch" title="Вспышка / Фонарик" style="display: none;">🔦</button>
+              <button type="button" class="modal-close-btn scanner-close" id="btnScannerClose" aria-label="Закрыть">&times;</button>
+            </div>
+          </div>
+
+          <!-- Video Viewport & Aim Reticle -->
+          <div class="scanner-viewport" id="scannerViewport">
+            <video id="nutritionScannerVideo" playsinline autoplay muted></video>
+            <div class="scanner-aim-frame">
+              <div class="scanner-corner tl"></div>
+              <div class="scanner-corner tr"></div>
+              <div class="scanner-corner bl"></div>
+              <div class="scanner-corner br"></div>
+              <div class="scanner-laser-line"></div>
+            </div>
+          </div>
+
+          <div class="scanner-footer">
+            <div class="scanner-hint" data-i18n="nutrition_scanner_hint">Наведите камеру на штрихкод продукта</div>
+            <button type="button" class="btn-scanner-manual" id="btnScannerManual">
+              ⌨️ <span data-i18n="nutrition_scanner_manual_btn">Ввести цифры вручную</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nutrition Statistics Modal (Calendar 4 weeks & Weekday Frequency) -->
+      <div class="modal-backdrop" id="nutritionStatsModalBackdrop" aria-hidden="true">
+        <div class="modal-sheet modal-sheet-scrollable nutrition-stats-sheet" role="dialog" aria-modal="true" aria-labelledby="nutritionStatsModalTitle">
+          <div class="modal-header">
+            <div class="nutrition-header-title-box">
+              <h2 id="nutritionStatsModalTitle">🥑 <span data-i18n="nutrition_stats_title">Статистика питания</span></h2>
+            </div>
+            <button type="button" class="modal-close-btn" id="nutritionStatsCloseBtn" aria-label="Закрыть">&times;</button>
+          </div>
+
+          <div class="nutrition-stats-modal-content">
+            <!-- Summary Highlights Cards -->
+            <div class="nutrition-stats-summary-grid">
+              <div class="nutrition-stat-card">
+                <div class="nutrition-stat-card-icon">🔥</div>
+                <div class="nutrition-stat-card-body">
+                  <div class="nutrition-stat-card-val" id="nutritionStatStreakVal">0 дн.</div>
+                  <div class="nutrition-stat-card-lbl" data-i18n="nutrition_stat_streak_lbl">В норме подряд</div>
+                </div>
+              </div>
+              <div class="nutrition-stat-card">
+                <div class="nutrition-stat-card-icon">🎯</div>
+                <div class="nutrition-stat-card-body">
+                  <div class="nutrition-stat-card-val" id="nutritionStatRateVal">0%</div>
+                  <div class="nutrition-stat-card-lbl" data-i18n="nutrition_stat_rate_lbl">За 4 недели</div>
+                </div>
+              </div>
+              <div class="nutrition-stat-card">
+                <div class="nutrition-stat-card-icon">🥑</div>
+                <div class="nutrition-stat-card-body">
+                  <div class="nutrition-stat-card-val" id="nutritionStatAvgVal">0 ккал</div>
+                  <div class="nutrition-stat-card-lbl" data-i18n="nutrition_stat_avg_lbl">В среднем за день</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Segmented Tabs Toggle: Calendar (4 weeks) vs Frequency by Day -->
+            <div class="nutrition-stats-tabs-bar" role="tablist">
+              <button type="button" class="nutrition-stats-tab-btn active" id="btnNutritionTabCalendar" role="tab" aria-selected="true" data-i18n="nutrition_tab_calendar">
+                📅 Календарь (4 нед.)
+              </button>
+              <button type="button" class="nutrition-stats-tab-btn" id="btnNutritionTabFrequency" role="tab" aria-selected="false" data-i18n="nutrition_tab_frequency">
+                📊 Частота по дням
+              </button>
+            </div>
+
+            <!-- Tab Pane 1: 4-week Calendar with Avocado Icons -->
+            <div class="nutrition-stats-pane" id="nutritionPaneCalendar">
+              <div class="nutrition-calendar-wrap">
+                <!-- Weekday Headers -->
+                <div class="nutrition-calendar-weekdays">
+                  <span>Пн</span>
+                  <span>Вт</span>
+                  <span>Ср</span>
+                  <span>Чт</span>
+                  <span>Пт</span>
+                  <span>Сб</span>
+                  <span>Вс</span>
+                </div>
+                <!-- 28-day Grid Container -->
+                <div class="nutrition-calendar-grid" id="nutritionCalendarGrid">
+                  <!-- Populated dynamically by JS -->
+                </div>
+              </div>
+
+              <!-- Selected Day Inspection Card / Tooltip Info -->
+              <div class="nutrition-calendar-detail-card" id="nutritionCalendarDetailCard" style="display: none;">
+                <div class="nutrition-detail-left">
+                  <div class="nutrition-detail-date" id="nutritionDetailDate">21 сентября</div>
+                  <div class="nutrition-detail-cal" id="nutritionDetailCal">1 850 / 2 000 ккал</div>
+                </div>
+                <div class="nutrition-detail-badge" id="nutritionDetailBadge">В норме 🥑</div>
+              </div>
+
+              <div class="nutrition-stats-footnote">
+                <span class="footnote-item"><span class="footnote-avocado">🥑</span> — норма КБЖУ соблюдена</span>
+                <span class="footnote-item"><span class="footnote-empty">○</span> — отклонение или нет данных</span>
+              </div>
+            </div>
+
+            <!-- Tab Pane 2: Frequency by Weekdays (Mon..Sun) -->
+            <div class="nutrition-stats-pane" id="nutritionPaneFrequency" style="display: none;">
+              <!-- Analytical Insight Alert -->
+              <div class="nutrition-frequency-insights" id="nutritionFrequencyInsights">
+                <div class="nutrition-insight-item is-warning" id="nutritionInsightHardest" style="display: none;">
+                  <span class="nutrition-insight-icon">⚠️</span>
+                  <div class="nutrition-insight-text">
+                    <strong id="nutritionInsightHardestTitle">Сложнее всего: Суббота</strong>
+                    <span id="nutritionInsightHardestDesc">Норма соблюдается реже всего</span>
+                  </div>
+                </div>
+                <div class="nutrition-insight-item is-best" id="nutritionInsightBest" style="display: none;">
+                  <span class="nutrition-insight-icon">⭐</span>
+                  <div class="nutrition-insight-text">
+                    <strong id="nutritionInsightBestTitle">Легче всего: Вторник</strong>
+                    <span id="nutritionInsightBestDesc">Самый стабильный день недели</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Weekday Rows (Пн..Вс) -->
+              <div class="nutrition-frequency-list" id="nutritionFrequencyList">
+                <!-- Populated dynamically by JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nutrition Settings Modal (Targets & Custom Meals) -->
+      <div class="modal-backdrop" id="nutritionSettingsModalBackdrop" aria-hidden="true">
+        <div class="modal-sheet modal-sheet-scrollable nutrition-settings-sheet" role="dialog" aria-modal="true" aria-labelledby="nutritionSettingsModalTitle">
+          <div class="modal-header">
+            <h2 id="nutritionSettingsModalTitle" data-i18n="nutrition_settings_modal_title">⚙️ Настройки питания</h2>
+            <button type="button" class="modal-close-btn" id="nutritionSettingsCloseBtn" aria-label="Закрыть">&times;</button>
+          </div>
+
+          <div class="nutrition-settings-content">
+            <!-- Daily Targets Notice -->
+            <div class="settings-group-block" style="margin-bottom: 14px; padding: 10px 14px; display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 18px; flex-shrink: 0;">⚙️</span>
+              <span style="font-size: 12.5px; color: var(--text-muted, #64748b); line-height: 1.4;" data-i18n="nutrition_daily_targets_hint">Суточные нормы калорий и БЖУ настраиваются в основных настройках приложения</span>
+            </div>
+
+            <!-- Custom Meals Section -->
+            <div class="settings-group-block" style="margin-top: 16px;">
+              <div class="settings-group-header">
+                <span class="settings-group-title" data-i18n="nutrition_settings_meals_title">Мои приёмы пищи</span>
+              </div>
+              <div class="custom-meals-list" id="customMealsList">
+                <!-- Rendered dynamically by JS -->
+              </div>
+
+              <!-- Add New Meal Form with Food_Kategory Image Picker -->
+              <div class="add-new-meal-form">
+                <div class="meal-picker-header-label">Выберите картинку для категории:</div>
+                <div class="meal-icon-picker-grid" id="newMealIconPickerGrid">
+                  <!-- 9 icons generated from Food_Kategory.jpg dynamically populated -->
+                </div>
+
+                <div class="form-row new-meal-inputs-row">
+                  <div class="new-meal-selected-preview" id="newMealSelectedPreview" title="Выбранная картинка">
+                    <img src="assets/nutrition_icons/meal_icon_1.webp" id="newMealSelectedPreviewImg" alt="Выбранная иконка">
+                  </div>
+                  <input type="hidden" id="newMealIconInput" value="assets/nutrition_icons/meal_icon_1.webp">
+                  <input type="text" id="newMealNameInput" class="form-input" placeholder="Название: Полдник, Десерт..." maxlength="30">
+                  <input type="color" id="newMealColorInput" value="#d83a88" title="Цвет на кольце" class="meal-color-input">
+                  <button type="button" class="btn-add-meal-submit" id="btnAddNewMealSubmit" title="Добавить категорию">
+                    + Добавить
+                  </button>
+                </div>
+              </div>
+            </div>
+
+
+            <div class="modal-actions" style="margin-top: 16px;">
+              <button type="button" class="btn-primary-block" id="btnSaveNutritionSettingsModal" data-i18n="close_btn">
+                Готово
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit Meal Category Modal -->
+      <div class="modal-backdrop confirmation-backdrop edit-meal-backdrop" id="editMealModalBackdrop" aria-hidden="true">
+        <div class="modal-sheet confirmation-sheet edit-meal-sheet" role="dialog" aria-modal="true" aria-labelledby="editMealModalTitle">
+          <div class="modal-header">
+            <h3 class="modal-sheet-title" id="editMealModalTitle">Редактировать приём пищи</h3>
+            <button type="button" class="modal-close-btn" id="editMealModalCloseBtn" aria-label="Закрыть">&times;</button>
+          </div>
+
+          <form id="editMealForm" class="modal-form" onsubmit="return false;" style="margin-top: 10px;">
+            <input type="hidden" id="editMealIdInput" value="">
+            <input type="hidden" id="editMealIconInput" value="">
+
+            <div class="form-group" style="margin-bottom: 12px; text-align: left;">
+              <label class="form-label" style="font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 6px; display: block;">Выберите картинку:</label>
+              <div class="meal-icon-picker-grid" id="editMealIconPickerGrid" style="margin-bottom: 8px;">
+                <!-- 9 icons populated by JS -->
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 16px; text-align: left;">
+              <label class="form-label" for="editMealNameInput" style="font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 6px; display: block;">Название и цвет:</label>
+              <div class="form-row new-meal-inputs-row" style="margin-bottom: 6px;">
+                <div class="new-meal-selected-preview" id="editMealSelectedPreview" title="Выбранная картинка">
+                  <img src="assets/nutrition_icons/meal_icon_1.webp" id="editMealSelectedPreviewImg" alt="Выбранная иконка">
+                </div>
+                <input type="text" id="editMealNameInput" class="form-input" placeholder="Название: Полдник..." maxlength="30" style="flex: 1;">
+                <input type="hidden" id="editMealColorInput" value="#ef4444">
+              </div>
+              <div class="meal-colors-row" id="editMealColorsRow">
+                <!-- 9 color circles populated by JS -->
+              </div>
+            </div>
+
+            <div class="modal-actions" style="display: flex; gap: 10px; margin-top: 14px;">
+              <button type="button" class="btn-cancel" id="btnDeleteEditMeal" style="display: none; padding: 10px 14px; color: #ef4444; border-color: rgba(239, 68, 68, 0.4); flex-shrink: 0;" title="Удалить приём пищи">🗑️</button>
+              <button type="button" class="btn-cancel" id="btnCancelEditMeal" style="flex: 1;" data-i18n="cycle_btn_cancel">Отмена</button>
+              <button type="button" class="btn-primary-block" id="btnSaveEditMeal" style="flex: 1; margin-top: 0;">Сохранить</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Macro Color Picker Modal (Long press on Ж, Б, У) -->
+      <div class="modal-backdrop confirmation-backdrop macro-color-backdrop" id="macroColorModalBackdrop" aria-hidden="true">
+        <div class="modal-sheet confirmation-sheet macro-color-sheet" role="dialog" aria-modal="true" aria-labelledby="macroColorTitle">
+          <div class="macro-color-header">
+            <h3 class="macro-color-title" id="macroColorTitle">Цвет: Белки (Б)</h3>
+            <button type="button" class="modal-close-btn" id="macroColorCloseBtn" aria-label="Закрыть">&times;</button>
+          </div>
+
+          <!-- Live Preview Bar -->
+          <div class="macro-color-previews">
+            <div class="macro-color-preview-item">
+              <div class="macro-color-preview-label">В норме (до 100%)</div>
+              <div class="macro-color-preview-track">
+                <div class="macro-color-preview-target-line"></div>
+                <div class="macro-color-preview-fill" id="macroColorPreviewNormal" style="height: 52%;"></div>
+              </div>
+            </div>
+            <div class="macro-color-preview-item">
+              <div class="macro-color-preview-label">При превышении нормы</div>
+              <div class="macro-color-preview-track">
+                <div class="macro-color-preview-target-line"></div>
+                <div class="macro-color-preview-fill is-over" id="macroColorPreviewOver" style="height: 90%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Color Swatches Grid -->
+          <div class="macro-color-palette" id="macroColorPalette">
+            <!-- Populated dynamically by JS -->
+          </div>
+
+          <!-- Custom Color Picker + Reset to Default -->
+          <div class="macro-color-custom-row">
+            <label class="macro-custom-color-btn" title="Выбрать любой цвет">
+              <input type="color" id="macroCustomColorInput" value="#3b82f6">
+              <span>Свой цвет</span>
+            </label>
+            <button type="button" class="btn-cancel btn-reset-macro-color" id="btnResetMacroColor">По умолчанию</button>
+          </div>
+
+          <div class="confirm-actions" style="margin-top: 14px;">
+            <button type="button" class="btn-cancel confirm-cancel-btn" id="macroColorCancelBtn">Отмена</button>
+            <button type="button" class="btn-primary-craft" id="macroColorApplyBtn" style="padding: 10px 24px;">Сохранить</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Achievements Modal -->
       <div class="modal-backdrop" id="achievementsModalBackdrop" aria-hidden="true">
         <div class="modal-sheet modal-sheet-scrollable achievements-sheet">
@@ -2294,14 +3034,18 @@
     </main>
   </div>
 
-  <script src="i18n.js?v=0.7.7"></script>
+  <script src="i18n.js?v=0.7.9"></script>
   <script src="maine_quests_data.js?v=0.7.1"></script>
   <script src="maine_quests.js?v=0.7.1"></script>
   <script src="initial_habits.js?v=0.7.1"></script>
   <script src="cycle_tracker.js?v=0.7.1"></script>
   <script src="finance_tracker.js?v=0.7.3"></script>
+  <script src="nutrition_tracker.js?v=0.1.5"></script>
   <script src="joy_tracker.js?v=0.8.15"></script>
-  <script src="app.js?v=0.7.41"></script>
+  <script src="stickers_system.js?v=0.1.0"></script>
+  <script src="achievements_system.js?v=0.1.0"></script>
+  <script src="pet_system.js?v=0.1.0"></script>
+  <script src="app.js?v=0.7.51"></script>
   <script>
     if ('serviceWorker' in navigator) {
       if (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || window.Capacitor) {
@@ -2320,7 +3064,7 @@
           }
         });
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js?v=0.8.45').then(reg => {
+          navigator.serviceWorker.register('./sw.js?v=0.8.57').then(reg => {
             reg.update();
           }).catch(err => {
             console.log('SW registration skipped:', err);

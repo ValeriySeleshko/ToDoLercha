@@ -24,6 +24,43 @@ const server = http.createServer((req, res) => {
     reqUrl = decodeURIComponent(reqUrl);
   } catch (e) {}
 
+  // Proxy for Open Food Facts Search API (bypasses browser CORS)
+  if (reqUrl === '/api/food-search') {
+    const fullUrl = new URL(req.url, `http://${req.headers.host || 'localhost:3000'}`);
+    const q = fullUrl.searchParams.get('q') || '';
+    if (!q.trim()) {
+      res.writeHead(200, {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Access-Control-Allow-Origin': '*'
+      });
+      res.end(JSON.stringify({ hits: [] }));
+      return;
+    }
+
+    const targetUrl = `https://search.openfoodfacts.org/search?q=${encodeURIComponent(q)}&page_size=15`;
+    fetch(targetUrl, { headers: { 'User-Agent': 'Plan4U-App/1.0 (contact@plan4u.app)' } })
+      .then(response => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+      })
+      .then(data => {
+        res.writeHead(200, {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': 'no-cache'
+        });
+        res.end(JSON.stringify(data));
+      })
+      .catch(err => {
+        res.writeHead(200, {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Access-Control-Allow-Origin': '*'
+        });
+        res.end(JSON.stringify({ hits: [], error: err.message }));
+      });
+    return;
+  }
+
   if (reqUrl === '/') reqUrl = '/index.html';
   const filePath = path.normalize(path.join(__dirname, reqUrl));
 

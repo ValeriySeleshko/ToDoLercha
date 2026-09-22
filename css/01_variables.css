@@ -1,0 +1,78 @@
+/* ==========================================================================
+   RESET & GLOBAL VARIABLES
+   ========================================================================== */
+:root {
+  --primary-rgb: 216, 58, 136;
+  --primary-magenta: #d83a88;
+  --primary-magenta-dark: #580c35;
+  --accent-pink-line: #f4a5c0;
+  --ruled-line-color: #ebdce4;
+  --widget-border-color: #636873;
+  --dark-text: #000000;
+  --muted-header: #8a2757;
+  --tab-bar-bg: #ece8df;
+  --tab-inactive-bg: #ded9cf;
+  --tab-inactive-text: #737780;
+  --badge-inactive-bg: #bcc0c7;
+  --badge-inactive-text: #4e535e;
+  --frame-border-color: #38316c;
+  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-note: 'PT Serif', Georgia, 'Times New Roman', serif;
+  --task-font-family: 'PT Serif', Georgia, 'Times New Roman', serif;
+  --task-font-size: 14px;
+  --line-height: 24px;
+
+  /* Macro Colors (БЖУ) - dynamically overridden by nutritionTracker settings */
+  --macro-color-prot: #3b82f6;
+  --macro-color-prot-rgb: 59, 130, 246;
+  --macro-color-fat: #f59e0b;
+  --macro-color-fat-rgb: 245, 158, 11;
+  --macro-color-carb: #10b981;
+  --macro-color-carb-rgb: 16, 185, 129;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: #f0f1f5;
+  font-family: var(--font-ui);
+  color: var(--dark-text);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px 10px;
+  overflow-x: hidden;
+}
+
+/* ==========================================================================
+   SMOOTH, JITTER-FREE STARTUP & TRANSITION STABILITY
+   ========================================================================== */
+.preload-no-transitions,
+.preload-no-transitions *,
+.preload-no-transitions *::before,
+.preload-no-transitions *::after {
+  -webkit-transition: none !important;
+  -moz-transition: none !important;
+  -ms-transition: none !important;
+  -o-transition: none !important;
+  transition: none !important;
+}
+
+body.app-booting .app-viewport {
+  opacity: 0;
+  visibility: hidden;
+}
+
+body.app-ready .app-viewport {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}

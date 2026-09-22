@@ -1,0 +1,1206 @@
+/* ==========================================================================
+   ☀️ JOY TRACKER MODULE (ЗАМЕТИТЬ РАДОСТЬ)
+   ========================================================================== */
+
+/* 1. Modules Hub Widget Button */
+.widget-circle.widget-joy {
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+  border: 1.5px solid #f59e0b;
+  color: #b45309;
+  position: relative;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+}
+
+.widget-circle.widget-joy:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+}
+
+.widget-circle.widget-joy .widget-joy-icon {
+  font-size: 19px;
+  line-height: 1;
+  filter: drop-shadow(0 1px 2px rgba(180, 83, 9, 0.25));
+  transition: transform 0.2s ease;
+}
+
+.widget-circle.widget-joy.needs-entry .widget-joy-icon {
+  animation: joySunPulse 2.4s infinite ease-in-out;
+}
+
+.widget-joy-badge {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 8px;
+  height: 8px;
+  background: #f59e0b;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.8);
+  display: none;
+}
+
+.widget-circle.widget-joy.needs-entry .widget-joy-badge {
+  display: block;
+}
+
+@keyframes joySunPulse {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.2) rotate(14deg); }
+}
+
+/* 2. Paper Sticker on Notebook Sheet */
+.notebook-joy-wrapper {
+  margin: 14px 10px 18px 10px;
+  position: relative;
+  z-index: 5;
+  display: flex;
+  justify-content: center;
+}
+
+.notebook-joy-wrapper.is-empty-invite {
+  position: relative;
+  margin: 14px 10px 18px 10px;
+  z-index: 5;
+  display: flex;
+  justify-content: center;
+  left: auto !important;
+  top: auto !important;
+  transform: none !important;
+}
+
+.notebook-joy-wrapper.is-placed-sticker {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  z-index: 28;
+  pointer-events: auto;
+  transform-origin: center center;
+  touch-action: none;
+  width: 140px;
+  height: 140px;
+  display: block;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+  will-change: left, top, transform;
+}
+
+.notebook-joy-wrapper.is-placed-sticker.is-dragging {
+  cursor: grabbing !important;
+  z-index: 100 !important;
+  transition: none !important;
+}
+
+.notebook-joy-card {
+  position: relative;
+  width: 100%;
+  max-width: 140px;
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+  border-radius: 0;
+  border: none;
+  background-color: transparent;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.22s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.notebook-joy-wrapper.is-placed-sticker.is-dragging .notebook-joy-card {
+  cursor: grabbing !important;
+  transform: scale(1.06);
+  filter: drop-shadow(0 16px 32px rgba(0, 0, 0, 0.32)) !important;
+  transition: none !important;
+}
+
+.notebook-joy-card:hover {
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.16));
+}
+
+/* Rotation Handle for Joy Sticker - Hidden by default, shown ONLY when moving the sticker */
+.notebook-joy-rotate-handle {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1.5px solid var(--primary-magenta, #d83a88);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--primary-magenta, #d83a88);
+  cursor: grab;
+  z-index: 38;
+  touch-action: none;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease, transform 0.18s ease, background 0.15s ease, box-shadow 0.15s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Shown strictly while moving / adjusting the sticker */
+.notebook-joy-wrapper.is-dragging .notebook-joy-rotate-handle,
+.notebook-joy-wrapper.has-moved .notebook-joy-rotate-handle {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.notebook-joy-rotate-handle:hover {
+  transform: scale(1.14);
+  background: #fdf2f8;
+  box-shadow: 0 3px 10px rgba(216, 58, 136, 0.28);
+}
+
+.notebook-joy-rotate-handle:active {
+  cursor: grabbing;
+  transform: scale(1.22);
+  background: #fce7f3;
+}
+
+/* Centered handwriting text with word wrap */
+.notebook-joy-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+  height: 100%;
+  margin: 0 !important;
+  padding: 16px 28px 16px 26px !important;
+  box-sizing: border-box;
+  font-family: 'Marck Script', cursive;
+  font-size: var(--joy-font-size, 18px);
+  line-height: 0.9;
+  color: #1c1917;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  font-weight: 400;
+  overflow: hidden;
+  position: relative;
+  z-index: 3;
+}
+
+.notebook-joy-text::-webkit-scrollbar {
+  display: none;
+}
+
+.notebook-joy-hint {
+  font-size: 10.5px;
+  color: #4b5563;
+  opacity: 0.75;
+  font-style: italic;
+}
+
+/* Empty day dashed invite note */
+.notebook-joy-empty-invite {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 13px 18px;
+  border: 2px dashed rgba(245, 158, 11, 0.45);
+  border-radius: 14px;
+  background: rgba(254, 243, 199, 0.28);
+  color: #b45309;
+  font-weight: 600;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.notebook-joy-empty-invite:hover {
+  background: rgba(254, 243, 199, 0.55);
+  border-color: #f59e0b;
+  transform: translateY(-1px);
+}
+
+/* 3. Joy Modal Form Styles */
+.joy-modal-sheet {
+  background: #fffcf8;
+  border-top: 3.5px solid #f59e0b;
+  max-width: 520px;
+  max-height: min(90dvh, calc(100% - 20px));
+  display: flex;
+  flex-direction: column;
+  margin: 0 auto;
+}
+
+.joy-modal-sheet .modal-header {
+  min-height: 58px;
+}
+
+.joy-modal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-joy-modal-jar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid var(--primary-magenta, #d83a88);
+  background: #ffffff;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.btn-joy-modal-jar:hover {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 6px 16px rgba(var(--primary-rgb, 216, 58, 136), 0.28), inset 0 1px 1px #ffffff;
+}
+
+.btn-joy-modal-jar:active {
+  transform: scale(0.94);
+}
+
+.btn-joy-modal-jar-icon {
+  font-size: 26px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+.theme-dark .btn-joy-modal-jar,
+.app-frame.theme-dark .btn-joy-modal-jar {
+  background: #252830;
+  border-color: var(--primary-magenta, #f472b6);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.08);
+}
+
+.theme-dark .btn-joy-modal-jar:hover,
+.app-frame.theme-dark .btn-joy-modal-jar:hover {
+  box-shadow: 0 4px 12px rgba(var(--primary-rgb, 216, 58, 136), 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.12);
+}
+
+
+.joy-modal-content {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 6px max(24px, calc(16px + env(safe-area-inset-bottom, 0px))) 4px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: calc(88vh - 65px);
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  box-sizing: border-box;
+}
+
+.joy-modal-content::-webkit-scrollbar {
+  width: 5px;
+}
+
+.joy-modal-content::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.joy-modal-content::-webkit-scrollbar-thumb:hover {
+  background: #f59e0b;
+}
+
+.joy-pet-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  padding: 10px 14px;
+  border-radius: 14px;
+  margin-bottom: 16px;
+}
+
+.joy-pet-avatar {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.joy-pet-speech-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #92400e;
+  line-height: 1.35;
+}
+
+.joy-section-label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.joy-mood-selector {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.joy-mood-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 1px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.joy-mood-chip .joy-mood-emoji {
+  font-size: 19px;
+  margin-bottom: 2px;
+  line-height: 1;
+}
+
+.joy-mood-chip .joy-mood-name {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+  letter-spacing: -0.3px;
+  line-height: 1.15;
+  text-align: center;
+  max-width: 100%;
+}
+
+.joy-mood-chip.active {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.25);
+}
+
+.joy-mood-chip.active .joy-mood-name {
+  color: #92400e;
+}
+
+.joy-textarea-wrapper {
+  position: relative;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03);
+  transition: border-color 0.2s ease;
+}
+
+.joy-textarea-wrapper:focus-within {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
+}
+
+.joy-text-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--notebook-font, 'Caveat', cursive);
+  font-size: 20px;
+  line-height: 1.5;
+  color: #1e293b;
+  resize: vertical;
+  min-height: 85px;
+}
+
+.joy-char-counter {
+  text-align: right;
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+.joy-helper-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+
+.btn-joy-prompt-help {
+  background: none;
+  border: none;
+  color: #d97706;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+.btn-joy-prompt-help:hover {
+  background: #fef3c7;
+}
+
+.joy-prompt-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fffbeb;
+  border: 1px dashed #f59e0b;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  color: #92400e;
+  margin-bottom: 12px;
+}
+
+.joy-sticker-choice-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin-bottom: 16px;
+}
+
+.joy-sticker-preview-thumb-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.joy-modal-sticker-thumb {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+}
+
+.joy-sticker-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.btn-joy-change-sticker {
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.btn-joy-change-sticker:hover {
+  background: #f1f5f9;
+}
+
+.joy-modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  flex-shrink: 0;
+  padding-bottom: 4px;
+}
+
+.btn-joy-remind-later {
+  flex: 1;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1.5px solid #dcdfe4;
+  color: #555a66;
+  font-family: var(--font-ui);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.btn-joy-remind-later:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #1e293b;
+}
+
+.btn-joy-remind-later:active {
+  transform: scale(0.98);
+}
+
+.btn-joy-save {
+  flex: 1.8;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #e34493, #c92f7a);
+  border: none;
+  color: #ffffff !important;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 750;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(var(--primary-rgb, 216, 58, 136), 0.32);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 6px;
+}
+
+.btn-joy-save:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(var(--primary-rgb, 216, 58, 136), 0.42);
+}
+
+.btn-joy-save:active {
+  transform: scale(0.98);
+}
+
+/* 4. Joy Jar Modal */
+.joy-jar-sheet {
+  background: #fffcf8;
+  max-width: 520px;
+  max-height: min(90dvh, calc(100% - 20px));
+  display: flex;
+  flex-direction: column;
+  margin: 0 auto;
+}
+
+.joy-jar-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.joy-jar-badge {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.joy-jar-content {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 6px max(24px, calc(16px + env(safe-area-inset-bottom, 0px))) 4px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: calc(88vh - 65px);
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  box-sizing: border-box;
+}
+
+.joy-jar-content::-webkit-scrollbar {
+  width: 5px;
+}
+
+.joy-jar-content::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.joy-jar-content::-webkit-scrollbar-thumb:hover {
+  background: #f59e0b;
+}
+
+.joy-spotlight-box {
+  background: #fffbeb;
+  border: 2px solid #f59e0b;
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 18px;
+  animation: spotlightPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.2);
+}
+
+@keyframes spotlightPop {
+  0% { opacity: 0; transform: scale(0.9); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.joy-spotlight-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  color: #92400e;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.joy-spotlight-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #b45309;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.joy-jar-desk-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.joy-jar-top-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 4px 6px 12px;
+  box-sizing: border-box;
+}
+
+.joy-jar-date-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1.5px solid rgba(245, 158, 11, 0.35);
+  font-size: 13px;
+  font-weight: 700;
+  color: #78350f;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.joy-jar-mood-icon {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.joy-jar-date-text {
+  font-size: 12.5px;
+  color: #78350f;
+  font-weight: 700;
+}
+
+.joy-jar-count-badge {
+  font-size: 12px;
+  font-weight: 800;
+  color: #92400e;
+  background: #fef3c7;
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid #fde68a;
+}
+
+.joy-jar-desk-stage {
+  position: relative;
+  width: 100%;
+  height: 310px;
+  margin: 4px 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 22px;
+  background: radial-gradient(circle at 50% 45%, rgba(254, 243, 199, 0.45) 0%, rgba(241, 245, 249, 0.28) 75%);
+  border: 1.5px dashed rgba(217, 119, 6, 0.22);
+  overflow: visible;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-y;
+  cursor: pointer;
+}
+
+.joy-jar-pile-backdrop {
+  position: absolute;
+  width: 290px;
+  height: 290px;
+  max-width: 95%;
+  max-height: 95%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  pointer-events: none;
+  z-index: 2;
+  transition: opacity 0.25s ease, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.joy-jar-active-sticker {
+  position: absolute;
+  width: 175px;
+  height: 175px;
+  top: 50%;
+  left: 50%;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  z-index: 10;
+  cursor: pointer;
+  touch-action: pan-y;
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.22s ease;
+}
+
+.joy-jar-active-sticker:hover {
+  transform: translate(-50%, -50%) rotate(var(--rot, -1.5deg)) scale(1.03);
+  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.22));
+}
+
+.joy-jar-active-sticker:active {
+  transform: translate(-50%, -50%) rotate(var(--rot, -1.5deg)) scale(0.97);
+}
+
+.joy-jar-active-sticker.animate-shuffle {
+  animation: stickerShuffleIn 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes stickerShuffleIn {
+  0% {
+    opacity: 0.3;
+    transform: translate(-50%, -68%) rotate(-18deg) scale(0.85);
+  }
+  60% {
+    transform: translate(-50%, -47%) rotate(4deg) scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(var(--rot, -1.5deg)) scale(1);
+  }
+}
+
+.joy-jar-nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  padding: 4px 0 12px;
+}
+
+.joy-jar-nav-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(217, 119, 6, 0.35);
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), inset 0 1px 1px #ffffff;
+  font-size: 22px;
+  font-weight: 800;
+  color: #b45309;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  padding: 0;
+  line-height: 1;
+}
+
+.joy-jar-nav-btn:hover:not(:disabled) {
+  transform: scale(1.08);
+  background: #fffbeb;
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.2);
+}
+
+.joy-jar-nav-btn:active:not(:disabled) {
+  transform: scale(0.93);
+}
+
+.joy-jar-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.joy-jar-shuffle-btn {
+  padding: 10px 18px;
+  border-radius: 20px;
+  border: 1.5px solid rgba(217, 119, 6, 0.35);
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 13.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.joy-jar-shuffle-btn:hover {
+  transform: scale(1.04);
+  background: #fef3c7;
+}
+
+.joy-jar-shuffle-btn:active {
+  transform: scale(0.96);
+}
+
+.joy-jar-action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  padding: 0;
+  color: #475569;
+}
+
+.joy-jar-action-btn:hover {
+  transform: scale(1.12);
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+.joy-jar-action-btn:active {
+  transform: scale(0.95);
+}
+
+.joy-jar-action-btn.btn-jar-del:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+.is-readonly-sticker {
+  cursor: default !important;
+  user-select: none;
+}
+
+.joy-jar-empty-state {
+  text-align: center;
+  padding: 36px 16px;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.joy-jar-empty-icon {
+  font-size: 40px;
+  margin-bottom: 8px;
+}
+
+/* 5. Sticker Picker Grid */
+.joy-sticker-picker-sheet {
+  background: #fffcf8;
+  max-width: 480px;
+  max-height: min(90dvh, calc(100% - 20px));
+  display: flex;
+  flex-direction: column;
+  margin: 0 auto;
+}
+
+.joy-sticker-picker-desc {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.joy-sticker-picker-content {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 6px max(24px, calc(16px + env(safe-area-inset-bottom, 0px))) 4px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: calc(88vh - 75px);
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  box-sizing: border-box;
+}
+
+.joy-sticker-picker-content::-webkit-scrollbar {
+  width: 5px;
+}
+
+.joy-sticker-picker-content::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.joy-sticker-picker-content::-webkit-scrollbar-thumb:hover {
+  background: #f59e0b;
+}
+
+.joy-sticker-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  padding: 8px 0 16px 0;
+}
+
+.joy-picker-sticker-item {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.02);
+  border: 2px solid transparent;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+}
+
+.joy-picker-sticker-item picture,
+.joy-picker-sticker-item img {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.12));
+}
+
+.joy-picker-sticker-item:hover {
+  transform: scale(1.12);
+  background: rgba(245, 158, 11, 0.08);
+  border-color: #f59e0b;
+}
+
+.joy-picker-sticker-item.active {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.15);
+  box-shadow: 0 0 0 2px #f59e0b;
+}
+
+.joy-picker-sticker-item.active::after {
+  content: '✓';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: #f59e0b;
+  color: #fff;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 6. Dark Theme Adaptations */
+.theme-dark .joy-modal-sheet,
+.theme-dark .joy-jar-sheet,
+.theme-dark .joy-sticker-picker-sheet {
+  background: #191c24;
+  color: #f3f4f6;
+}
+
+.theme-dark .joy-pet-banner {
+  background: #282118;
+  border-color: #45341c;
+}
+
+.theme-dark .joy-pet-speech-text {
+  color: #fde68a;
+}
+
+.theme-dark .joy-mood-chip {
+  background: #242835;
+  border-color: #383e52;
+}
+
+.theme-dark .joy-mood-chip .joy-mood-name {
+  color: #94a3b8;
+}
+
+.theme-dark .joy-mood-chip.active {
+  background: #45341c;
+  border-color: #f59e0b;
+}
+
+.theme-dark .joy-textarea-wrapper {
+  background: #14161d;
+  border-color: #383e52;
+}
+
+.theme-dark .joy-text-input {
+  color: #f3f4f6;
+}
+
+.theme-dark .joy-sticker-choice-row {
+  background: #242835;
+  border-color: #383e52;
+}
+
+.theme-dark .joy-sticker-label {
+  color: #cbd5e1;
+}
+
+.theme-dark .btn-joy-change-sticker {
+  background: #1e222d;
+  border-color: #383e52;
+  color: #e2e8f0;
+}
+
+.theme-dark .btn-joy-remind-later,
+.app-frame.theme-dark .btn-joy-remind-later {
+  background: #27272a;
+  border-color: #3f3f46;
+  color: #cbd5e1;
+}
+
+.theme-dark .btn-joy-remind-later:hover,
+.app-frame.theme-dark .btn-joy-remind-later:hover {
+  background: #3f3f46;
+  color: #f8fafc;
+}
+
+.theme-dark .btn-joy-save,
+.app-frame.theme-dark .btn-joy-save {
+  background: linear-gradient(135deg, #db2777, #be185d);
+  box-shadow: 0 4px 14px rgba(219, 39, 119, 0.4);
+  color: #ffffff !important;
+}
+
+.theme-dark .btn-joy-save:hover,
+.app-frame.theme-dark .btn-joy-save:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 6px 18px rgba(219, 39, 119, 0.5);
+}
+
+.theme-dark .joy-jar-desk-stage,
+.app-frame.theme-dark .joy-jar-desk-stage {
+  background: radial-gradient(circle at 50% 45%, rgba(245, 158, 11, 0.14) 0%, rgba(30, 36, 48, 0.45) 75%);
+  border-color: rgba(245, 158, 11, 0.28);
+}
+
+.theme-dark .joy-jar-date-badge,
+.app-frame.theme-dark .joy-jar-date-badge {
+  background: #252830;
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #fde68a;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.theme-dark .joy-jar-date-text,
+.app-frame.theme-dark .joy-jar-date-text {
+  color: #fde68a;
+}
+
+.theme-dark .joy-jar-count-badge,
+.app-frame.theme-dark .joy-jar-count-badge {
+  background: #332714;
+  border-color: #593f18;
+  color: #fcd34d;
+}
+
+.theme-dark .joy-jar-nav-btn,
+.app-frame.theme-dark .joy-jar-nav-btn {
+  background: #252830;
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #fde68a;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.theme-dark .joy-jar-nav-btn:hover:not(:disabled),
+.app-frame.theme-dark .joy-jar-nav-btn:hover:not(:disabled) {
+  background: #362e1c;
+  border-color: #f59e0b;
+}
+
+.theme-dark .joy-jar-shuffle-btn,
+.app-frame.theme-dark .joy-jar-shuffle-btn {
+  background: #2b2518;
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #fde68a;
+}
+
+.theme-dark .joy-jar-shuffle-btn:hover,
+.app-frame.theme-dark .joy-jar-shuffle-btn:hover {
+  background: #3a301a;
+  border-color: #f59e0b;
+}
+
+.theme-dark .joy-jar-action-btn,
+.app-frame.theme-dark .joy-jar-action-btn {
+  background: #2b3040;
+  border-color: #3e465a;
+  color: #e2e8f0;
+}
+
+.theme-dark .joy-jar-action-btn:hover,
+.app-frame.theme-dark .joy-jar-action-btn:hover {
+  background: #384055;
+  border-color: #525e79;
+}
+
+.theme-dark .joy-jar-action-btn.btn-jar-del:hover,
+.app-frame.theme-dark .joy-jar-action-btn.btn-jar-del:hover {
+  background: #451a1a;
+  border-color: #7f1d1d;
+  color: #fca5a5;
+}
+
+.theme-dark .joy-modal-content::-webkit-scrollbar-thumb,
+.theme-dark .joy-jar-content::-webkit-scrollbar-thumb,
+.theme-dark .joy-sticker-picker-content::-webkit-scrollbar-thumb {
+  background: #383e52;
+}
+
+.theme-dark .joy-modal-content::-webkit-scrollbar-thumb:hover,
+.theme-dark .joy-jar-content::-webkit-scrollbar-thumb:hover,
+.theme-dark .joy-sticker-picker-content::-webkit-scrollbar-thumb:hover {
+  background: #f59e0b;
+}

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'todo-notebook-v0.8.45';
+const CACHE_NAME = 'todo-notebook-v20260922062923';
 const ASSETS = [
   './',
   './index.html',
@@ -6,10 +6,14 @@ const ASSETS = [
   './i18n.js',
   './cycle_tracker.js',
   './finance_tracker.js',
+  './nutrition_tracker.js',
   './joy_tracker.js',
   './maine_quests_data.js',
   './maine_quests.js',
   './initial_habits.js',
+  './stickers_system.js',
+  './achievements_system.js',
+  './pet_system.js',
   './app.js',
   './manifest.json',
   './icon.svg',
@@ -93,6 +97,12 @@ self.addEventListener('fetch', (event) => {
   }
 
   const url = new URL(event.request.url);
+
+  // Allow third-party APIs (such as Open Food Facts) to go directly through the network
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
   const isAsset = url.pathname.includes('/assets/') || 
                   /\.(png|jpg|jpeg|webp|svg|ico|wav|mp3|woff2?|ttf)$/i.test(url.pathname);
 

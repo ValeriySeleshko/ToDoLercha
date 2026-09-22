@@ -6,7 +6,10 @@
   "scripts": {
     "start": "node server.cjs",
     "serve": "node server.cjs",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "node scripts/build.cjs",
+    "build:android": "node scripts/build.cjs --android",
+    "sync": "node scripts/build.cjs",
+    "test": "node -c app.js pet_system.js stickers_system.js achievements_system.js cycle_tracker.js finance_tracker.js nutrition_tracker.js joy_tracker.js maine_quests.js maine_quests_data.js i18n.js"
   },
   "repository": {
     "type": "git",

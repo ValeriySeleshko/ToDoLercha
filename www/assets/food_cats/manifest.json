@@ -1,0 +1,350 @@
+[
+  {
+    "id": 1,
+    "name": "Рыжий",
+    "file": "FoodCat01.jpg",
+    "preview": "assets/food_cats/cat_c1_s05.webp",
+    "steps": [
+      {
+        "step": 1,
+        "webp": "assets/food_cats/cat_c1_s01.webp",
+        "png": "assets/food_cats/cat_c1_s01.png"
+      },
+      {
+        "step": 2,
+        "webp": "assets/food_cats/cat_c1_s02.webp",
+        "png": "assets/food_cats/cat_c1_s02.png"
+      },
+      {
+        "step": 3,
+        "webp": "assets/food_cats/cat_c1_s03.webp",
+        "png": "assets/food_cats/cat_c1_s03.png"
+      },
+      {
+        "step": 4,
+        "webp": "assets/food_cats/cat_c1_s04.webp",
+        "png": "assets/food_cats/cat_c1_s04.png"
+      },
+      {
+        "step": 5,
+        "webp": "assets/food_cats/cat_c1_s05.webp",
+        "png": "assets/food_cats/cat_c1_s05.png"
+      },
+      {
+        "step": 6,
+        "webp": "assets/food_cats/cat_c1_s06.webp",
+        "png": "assets/food_cats/cat_c1_s06.png"
+      },
+      {
+        "step": 7,
+        "webp": "assets/food_cats/cat_c1_s07.webp",
+        "png": "assets/food_cats/cat_c1_s07.png"
+      },
+      {
+        "step": 8,
+        "webp": "assets/food_cats/cat_c1_s08.webp",
+        "png": "assets/food_cats/cat_c1_s08.png"
+      },
+      {
+        "step": 9,
+        "webp": "assets/food_cats/cat_c1_s09.webp",
+        "png": "assets/food_cats/cat_c1_s09.png"
+      },
+      {
+        "step": 10,
+        "webp": "assets/food_cats/cat_c1_s10.webp",
+        "png": "assets/food_cats/cat_c1_s10.png"
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Дымчатый",
+    "file": "FoodCat02.jpg",
+    "preview": "assets/food_cats/cat_c2_s05.webp",
+    "steps": [
+      {
+        "step": 1,
+        "webp": "assets/food_cats/cat_c2_s01.webp",
+        "png": "assets/food_cats/cat_c2_s01.png"
+      },
+      {
+        "step": 2,
+        "webp": "assets/food_cats/cat_c2_s02.webp",
+        "png": "assets/food_cats/cat_c2_s02.png"
+      },
+      {
+        "step": 3,
+        "webp": "assets/food_cats/cat_c2_s03.webp",
+        "png": "assets/food_cats/cat_c2_s03.png"
+      },
+      {
+        "step": 4,
+        "webp": "assets/food_cats/cat_c2_s04.webp",
+        "png": "assets/food_cats/cat_c2_s04.png"
+      },
+      {
+        "step": 5,
+        "webp": "assets/food_cats/cat_c2_s05.webp",
+        "png": "assets/food_cats/cat_c2_s05.png"
+      },
+      {
+        "step": 6,
+        "webp": "assets/food_cats/cat_c2_s06.webp",
+        "png": "assets/food_cats/cat_c2_s06.png"
+      },
+      {
+        "step": 7,
+        "webp": "assets/food_cats/cat_c2_s07.webp",
+        "png": "assets/food_cats/cat_c2_s07.png"
+      },
+      {
+        "step": 8,
+        "webp": "assets/food_cats/cat_c2_s08.webp",
+        "png": "assets/food_cats/cat_c2_s08.png"
+      },
+      {
+        "step": 9,
+        "webp": "assets/food_cats/cat_c2_s09.webp",
+        "png": "assets/food_cats/cat_c2_s09.png"
+      },
+      {
+        "step": 10,
+        "webp": "assets/food_cats/cat_c2_s10.webp",
+        "png": "assets/food_cats/cat_c2_s10.png"
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "name": "Полосатый",
+    "file": "FoodCat03.jpg",
+    "preview": "assets/food_cats/cat_c3_s05.webp",
+    "steps": [
+      {
+        "step": 1,
+        "webp": "assets/food_cats/cat_c3_s01.webp",
+        "png": "assets/food_cats/cat_c3_s01.png"
+      },
+      {
+        "step": 2,
+        "webp": "assets/food_cats/cat_c3_s02.webp",
+        "png": "assets/food_cats/cat_c3_s02.png"
+      },
+      {
+        "step": 3,
+        "webp": "assets/food_cats/cat_c3_s03.webp",
+        "png": "assets/food_cats/cat_c3_s03.png"
+      },
+      {
+        "step": 4,
+        "webp": "assets/food_cats/cat_c3_s04.webp",
+        "png": "assets/food_cats/cat_c3_s04.png"
+      },
+      {
+        "step": 5,
+        "webp": "assets/food_cats/cat_c3_s05.webp",
+        "png": "assets/food_cats/cat_c3_s05.png"
+      },
+      {
+        "step": 6,
+        "webp": "assets/food_cats/cat_c3_s06.webp",
+        "png": "assets/food_cats/cat_c3_s06.png"
+      },
+      {
+        "step": 7,
+        "webp": "assets/food_cats/cat_c3_s07.webp",
+        "png": "assets/food_cats/cat_c3_s07.png"
+      },
+      {
+        "step": 8,
+        "webp": "assets/food_cats/cat_c3_s08.webp",
+        "png": "assets/food_cats/cat_c3_s08.png"
+      },
+      {
+        "step": 9,
+        "webp": "assets/food_cats/cat_c3_s09.webp",
+        "png": "assets/food_cats/cat_c3_s09.png"
+      },
+      {
+        "step": 10,
+        "webp": "assets/food_cats/cat_c3_s10.webp",
+        "png": "assets/food_cats/cat_c3_s10.png"
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "name": "Белоснежный",
+    "file": "FoodCat04.jpg",
+    "preview": "assets/food_cats/cat_c4_s05.webp",
+    "steps": [
+      {
+        "step": 1,
+        "webp": "assets/food_cats/cat_c4_s01.webp",
+        "png": "assets/food_cats/cat_c4_s01.png"
+      },
+      {
+        "step": 2,
+        "webp": "assets/food_cats/cat_c4_s02.webp",
+        "png": "assets/food_cats/cat_c4_s02.png"
+      },
+      {
+        "step": 3,
+        "webp": "assets/food_cats/cat_c4_s03.webp",
+        "png": "assets/food_cats/cat_c4_s03.png"
+      },
+      {
+        "step": 4,
+        "webp": "assets/food_cats/cat_c4_s04.webp",
+        "png": "assets/food_cats/cat_c4_s04.png"
+      },
+      {
+        "step": 5,
+        "webp": "assets/food_cats/cat_c4_s05.webp",
+        "png": "assets/food_cats/cat_c4_s05.png"
+      },
+      {
+        "step": 6,
+        "webp": "assets/food_cats/cat_c4_s06.webp",
+        "png": "assets/food_cats/cat_c4_s06.png"
+      },
+      {
+        "step": 7,
+        "webp": "assets/food_cats/cat_c4_s07.webp",
+        "png": "assets/food_cats/cat_c4_s07.png"
+      },
+      {
+        "step": 8,
+        "webp": "assets/food_cats/cat_c4_s08.webp",
+        "png": "assets/food_cats/cat_c4_s08.png"
+      },
+      {
+        "step": 9,
+        "webp": "assets/food_cats/cat_c4_s09.webp",
+        "png": "assets/food_cats/cat_c4_s09.png"
+      },
+      {
+        "step": 10,
+        "webp": "assets/food_cats/cat_c4_s10.webp",
+        "png": "assets/food_cats/cat_c4_s10.png"
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "name": "Черепаховый",
+    "file": "FoodCat05.jpg",
+    "preview": "assets/food_cats/cat_c5_s05.webp",
+    "steps": [
+      {
+        "step": 1,
+        "webp": "assets/food_cats/cat_c5_s01.webp",
+        "png": "assets/food_cats/cat_c5_s01.png"
+      },
+      {
+        "step": 2,
+        "webp": "assets/food_cats/cat_c5_s02.webp",
+        "png": "assets/food_cats/cat_c5_s02.png"
+      },
+      {
+        "step": 3,
+        "webp": "assets/food_cats/cat_c5_s03.webp",
+        "png": "assets/food_cats/cat_c5_s03.png"
+      },
+      {
+        "step": 4,
+        "webp": "assets/food_cats/cat_c5_s04.webp",
+        "png": "assets/food_cats/cat_c5_s04.png"
+      },
+      {
+        "step": 5,
+        "webp": "assets/food_cats/cat_c5_s05.webp",
+        "png": "assets/food_cats/cat_c5_s05.png"
+      },
+      {
+        "step": 6,
+        "webp": "assets/food_cats/cat_c5_s06.webp",
+        "png": "assets/food_cats/cat_c5_s06.png"
+      },
+      {
+        "step": 7,
+        "webp": "assets/food_cats/cat_c5_s07.webp",
+        "png": "assets/food_cats/cat_c5_s07.png"
+      },
+      {
+        "step": 8,
+        "webp": "assets/food_cats/cat_c5_s08.webp",
+        "png": "assets/food_cats/cat_c5_s08.png"
+      },
+      {
+        "step": 9,
+        "webp": "assets/food_cats/cat_c5_s09.webp",
+        "png": "assets/food_cats/cat_c5_s09.png"
+      },
+      {
+        "step": 10,
+        "webp": "assets/food_cats/cat_c5_s10.webp",
+        "png": "assets/food_cats/cat_c5_s10.png"
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "name": "Черный",
+    "file": "FoodCat06.jpg",
+    "preview": "assets/food_cats/cat_c6_s05.webp",
+    "steps": [
+      {
+        "step": 1,
+        "webp": "assets/food_cats/cat_c6_s01.webp",
+        "png": "assets/food_cats/cat_c6_s01.png"
+      },
+      {
+        "step": 2,
+        "webp": "assets/food_cats/cat_c6_s02.webp",
+        "png": "assets/food_cats/cat_c6_s02.png"
+      },
+      {
+        "step": 3,
+        "webp": "assets/food_cats/cat_c6_s03.webp",
+        "png": "assets/food_cats/cat_c6_s03.png"
+      },
+      {
+        "step": 4,
+        "webp": "assets/food_cats/cat_c6_s04.webp",
+        "png": "assets/food_cats/cat_c6_s04.png"
+      },
+      {
+        "step": 5,
+        "webp": "assets/food_cats/cat_c6_s05.webp",
+        "png": "assets/food_cats/cat_c6_s05.png"
+      },
+      {
+        "step": 6,
+        "webp": "assets/food_cats/cat_c6_s06.webp",
+        "png": "assets/food_cats/cat_c6_s06.png"
+      },
+      {
+        "step": 7,
+        "webp": "assets/food_cats/cat_c6_s07.webp",
+        "png": "assets/food_cats/cat_c6_s07.png"
+      },
+      {
+        "step": 8,
+        "webp": "assets/food_cats/cat_c6_s08.webp",
+        "png": "assets/food_cats/cat_c6_s08.png"
+      },
+      {
+        "step": 9,
+        "webp": "assets/food_cats/cat_c6_s09.webp",
+        "png": "assets/food_cats/cat_c6_s09.png"
+      },
+      {
+        "step": 10,
+        "webp": "assets/food_cats/cat_c6_s10.webp",
+        "png": "assets/food_cats/cat_c6_s10.png"
+      }
+    ]
+  }
+]
