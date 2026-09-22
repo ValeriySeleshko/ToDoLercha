@@ -1133,6 +1133,10 @@
   justify-content: center !important;
 }
 
+#confirmModalBackdrop {
+  z-index: 10500 !important;
+}
+
 .modal-backdrop.confirmation-backdrop .modal-sheet.confirmation-sheet {
   max-width: 350px;
   width: calc(100% - 36px);

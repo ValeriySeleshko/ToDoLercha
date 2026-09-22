@@ -431,6 +431,97 @@
       return this.data.settings;
     }
 
+    /**
+     * Научный автоматический расчёт суточных калорий и БЖУ (Формула Миффлина — Сан-Жеора)
+     */
+    static calculateTargets(params = {}) {
+      const gender = params.gender === 'male' ? 'male' : 'female';
+      const age = Math.min(120, Math.max(12, Number(params.age) || 28));
+      const height = Math.min(250, Math.max(90, Number(params.height) || 165));
+      const weight = Math.min(300, Math.max(30, Number(params.weight) || 65));
+
+      const ACTIVITY_MULTIPLIERS = {
+        sedentary: 1.2,    // Сидячий образ жизни
+        light: 1.375,      // Легкая активность (1-3 тренировки/нед)
+        moderate: 1.55,    // Умеренная активность (3-5 тренировок/нед)
+        high: 1.725,       // Высокая активность (6-7 тренировок/нед)
+        extreme: 1.9       // Экстремальная активность
+      };
+      const actMult = ACTIVITY_MULTIPLIERS[params.activityLevel] || ACTIVITY_MULTIPLIERS.light;
+
+      // 1. BMR (Базовый обмен веществ)
+      let bmr = (10 * weight) + (6.25 * height) - (5 * age);
+      if (gender === 'male') {
+        bmr += 5;
+      } else {
+        bmr -= 161;
+      }
+      bmr = Math.max(600, Math.round(bmr));
+
+      // 2. TDEE (Полный суточный расход энергии с активностью)
+      const tdee = Math.round(bmr * actMult);
+
+      // 3. Калории с учётом цели
+      let calTarget = tdee;
+      let plannedDiff = 0;
+      const userGoal = params.goal || 'maintain';
+
+      if (userGoal === 'loss') {
+        calTarget = Math.max(800, Math.round((tdee * 0.85) / 10) * 10);
+        plannedDiff = calTarget - tdee;
+      } else if (userGoal === 'gain') {
+        calTarget = Math.max(800, Math.round((tdee * 1.10) / 10) * 10);
+        plannedDiff = calTarget - tdee;
+      } else {
+        // Поддержание веса: округляем TDEE до ближайших 10 ккал, плановый дефицит/профицит = 0
+        calTarget = Math.max(800, Math.round(tdee / 10) * 10);
+        plannedDiff = 0;
+      }
+
+      // 4. Пропорции БЖУ
+      const SPLITS = {
+        balanced: { p: 0.30, f: 0.30, c: 0.40 }, // Здоровье и баланс
+        loss_opt: { p: 0.35, f: 0.25, c: 0.40 }, // Снижение веса и рельеф
+        low_carb: { p: 0.30, f: 0.40, c: 0.30 }, // Низкоуглеводная
+        athlete:  { p: 0.25, f: 0.20, c: 0.55 }  // Энергия / выносливость
+      };
+      const split = SPLITS[params.macroSplit] || (params.goal === 'loss' ? SPLITS.loss_opt : SPLITS.balanced);
+
+      const protGrams = Math.max(20, Math.round((calTarget * split.p) / 4));
+      const fatGrams = Math.max(15, Math.round((calTarget * split.f) / 9));
+      // Углеводы закрывают остаток калорийности для точности
+      const carbKcal = Math.max(40, calTarget - (protGrams * 4 + fatGrams * 9));
+      const carbGrams = Math.max(20, Math.round(carbKcal / 4));
+
+      return {
+        gender,
+        age,
+        height,
+        weight,
+        goal: userGoal,
+        bmr,
+        tdee,
+        diffKcal: plannedDiff,
+        calorieTarget: calTarget,
+        proteinTarget: protGrams,
+        fatTarget: fatGrams,
+        carbTarget: carbGrams,
+        splitPercents: {
+          p: Math.round(split.p * 100),
+          f: Math.round(split.f * 100),
+          c: Math.round(split.c * 100)
+        }
+      };
+    }
+
+    calculateTargets(params = {}) {
+      return NutritionTracker.calculateTargets(params);
+    }
+
+    setCycleTracker(ct) {
+      this._cycleTracker = ct || null;
+    }
+
     getMacroColor(key) {
       if (!this.data.settings) this.data.settings = { ...DEFAULT_SETTINGS };
       if (!this.data.settings.macroColors) {
@@ -994,10 +1085,64 @@
         });
 
       const s = this.data.settings;
-      const calTarget = s.calorieTarget || 2000;
-      const pTarget = s.proteinTarget || 80;
-      const fTarget = s.fatTarget || 70;
-      const cTarget = s.carbTarget || 250;
+      let calTarget = s.calorieTarget || 2000;
+      let pTarget = s.proteinTarget || 80;
+      let fTarget = s.fatTarget || 70;
+      let cTarget = s.carbTarget || 250;
+
+      // Кросс-модульная синергия: Женский календарь + Дневник питания (Лютеиновая фаза / ПМС)
+      let cycleBoost = {
+        isBoosted: false,
+        percent: 0,
+        baseCalories: calTarget,
+        baseCarbs: cTarget,
+        extraCalories: 0,
+        extraCarbs: 0,
+        adviceText: '',
+        phase: 'unknown'
+      };
+
+      try {
+        const ct = this._cycleTracker || window.app?.cycleTracker || (typeof window !== 'undefined' && window.Plan4UCycleTracker ? new window.Plan4UCycleTracker.CycleTracker() : null);
+        if (ct) {
+          const cycleSettings = ct.getSettings();
+          const synergyStatus = (typeof ct.getLutealSynergyStatus === 'function')
+            ? ct.getLutealSynergyStatus(curDateStr)
+            : null;
+          cycleBoost.synergyStatus = synergyStatus;
+
+          const isLutealBoost = (typeof ct.isLutealNutritionBoostActive === 'function')
+            ? ct.isLutealNutritionBoostActive(curDateStr)
+            : (synergyStatus ? synergyStatus.isBoosted : false);
+
+          const boostPct = Number(cycleSettings.lutealBoostPercent) || 10;
+          cycleBoost.percent = boostPct;
+
+            if (isLutealBoost) {
+              const boostedCal = Math.round(calTarget * (1 + boostPct / 100));
+              const boostedCarbs = Math.round(cTarget * (1 + boostPct / 100));
+              const currentLang = (window.Plan4UI18n && typeof window.Plan4UI18n.getCurrentLanguage === 'function')
+                ? window.Plan4UI18n.getCurrentLanguage()
+                : (window.app?.settings?.lang || 'ru');
+              const advice = (typeof ct.getLutealNutritionAdvice === 'function')
+                ? ct.getLutealNutritionAdvice(curDateStr, currentLang)
+                : '';
+
+              cycleBoost.isBoosted = true;
+              cycleBoost.baseCalories = calTarget;
+              cycleBoost.baseCarbs = cTarget;
+              cycleBoost.extraCalories = boostedCal - calTarget;
+              cycleBoost.extraCarbs = boostedCarbs - cTarget;
+              cycleBoost.adviceText = advice;
+              cycleBoost.phase = 'luteal';
+
+              calTarget = boostedCal;
+              cTarget = boostedCarbs;
+            }
+        }
+      } catch (e) {
+        console.warn('Plan4UNutritionTracker: cycle synergy evaluation error', e);
+      }
 
       return {
         date: curDateStr,
@@ -1019,7 +1164,8 @@
         },
         breakdown,
         allMealsWithStatus: this.data.meals.map(m => mealMap[m.id] || { ...m, mealId: m.id, calories: 0, entries: [] }),
-        entryCount: entries.length
+        entryCount: entries.length,
+        cycleBoost
       };
     }
 

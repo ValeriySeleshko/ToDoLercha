@@ -1,0 +1,614 @@
+/* ==========================================================================
+   14_SHEET_EXPORT.CSS - Plan4U Stories & Sheet Image Export & Luteal Care
+   ========================================================================== */
+
+/* --- 1. Luteal Care Banner in Nutrition Tracker --- */
+.nutrition-luteal-care-banner {
+  display: flex;
+  flex-direction: column;
+  background: rgba(254, 242, 242, 0.92);
+  border: 1.5px solid rgba(244, 114, 182, 0.35);
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin: 0 0 12px 0;
+  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.06);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  animation: lutealBannerFadeIn 0.25s ease-out;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+@keyframes lutealBannerFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.nutrition-luteal-care-banner:hover {
+  background: rgba(254, 242, 242, 0.98);
+  border-color: rgba(244, 114, 182, 0.5);
+  box-shadow: 0 3px 10px rgba(244, 63, 94, 0.1);
+}
+
+.theme-dark .nutrition-luteal-care-banner {
+  background: rgba(46, 24, 38, 0.85);
+  border-color: rgba(244, 114, 182, 0.28);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.theme-dark .nutrition-luteal-care-banner:hover {
+  background: rgba(56, 28, 44, 0.95);
+  border-color: rgba(244, 114, 182, 0.45);
+}
+
+.luteal-banner-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+}
+
+.luteal-banner-header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.luteal-banner-header-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.luteal-banner-icon {
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.luteal-banner-title {
+  font-size: 12px;
+  font-weight: 750;
+  color: #9f1239;
+  letter-spacing: -0.2px;
+  line-height: 1.25;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.theme-dark .luteal-banner-title {
+  color: #fecdd3;
+}
+
+.luteal-banner-pill {
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #e11d48;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 1.5px 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  letter-spacing: 0.1px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.theme-dark .luteal-banner-pill {
+  color: #fda4af;
+  background: rgba(30, 16, 26, 0.85);
+  border-color: rgba(244, 114, 182, 0.4);
+}
+
+.luteal-banner-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: #be123c;
+  flex-shrink: 0;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.theme-dark .luteal-banner-arrow {
+  color: #f472b6;
+}
+
+.nutrition-luteal-care-banner.is-open .luteal-banner-arrow {
+  transform: rotate(180deg);
+}
+
+.luteal-banner-body {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, margin-top 0.2s ease;
+}
+
+.nutrition-luteal-care-banner.is-open .luteal-banner-body {
+  max-height: 250px;
+  opacity: 1;
+  margin-top: 8px;
+}
+
+.luteal-banner-desc {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: #475569;
+  font-family: var(--font-handwriting, 'Caveat', cursive, sans-serif);
+  font-weight: 600;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(244, 114, 182, 0.28);
+}
+
+.theme-dark .luteal-banner-desc {
+  color: #e2e8f0;
+  border-top-color: rgba(244, 114, 182, 0.2);
+}
+
+/* Standby info bar shown in Nutrition Modal when synergy is ON, but today is not luteal *//* Donut center boost tag */
+.donut-boost-chip {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  color: #e11d48;
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.25);
+  padding: 1px 6px;
+  border-radius: 999px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.theme-dark .donut-boost-chip {
+  color: #fda4af;
+  background: rgba(244, 114, 182, 0.18);
+  border-color: rgba(244, 114, 182, 0.35);
+}
+
+/* Cycle Sub-Settings Boost Chips & Status Box */
+.cycle-boost-chips {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.cycle-boost-chip {
+  flex: 1;
+  padding: 7px 8px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border-color, #e2e8f0);
+  background: var(--card-bg, #ffffff);
+  color: var(--text-color, #1e293b);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  text-align: center;
+}
+
+.cycle-boost-chip.active {
+  border-color: var(--primary-magenta, #d83a88);
+  background: rgba(var(--primary-rgb, 216, 58, 136), 0.1);
+  color: var(--primary-magenta, #d83a88);
+  box-shadow: 0 2px 6px rgba(var(--primary-rgb, 216, 58, 136), 0.15);
+}
+/* --- 2. Floating Camera Export Button on Notebook Sheet (Shown ONLY in past archive days) --- */
+.btn-sheet-export {
+  display: none;
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 15;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--primary-magenta, #d83a88);
+  background: var(--card-bg, #ffffff);
+  color: var(--primary-magenta, #d83a88);
+  box-shadow: 0 3px 12px rgba(var(--primary-rgb, 216, 58, 136), 0.25), 0 1px 3px rgba(0, 0, 0, 0.08);
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.btn-sheet-export:hover {
+  transform: scale(1.1) rotate(-6deg);
+  box-shadow: 0 6px 20px rgba(var(--primary-rgb, 216, 58, 136), 0.38);
+}
+
+.btn-sheet-export:active {
+  transform: scale(0.92);
+}
+
+.btn-sheet-export-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.theme-dark .btn-sheet-export {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: var(--primary-magenta, #f1f5f9);
+  color: var(--primary-magenta, #f1f5f9);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+/* Button in Past Day Return Row: "Сохранить или поделиться этим днем" */
+.past-day-export-btn {
+  background: var(--card-bg, #ffffff);
+  border: 2px solid var(--primary-magenta, #d83a88);
+  border-radius: 12px;
+  padding: 6px 12px;
+  font-size: 16px;
+  color: var(--primary-magenta, #d83a88);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 3px 10px rgba(var(--primary-rgb, 216, 58, 136), 0.2);
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease;
+}
+
+.past-day-export-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 5px 16px rgba(var(--primary-rgb, 216, 58, 136), 0.32);
+}
+
+.past-day-export-btn:active {
+  transform: scale(0.94);
+}
+
+.theme-dark .past-day-export-btn {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: var(--primary-magenta, #f1f5f9);
+  color: var(--primary-magenta, #f1f5f9);
+}
+
+/* --- 3. Sheet Export Modal --- */
+.modal-backdrop.sheet-export-backdrop,
+#sheetExportModalBackdrop {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  z-index: 1000 !important;
+}
+
+.sheet-export-sheet {
+  width: 100% !important;
+  max-width: 100% !important;
+  max-height: calc(100% - 16px) !important;
+  height: auto !important;
+  border-radius: 24px 24px 0 0 !important;
+  border-top: 3px solid rgba(var(--primary-rgb, 216, 58, 136), 0.8) !important;
+  margin: 0 !important;
+  margin-bottom: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  box-shadow: 0 -8px 36px rgba(0, 0, 0, 0.28) !important;
+  background: var(--card-bg, #ffffff) !important;
+  box-sizing: border-box !important;
+  transform: none !important;
+  animation: modalSheetSpringIn 0.38s cubic-bezier(0.2, 0.8, 0.25, 1) forwards !important;
+}
+
+/* Sticky fixed Header with guaranteed visible Close button */
+.sheet-export-sheet .modal-header {
+  position: sticky !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 12px 16px 10px 16px !important;
+  margin: 0 !important;
+  background: var(--card-bg, #ffffff) !important;
+  border-bottom: 1px solid var(--border-color, #e2e8f0) !important;
+  box-sizing: border-box !important;
+  z-index: 50 !important;
+}
+
+.theme-dark .sheet-export-sheet .modal-header {
+  background: #1e293b !important;
+  border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.sheet-export-header-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.sheet-export-header-title h2 {
+  font-size: 16px !important;
+  font-weight: 750 !important;
+  color: var(--text-color, #0f172a) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.theme-dark .sheet-export-header-title h2 {
+  color: #f1f5f9 !important;
+}
+
+.sheet-export-date-badge {
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  color: var(--primary-magenta, #d83a88) !important;
+  background: rgba(var(--primary-rgb, 216, 58, 136), 0.1) !important;
+  padding: 3px 8px !important;
+  border-radius: 999px !important;
+  letter-spacing: 0.2px !important;
+}
+
+.theme-dark .sheet-export-date-badge {
+  color: var(--primary-magenta, #f1f5f9) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Close button - prominent, styled and guaranteed visible */
+.sheet-export-sheet .modal-close-btn {
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  min-height: 34px !important;
+  background: var(--bg-surface, #f1f5f9) !important;
+  border: 1.5px solid var(--border-color, #cbd5e1) !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  color: var(--text-color, #334155) !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  transition: all 0.18s ease !important;
+  margin-left: auto !important;
+  box-sizing: border-box !important;
+}
+
+.sheet-export-sheet .modal-close-btn:hover {
+  background: var(--primary-magenta, #d83a88) !important;
+  color: #ffffff !important;
+  border-color: var(--primary-magenta, #d83a88) !important;
+  transform: rotate(90deg) scale(1.06) !important;
+}
+
+.theme-dark .sheet-export-sheet .modal-close-btn {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: #f1f5f9 !important;
+}
+
+.sheet-export-modal-content {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  padding: 12px 16px max(20px, env(safe-area-inset-bottom, 20px)) !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* Format Tabs (hidden if only 1 format) */
+.sheet-export-format-tabs {
+  display: none !important;
+}
+
+/* Option Checkboxes Grid */
+.sheet-export-options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.sheet-export-option-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--bg-surface, #f8fafc);
+  border: 1px solid var(--border-color, #e2e8f0);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-color, #334155);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+.theme-dark .sheet-export-option-pill {
+  background: rgba(30, 41, 59, 0.5);
+  border-color: rgba(71, 85, 105, 0.4);
+  color: #cbd5e1;
+}
+
+.sheet-export-option-pill input[type="checkbox"] {
+  accent-color: var(--primary-magenta, #d83a88);
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+/* Live Preview Stage */
+.sheet-export-preview-container {
+  position: relative !important;
+  width: 100% !important;
+  min-height: 120px !important;
+  max-height: min(28vh, 260px) !important;
+  border-radius: 18px !important;
+  background: radial-gradient(circle at center, #f1e6db 0%, #e2d1be 100%) !important;
+  border: 1.5px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+  padding: 8px !important;
+  box-sizing: border-box !important;
+}
+
+.theme-dark .sheet-export-preview-container {
+  background: radial-gradient(circle at center, #241c19 0%, #151110 100%) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.4) !important;
+}
+
+.sheet-export-image-wrap {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.sheet-export-preview-img {
+  max-width: 100% !important;
+  max-height: min(26vh, 240px) !important;
+  object-fit: contain !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+  transition: transform 0.25s ease !important;
+}
+
+.sheet-export-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(4px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  z-index: 10;
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.theme-dark .sheet-export-loading {
+  background: rgba(15, 23, 42, 0.85);
+  color: #cbd5e1;
+}
+
+.export-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3.5px solid rgba(var(--primary-rgb, 216, 58, 136), 0.2);
+  border-top-color: var(--primary-magenta, #d83a88);
+  border-radius: 50%;
+  animation: exportSpin 0.75s linear infinite;
+}
+
+@keyframes exportSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* Action Buttons: Unified with app design system, NO GRADIENTS */
+.sheet-export-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.btn-sheet-export-action {
+  flex: 1;
+  height: 46px;
+  padding: 0 16px;
+  border-radius: 12px;
+  font-family: var(--font-ui, 'Inter', -apple-system, sans-serif);
+  font-size: 14px;
+  font-weight: 750;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.18s ease;
+}
+
+.btn-sheet-export-action:active {
+  transform: scale(0.98);
+}
+
+/* Share button: Primary solid accent (NO GRADIENT) */
+.btn-export-share {
+  background: var(--primary-magenta, #d83a88);
+  color: var(--btn-accent-text, #ffffff) !important;
+  border: var(--btn-accent-border, none);
+  box-shadow: 0 4px 14px rgba(var(--primary-rgb, 216, 58, 136), 0.3);
+}
+
+.btn-export-share:hover {
+  filter: brightness(0.93);
+  box-shadow: 0 6px 18px rgba(var(--primary-rgb, 216, 58, 136), 0.4);
+}
+
+/* Download button: Secondary craft button (NO GRADIENT) */
+.btn-export-download {
+  background: var(--bg-surface, #f8fafc);
+  color: var(--text-color, #1e293b);
+  border: 1.5px solid var(--border-color, #cbd5e1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.btn-export-download:hover {
+  background: var(--card-bg, #ffffff);
+  border-color: var(--primary-magenta, #d83a88);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+
+.theme-dark .btn-export-download {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #f1f5f9;
+}
+
+.theme-dark .btn-export-download:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--primary-magenta, #f1f5f9);
+}
+
+/* --- 4. Staging Container for High-Res Canvas Capture (Off-screen) --- */
+.sheet-export-staging-wrap {
+  position: fixed;
+  left: -9999px;
+  top: -9999px;
+  z-index: -999;
+  visibility: hidden;
+  pointer-events: none;
+}

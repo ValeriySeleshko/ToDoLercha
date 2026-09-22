@@ -81,6 +81,7 @@ const filesToSync = [
   'favicon.png',
   'icon.png',
   'icon.svg',
+  'html2canvas.min.js',
   ...jsFiles
 ];
 
@@ -94,10 +95,21 @@ filesToSync.forEach(file => {
   }
 });
 
-// Recursive copy function for assets
+// Recursive sync function with cleanup for assets
 function copyFolderSync(from, to) {
   if (!fs.existsSync(from)) return;
   if (!fs.existsSync(to)) fs.mkdirSync(to, { recursive: true });
+
+  // Remove files in destination that no longer exist in source
+  fs.readdirSync(to).forEach(element => {
+    const destPath = path.join(to, element);
+    const srcPath = path.join(from, element);
+    if (!fs.existsSync(srcPath)) {
+      fs.rmSync(destPath, { recursive: true, force: true });
+    }
+  });
+
+  // Copy files from source to destination
   fs.readdirSync(from).forEach(element => {
     const srcPath = path.join(from, element);
     const destPath = path.join(to, element);

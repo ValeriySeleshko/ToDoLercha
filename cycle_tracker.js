@@ -62,7 +62,9 @@
     periodLength: 5,         // Средняя длительность месячных (дней)
     defaultCycleLength: 28,  // Базовый ориентир, если пока мало записей
     lutealLength: 14,        // Лютеиновая фаза (биологическая константа 12-14 дней)
-    showInTopBar: true       // Показывать круглый значок в шапке блокнота
+    showInTopBar: true,      // Показывать круглый значок в шапке блокнота
+    lutealNutritionSync: false, // Связка с питанием: адаптация КБЖУ в лютеиновую фазу
+    lutealBoostPercent: 10      // Процент повышения нормы калорий и углеводов (10% по умолчанию)
   };
 
   const phase = (title, badge, energies, taskTips) => ({ title, badge, energies, taskTips });
@@ -163,7 +165,15 @@
       "Слушай внутренние сигналы, береги поясницу и держи любимые средства гигиены наготове. Всё идёт естественным чередом в своём ритме.",
       "Побудь в режиме мягкого ожидания. Никакой паники: организм сам знает идеальный момент для перезагрузки."
       ]
-    )
+    ),
+    luteal_nutrition: [
+      "Лютеиновая фаза: сегодня лёгкая тяга к сладкому — это абсолютно нормально, норма калорий бережно повышена 🌸",
+      "Организм сейчас тратит больше энергии на внутренние процессы. Побалуй себя сложными углеводами или десертом без чувства вины 🍫✨",
+      "Фаза уюта и тепла: телу нужно чуть больше сил. Норма КБЖУ адаптирована, чтобы ты чувствовала себя сытой и спокойной 🍵🥑",
+      "Гормональный фон сейчас требует поддержки — добавь ягод, орешков или тёплого какао. Мы прибавили калорий для твоего комфорта 🍓✨",
+      "Не кори себя за хороший аппетит: в лютеиновую фазу обмен веществ ускоряется на 5–10%. Мы мягко скорректировали норму дня 🧸💖",
+      "Слушай своё тело: сегодня ему требуется чуть больше энергии и бережности. Кушай вкусно и с любовью к себе 🥑✨"
+    ]
     },
     uk: {
     menstrual_early: phase(
@@ -259,7 +269,15 @@
       "Слухай внутрішні підказки тіла, бережи себе і тримай засоби гігієни напоготові. Усе відбувається у своєму гармонійному темпі.",
       "Побудь у стані спокійного очікування. Жодної тривоги: організм сам чудово знає ідеальний момент для перезавантаження."
       ]
-    )
+    ),
+    luteal_nutrition: [
+      "Лютеїнова фаза: сьогодні легка тяга до солодкого — це абсолютно нормально, норму калорій дбайливо підвищено 🌸",
+      "Організм зараз витрачає більше енергії на внутрішні процеси. Потіш себе складними вуглеводами чи улюбленим десертом без почуття провини 🍫✨",
+      "Фаза затишку й тепла: тілу потрібно трохи більше сил. Норму КБЖВ адаптовано, щоб ти почувалася ситою і спокійною 🍵🥑",
+      "Гормональний фон потребує підтримки — додай ягід, горішків або теплого какао. Ми додали калорій для твого комфорту 🍓✨",
+      "Не картай себе за апетит: у лютеїнову фазу метаболізм прискорюється на 5–10%. Ми м'яко скоригували денну норму 🧸💖",
+      "Слухай своє тіло: сьогодні йому потрібно більше турботи й енергії. Їж смачно і з любов'ю до себе 🥑✨"
+    ]
     },
     en: {
     menstrual_early: phase(
@@ -355,7 +373,15 @@
       "Tune in to subtle cues, stay warm, and keep your care items tucked in your bag. Everything is proceeding naturally in its own time.",
       "Embrace this gentle waiting period. No panic or overthinking: your body knows the perfect moment to press reset."
       ]
-    )
+    ),
+    luteal_nutrition: [
+      "Luteal phase: a gentle craving for sweets is completely natural today — your daily calories have been thoughtfully increased 🌸",
+      "Your body burns more energy during this phase. Enjoy complex carbs or a favorite treat with zero guilt 🍫✨",
+      "A season of comfort and warmth: your body needs a bit more fuel. Targets are adapted so you feel nourished and peaceful 🍵🥑",
+      "Hormones need gentle support right now — enjoy berries, nuts, or a warm cup of cocoa. We've added calories for your ease 🍓✨",
+      "Don't judge yourself for a healthy appetite: metabolism naturally rises by 5–10% in the luteal phase. We adjusted today's target 🧸💖",
+      "Listen to your body: it asks for gentleness and energy today. Eat nourishing, delicious food with self-love 🥑✨"
+    ]
     }
   };
 
@@ -464,6 +490,11 @@
 
     deleteCycle(id) {
       this.data.history = this.data.history.filter(c => c.id !== id);
+      this.saveData();
+    }
+
+    clearAllHistory() {
+      this.data.history = [];
       this.saveData();
     }
 
@@ -760,6 +791,72 @@
         taskTip: pick(subData.taskTips, subData.taskTip || ''),
         badge: subData.badge || ''
       };
+    }
+
+    // Проверка активности синергии с питанием на указанную дату
+    isLutealNutritionBoostActive(dateStr = null) {
+      if (!this.isEnabled() || !this.data.settings.lutealNutritionSync) return false;
+      const status = this.getStatusForDate(dateStr);
+      if (!status || !status.hasData) return false;
+      return status.phase === 'luteal';
+    }
+
+    // Детальный статус кросс-модульной синергии для интерфейса
+    getLutealSynergyStatus(dateStr = null) {
+      const curDateStr = dateStr || getTodayString();
+      const isEnabled = this.isEnabled();
+      const isSyncOn = !!this.data.settings.lutealNutritionSync;
+      const boostPct = Number(this.data.settings.lutealBoostPercent) || 10;
+
+      if (!isEnabled) {
+        return {
+          active: false,
+          isBoosted: false,
+          reason: 'cycle_disabled',
+          boostPct,
+          phase: 'unknown',
+          dayInCycle: 0
+        };
+      }
+
+      if (!isSyncOn) {
+        return {
+          active: false,
+          isBoosted: false,
+          reason: 'disabled',
+          boostPct,
+          phase: 'unknown',
+          dayInCycle: 0
+        };
+      }
+
+      const status = this.getStatusForDate(curDateStr);
+      if (!status || !status.hasData) {
+        return {
+          active: true,
+          isBoosted: false,
+          reason: 'no_cycle_data',
+          boostPct,
+          phase: 'unknown',
+          dayInCycle: 0
+        };
+      }
+
+      const isLuteal = status.phase === 'luteal';
+      return {
+        active: true,
+        isBoosted: isLuteal,
+        reason: isLuteal ? 'luteal_phase' : 'other_phase',
+        boostPct,
+        phase: status.phase,
+        dayInCycle: status.dayInCycle
+      };
+    }
+
+    getLutealNutritionAdvice(dateStr = null, lang = 'ru') {
+      const activeLang = ADVICE_DATA[lang] ? lang : (ADVICE_DATA.ru ? 'ru' : 'en');
+      const phrases = ADVICE_DATA[activeLang]?.luteal_nutrition || ADVICE_DATA.ru.luteal_nutrition;
+      return pick(phrases, "Лютеиновая фаза: норма калорий бережно повышена для твоего комфорта 🌸");
     }
   }
 

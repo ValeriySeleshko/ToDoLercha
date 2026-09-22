@@ -222,6 +222,11 @@
 
       <!-- Lined Notebook Page Container -->
       <section class="notebook-sheet" id="notebookSheet" role="tabpanel" aria-labelledby="tab-todo">
+        <!-- Floating Export Sheet to Image / Stories Button (Shown only on past archive days) -->
+        <button type="button" class="btn-sheet-export" id="btnExportSheet" style="display: none;" title="Сохранить или поделиться листом дня" aria-label="Экспорт страницы" data-i18n-title="export_sheet_btn_title" data-i18n-aria="export_sheet_btn_aria">
+          <span class="btn-sheet-export-icon">📸</span>
+        </button>
+
         <!-- Left vertical margin pink line -->
         <div class="margin-line" aria-hidden="true"></div>
 
@@ -1131,6 +1136,30 @@
                       <input type="range" id="cycleDefaultLengthRange" min="20" max="45" step="1" value="28" class="range-slider">
                     </div>
 
+                    <!-- Кросс-модульная связка: Женский календарь + Дневник питания -->
+                    <div class="setting-toggle-row" style="margin-top: 8px; border-top: 1px dashed var(--border-color, #e2e8f0); padding-top: 10px;">
+                      <div class="setting-toggle-info">
+                        <div class="setting-toggle-label" style="display: flex; align-items: center; gap: 5px;">
+                          <span>🍒🥑</span> <span data-i18n="cycle_toggle_nutrition_sync">Адаптация КБЖУ в лютеиновую фазу</span>
+                        </div>
+                        <div class="setting-toggle-desc" data-i18n="cycle_toggle_nutrition_sync_desc">Мягко повышать норму калорий и углеводов в дни ПМС, когда метаболизму нужно больше энергии</div>
+                      </div>
+                      <label class="toggle-switch">
+                        <input type="checkbox" id="toggleCycleNutritionSync">
+                        <span class="toggle-slider"></span>
+                      </label>
+                    </div>
+
+                    <!-- Выбор процента прибавки (появляется при включенном тумблере) -->
+                    <div class="form-group" id="cycleNutritionBoostGroup" style="display: none; margin-bottom: 8px;">
+                      <label style="font-size: 11.5px; color: var(--text-muted, #64748b); font-weight: 600;" data-i18n="cycle_boost_percent_label">Размер прибавки в лютеиновую фазу:</label>
+                      <div class="cycle-boost-chips" id="cycleBoostChips">
+                        <button type="button" class="cycle-boost-chip" data-boost="5">+5% (~100 ккал)</button>
+                        <button type="button" class="cycle-boost-chip active" data-boost="10">+10% (рекомендуется)</button>
+                        <button type="button" class="cycle-boost-chip" data-boost="15">+15% (~300 ккал)</button>
+                      </div>
+                    </div>
+
                     <button type="button" class="btn-primary-block settings-module-action-btn" id="btnOpenCycleFromSettings">
                       <span data-i18n="cycle_open_btn">🍒 Открыть календарь цикла</span>
                     </button>
@@ -1227,7 +1256,12 @@
 
                     <!-- Суточные нормы -->
                     <div class="nutrition-targets-block">
-                      <div class="settings-group-title" data-i18n="nutrition_daily_targets_title">Суточные нормы</div>
+                      <div class="nutrition-targets-header-row">
+                        <div class="settings-group-title" data-i18n="nutrition_daily_targets_title">Суточные нормы</div>
+                        <button type="button" class="btn-open-nutrition-calc" id="btnOpenNutritionCalcModal" title="Рассчитать нормы калорий и БЖУ автоматически">
+                          <span data-i18n="nutrition_calc_open_btn">🪄 Авто-расчёт КБЖУ</span>
+                        </button>
+                      </div>
                       <div class="nutrition-targets-cards-grid">
                         <!-- Калории -->
                         <div class="nutrition-target-card target-card-kcal">
@@ -1385,7 +1419,7 @@
           </div>
 
           <div style="text-align: center; font-size: 11px; color: #94a3b8; margin-top: 12px; font-weight: 600; letter-spacing: 0.3px;" data-i18n="app_version_footer">
-            Plan4U • Версия 0.3.13
+            Plan4U • Версия 0.3.16
           </div>
 
 
@@ -1567,7 +1601,9 @@
             <div class="cycle-history-section">
               <div class="cycle-history-header">
                 <h3 data-i18n="cycle_history_title">История циклов</h3>
-                <span class="cycle-history-count" id="cycleHistoryCount">0 записей</span>
+                <div class="cycle-history-header-actions">
+                  <span class="cycle-history-count" id="cycleHistoryCount">0 записей</span>
+                </div>
               </div>
               <div class="cycle-history-list" id="cycleHistoryList">
                 <!-- Dynamically populated list of past cycles -->
@@ -1643,15 +1679,12 @@
 
             <!-- 4. Main Actions -->
             <div class="cycle-add-actions">
-              <button type="button" class="cycle-btn-modal-cancel" id="cycleAddCancelBtn" data-i18n="cycle_btn_cancel">Отмена</button>
-              <button type="button" class="cycle-btn-modal-save" id="cycleAddSaveBtn">
-                <span class="btn-save-icon">✨</span>
-                <span data-i18n="cycle_btn_save">Сохранить</span>
-              </button>
+              <button type="button" class="cycle-btn-modal-cancel btn-cancel" id="cycleAddCancelBtn" data-i18n="cycle_btn_cancel">Отмена</button>
+              <button type="button" class="cycle-btn-modal-save btn-submit" id="cycleAddSaveBtn" data-i18n="cycle_btn_save">Сохранить</button>
             </div>
 
             <!-- 5. Delete Button (Edit Mode Only) -->
-            <button type="button" class="btn-cycle-modal-delete" id="cycleAddDeleteBtn" style="display: none;">
+            <button type="button" class="btn-cycle-modal-delete btn-danger-block" id="cycleAddDeleteBtn" style="display: none;">
               <span>🗑️</span>
               <span data-i18n="cycle_btn_delete">Удалить эту запись</span>
             </button>
@@ -2127,6 +2160,27 @@
           </div>
 
 
+          <!-- Luteal Phase Gentle Care Banner (Shown when Cycle & Nutrition synergy is active) -->
+          <div class="nutrition-luteal-care-banner" id="nutritionLutealCareBanner" style="display: none;" role="button" tabindex="0" aria-expanded="false">
+            <div class="luteal-banner-header" id="nutritionLutealToggle">
+              <div class="luteal-banner-header-left">
+                <span class="luteal-banner-icon">🍒</span>
+                <span class="luteal-banner-title" data-i18n="luteal_banner_title">Забота в лютеиновую фазу</span>
+              </div>
+              <div class="luteal-banner-header-right">
+                <span class="luteal-banner-pill" id="lutealBannerPill">+10% к норме</span>
+                <span class="luteal-banner-arrow" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </span>
+              </div>
+            </div>
+            <div class="luteal-banner-body" id="nutritionLutealBody">
+              <div class="luteal-banner-desc" id="nutritionLutealQuote"></div>
+            </div>
+          </div>
+
           <!-- Hero Section: Left Donut Ring + Right 3 Vertical Macro Bars -->
           <div class="nutrition-hero-section">
             <!-- Left Column: Donut Ring (Offset to Left) -->
@@ -2599,10 +2653,15 @@
           </div>
 
           <div class="nutrition-settings-content">
-            <!-- Daily Targets Notice -->
-            <div class="settings-group-block" style="margin-bottom: 14px; padding: 10px 14px; display: flex; align-items: center; gap: 10px;">
-              <span style="font-size: 18px; flex-shrink: 0;">⚙️</span>
-              <span style="font-size: 12.5px; color: var(--text-muted, #64748b); line-height: 1.4;" data-i18n="nutrition_daily_targets_hint">Суточные нормы калорий и БЖУ настраиваются в основных настройках приложения</span>
+            <!-- Daily Targets Notice & Quick Auto-Calc Trigger -->
+            <div class="settings-group-block nutrition-calc-settings-callout">
+              <div class="nutrition-callout-info">
+                <span class="nutrition-callout-icon">🪄</span>
+                <span class="nutrition-callout-text" data-i18n="nutrition_daily_targets_hint">Суточные нормы калорий и БЖУ настраиваются в основных настройках приложения</span>
+              </div>
+              <button type="button" class="btn-open-nutrition-calc" id="btnOpenNutritionCalcFromMealSettings" title="Рассчитать нормы калорий и БЖУ">
+                <span data-i18n="nutrition_calc_open_btn">🪄 Авто-расчёт КБЖУ</span>
+              </button>
             </div>
 
             <!-- Custom Meals Section -->
@@ -2639,6 +2698,183 @@
             <div class="modal-actions" style="margin-top: 16px;">
               <button type="button" class="btn-primary-block" id="btnSaveNutritionSettingsModal" data-i18n="close_btn">
                 Готово
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nutrition Calculator Submenu Modal (Автоматический расчет КБЖУ) -->
+      <div class="modal-backdrop" id="nutritionCalcModalBackdrop" aria-hidden="true">
+        <div class="modal-sheet modal-sheet-scrollable nutrition-calc-sheet" role="dialog" aria-modal="true" aria-labelledby="nutritionCalcModalTitle">
+          <div class="modal-header">
+            <div class="modal-header-titles">
+              <h2 id="nutritionCalcModalTitle" data-i18n="nutrition_calc_modal_title">🪄 Калькулятор норм КБЖУ</h2>
+              <p class="modal-header-subtitle" data-i18n="nutrition_calc_modal_subtitle">Научный расчёт по формуле Миффлина — Сан-Жеора с учётом вашей активности и цели</p>
+            </div>
+            <button type="button" class="modal-close-btn" id="nutritionCalcCloseBtn" aria-label="Закрыть">&times;</button>
+          </div>
+
+          <div class="nutrition-calc-content">
+            <!-- 1. Gender Selection (2 кнопки: розовая девушка и голубая мужчина) -->
+            <div class="calc-gender-row" id="calcGenderControl">
+              <button type="button" class="calc-segment-btn calc-gender-btn btn-gender-female active" data-gender="female" id="calcGenderFemale">
+                <span data-i18n="nutrition_calc_gender_female">♀️ Девушка</span>
+              </button>
+              <button type="button" class="calc-segment-btn calc-gender-btn btn-gender-male" data-gender="male" id="calcGenderMale">
+                <span data-i18n="nutrition_calc_gender_male">♂️ Мужчина</span>
+              </button>
+            </div>
+
+            <!-- 2. Age, Height, Weight with Intuitive +- Steppers -->
+            <div class="calc-body-cards-grid">
+              <!-- Возраст -->
+              <div class="calc-body-card">
+                <div class="calc-body-card-header">
+                  <span class="calc-body-card-title">🎂 <span data-i18n="nutrition_calc_age">Возраст</span></span>
+                  <span class="calc-body-card-badge" data-i18n="nutrition_calc_age_unit">лет</span>
+                </div>
+                <div class="target-stepper-row calc-stepper-row">
+                  <button type="button" class="btn-target-step btn-step-minus" data-target="calcInputAge" data-step="-1" data-min="12" data-max="120" aria-label="Уменьшить возраст">−</button>
+                  <input type="number" id="calcInputAge" class="target-num-input calc-body-input" value="28" min="12" max="120" step="1" inputmode="numeric">
+                  <button type="button" class="btn-target-step btn-step-plus" data-target="calcInputAge" data-step="1" data-min="12" data-max="120" aria-label="Увеличить возраст">+</button>
+                </div>
+              </div>
+
+              <!-- Рост -->
+              <div class="calc-body-card">
+                <div class="calc-body-card-header">
+                  <span class="calc-body-card-title">📏 <span data-i18n="nutrition_calc_height">Рост</span></span>
+                  <span class="calc-body-card-badge" data-i18n="nutrition_calc_height_unit">см</span>
+                </div>
+                <div class="target-stepper-row calc-stepper-row">
+                  <button type="button" class="btn-target-step btn-step-minus" data-target="calcInputHeight" data-step="-1" data-min="90" data-max="250" aria-label="Уменьшить рост">−</button>
+                  <input type="number" id="calcInputHeight" class="target-num-input calc-body-input" value="165" min="90" max="250" step="1" inputmode="numeric">
+                  <button type="button" class="btn-target-step btn-step-plus" data-target="calcInputHeight" data-step="1" data-min="90" data-max="250" aria-label="Увеличить рост">+</button>
+                </div>
+              </div>
+
+              <!-- Вес -->
+              <div class="calc-body-card">
+                <div class="calc-body-card-header">
+                  <span class="calc-body-card-title">⚖️ <span data-i18n="nutrition_calc_weight">Вес</span></span>
+                  <span class="calc-body-card-badge" data-i18n="nutrition_calc_weight_unit">кг</span>
+                </div>
+                <div class="target-stepper-row calc-stepper-row">
+                  <button type="button" class="btn-target-step btn-step-minus" data-target="calcInputWeight" data-step="-0.5" data-min="30" data-max="300" aria-label="Уменьшить вес">−</button>
+                  <input type="number" id="calcInputWeight" class="target-num-input calc-body-input" value="65" min="30" max="300" step="0.5" inputmode="decimal">
+                  <button type="button" class="btn-target-step btn-step-plus" data-target="calcInputWeight" data-step="0.5" data-min="30" data-max="300" aria-label="Увеличить вес">+</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Physical Activity Level -->
+            <div class="calc-form-group">
+              <label class="calc-label" for="calcSelectActivity" data-i18n="nutrition_calc_activity">Уровень физической активности</label>
+              <select id="calcSelectActivity" class="settings-select calc-select">
+                <option value="sedentary" data-i18n="nutrition_calc_act_sedentary">🪑 Сидячий образ жизни (минимум движения, офис)</option>
+                <option value="light" selected data-i18n="nutrition_calc_act_light">🚶 Лёгкая активность (прогулки, спорт 1-3 р/нед)</option>
+                <option value="moderate" data-i18n="nutrition_calc_act_moderate">🏃 Умеренная активность (тренировки 3-5 р/нед)</option>
+                <option value="high" data-i18n="nutrition_calc_act_high">🏋️ Высокая активность (интенсивный спорт 6-7 р/нед)</option>
+                <option value="extreme" data-i18n="nutrition_calc_act_extreme">⚡ Экстремальная активность (тяжёлый труд / профи)</option>
+              </select>
+            </div>
+
+            <!-- 4. Goal Selection -->
+            <div class="calc-form-group">
+              <label class="calc-label" data-i18n="nutrition_calc_goal">Ваша цель</label>
+              <div class="calc-goal-cards" id="calcGoalContainer">
+                <button type="button" class="calc-goal-card active" data-goal="loss" id="calcGoalLoss">
+                  <div class="calc-goal-icon">📉</div>
+                  <div class="calc-goal-name" data-i18n="nutrition_calc_goal_loss">Снижение веса (-15%)</div>
+                </button>
+                <button type="button" class="calc-goal-card" data-goal="maintain" id="calcGoalMaintain">
+                  <div class="calc-goal-icon">⚖️</div>
+                  <div class="calc-goal-name" data-i18n="nutrition_calc_goal_maintain">Поддержание веса</div>
+                </button>
+                <button type="button" class="calc-goal-card" data-goal="gain" id="calcGoalGain">
+                  <div class="calc-goal-icon">📈</div>
+                  <div class="calc-goal-name" data-i18n="nutrition_calc_goal_gain">Набор массы (+10%)</div>
+                </button>
+              </div>
+            </div>
+
+            <!-- 5. Macro Split Scheme -->
+            <div class="calc-form-group">
+              <label class="calc-label" for="calcSelectMacroSplit" data-i18n="nutrition_calc_macro_split">Схема распределения БЖУ</label>
+              <select id="calcSelectMacroSplit" class="settings-select calc-select">
+                <option value="loss_opt" selected data-i18n="nutrition_calc_split_loss">🎯 Для похудения (35% Б / 25% Ж / 40% У)</option>
+                <option value="balanced" data-i18n="nutrition_calc_split_balanced">🥗 Сбалансированная (30% Б / 30% Ж / 40% У)</option>
+                <option value="low_carb" data-i18n="nutrition_calc_split_low_carb">🥑 Низкоуглеводная (30% Б / 40% Ж / 30% У)</option>
+                <option value="athlete" data-i18n="nutrition_calc_split_athlete">⚡ Спортивная / Энергия (25% Б / 20% Ж / 55% У)</option>
+              </select>
+            </div>
+
+            <!-- 6. Live Preview Block -->
+            <div class="calc-preview-card">
+              <div class="calc-preview-header">
+                <span class="calc-preview-title" data-i18n="nutrition_calc_preview_title">Расчётная норма на день:</span>
+                <span class="calc-preview-diff-badge" id="calcPreviewDiffBadge">-250 ккал</span>
+              </div>
+
+              <div class="calc-preview-calorie-hero">
+                <span class="calc-hero-fire">🔥</span>
+                <span class="calc-hero-val" id="calcPreviewCalories">1 650</span>
+                <span class="calc-hero-unit" data-i18n="nutrition_kcal_short">ккал</span>
+              </div>
+
+              <!-- Macro Visual Ratio Bar -->
+              <div class="calc-macro-ratio-bar">
+                <div class="calc-macro-seg seg-prot" id="calcSegProt" style="width: 35%;" title="Белки 35%"></div>
+                <div class="calc-macro-seg seg-fat" id="calcSegFat" style="width: 25%;" title="Жиры 25%"></div>
+                <div class="calc-macro-seg seg-carb" id="calcSegCarb" style="width: 40%;" title="Углеводы 40%"></div>
+              </div>
+
+              <!-- Macro Cards -->
+              <div class="calc-preview-macros-grid">
+                <div class="calc-macro-box box-prot">
+                  <div class="calc-macro-box-header">
+                    <span class="calc-dot dot-prot"></span>
+                    <span data-i18n="nutrition_macro_protein">Белки</span>
+                  </div>
+                  <div class="calc-macro-box-val"><span id="calcPreviewProt">144</span> <small>г</small></div>
+                  <div class="calc-macro-box-pct" id="calcPreviewProtPct">35% • 576 ккал</div>
+                </div>
+
+                <div class="calc-macro-box box-fat">
+                  <div class="calc-macro-box-header">
+                    <span class="calc-dot dot-fat"></span>
+                    <span data-i18n="nutrition_macro_fat">Жиры</span>
+                  </div>
+                  <div class="calc-macro-box-val"><span id="calcPreviewFat">46</span> <small>г</small></div>
+                  <div class="calc-macro-box-pct" id="calcPreviewFatPct">25% • 414 ккал</div>
+                </div>
+
+                <div class="calc-macro-box box-carb">
+                  <div class="calc-macro-box-header">
+                    <span class="calc-dot dot-carb"></span>
+                    <span data-i18n="nutrition_macro_carbs">Углеводы</span>
+                  </div>
+                  <div class="calc-macro-box-val"><span id="calcPreviewCarb">165</span> <small>г</small></div>
+                  <div class="calc-macro-box-pct" id="calcPreviewCarbPct">40% • 660 ккал</div>
+                </div>
+              </div>
+
+              <!-- Scientific meta notes (BMR & TDEE) -->
+              <div class="calc-preview-meta-row">
+                <span class="calc-meta-pill">
+                  <span data-i18n="nutrition_calc_bmr_label">Базовый обмен (BMR):</span> <strong id="calcPreviewBmr">1 380</strong> ккал
+                </span>
+                <span class="calc-meta-pill">
+                  <span data-i18n="nutrition_calc_tdee_label">Суточный расход (TDEE):</span> <strong id="calcPreviewTdee">1 900</strong> ккал
+                </span>
+              </div>
+            </div>
+
+            <!-- 7. Actions -->
+            <div class="modal-actions" style="margin-top: 18px;">
+              <button type="button" class="btn-primary-block btn-apply-calc" id="btnApplyNutritionCalc">
+                <span data-i18n="nutrition_calc_apply_btn">Применить нормы в настройки</span>
               </button>
             </div>
           </div>
@@ -3031,9 +3267,68 @@
         </div>
       </div>
 
+      <!-- Sheet Export to Image & Stories Modal -->
+      <div class="modal-backdrop sheet-export-backdrop" id="sheetExportModalBackdrop" aria-hidden="true">
+        <div class="modal-sheet modal-sheet-scrollable sheet-export-sheet" role="dialog" aria-modal="true" aria-labelledby="sheetExportModalTitle">
+          <div class="modal-header">
+            <div class="sheet-export-header-title">
+              <h2 id="sheetExportModalTitle">📸 <span data-i18n="export_modal_title">Поделиться днём</span></h2>
+              <span class="sheet-export-date-badge" id="sheetExportDateBadge">22 сен</span>
+            </div>
+            <button type="button" class="modal-close-btn" id="sheetExportCloseBtn" aria-label="Закрыть">&times;</button>
+          </div>
+
+          <div class="sheet-export-modal-content">
+            <!-- Options Row (Checkboxes) -->
+            <div class="sheet-export-options-grid">
+              <label class="sheet-export-option-pill">
+                <input type="checkbox" id="exportOptStickers" checked>
+                <span>✨ <span data-i18n="export_opt_stickers">Стикеры</span></span>
+              </label>
+              <label class="sheet-export-option-pill">
+                <input type="checkbox" id="exportOptStamps" checked>
+                <span>🏷️ <span data-i18n="export_opt_stamps">Штампы дня</span></span>
+              </label>
+              <label class="sheet-export-option-pill">
+                <input type="checkbox" id="exportOptPet" checked>
+                <span>🐾 <span data-i18n="export_opt_pet">Котик Мейни</span></span>
+              </label>
+              <label class="sheet-export-option-pill">
+                <input type="checkbox" id="exportOptHideFinance">
+                <span>🔒 <span data-i18n="export_opt_hide_finance">Скрыть суммы</span></span>
+              </label>
+            </div>
+
+            <!-- Live Image Preview Stage -->
+            <div class="sheet-export-preview-container" id="sheetExportPreviewContainer">
+              <div class="sheet-export-loading" id="sheetExportLoading" style="display: none;">
+                <div class="export-spinner"></div>
+                <span data-i18n="export_generating">Создаём красивую картинку... ✨</span>
+              </div>
+              <div class="sheet-export-image-wrap" id="sheetExportImageWrap">
+                <img id="sheetExportPreviewImg" class="sheet-export-preview-img" alt="Предпросмотр листа" src="" />
+              </div>
+            </div>
+
+            <!-- Action Buttons: Save to Gallery & Share -->
+            <div class="sheet-export-actions">
+              <button type="button" class="btn-sheet-export-action btn-export-download" id="btnSheetExportDownload">
+                <span class="btn-export-icon">💾</span>
+                <span data-i18n="export_btn_save">Сохранить фото</span>
+              </button>
+              <button type="button" class="btn-sheet-export-action btn-export-share" id="btnSheetExportShare">
+                <span class="btn-export-icon">📤</span>
+                <span data-i18n="export_btn_share">Поделиться</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </main>
   </div>
 
+  <script src="html2canvas.min.js"></script>
   <script src="i18n.js?v=0.7.9"></script>
   <script src="maine_quests_data.js?v=0.7.1"></script>
   <script src="maine_quests.js?v=0.7.1"></script>

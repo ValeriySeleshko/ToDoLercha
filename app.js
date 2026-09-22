@@ -1315,6 +1315,7 @@ if (typeof DEFAULT_STICKER_CATEGORIES === 'undefined') {
 class NotebookApp {
   constructor() {
     window.appInstance = this;
+    window.app = this;
     this._isHydrating = false;
     this.hasDeferredTaskFlag = localStorage.getItem('todo_notebook_flag_defer') === '1';
     this.hasExportedBackupFlag = localStorage.getItem('todo_notebook_flag_backup') === '1';
@@ -5839,6 +5840,9 @@ class NotebookApp {
     this.cyclePeriodLengthVal = document.getElementById('cyclePeriodLengthVal');
     this.cycleDefaultLengthRange = document.getElementById('cycleDefaultLengthRange');
     this.cycleDefaultLengthVal = document.getElementById('cycleDefaultLengthVal');
+    this.toggleCycleNutritionSync = document.getElementById('toggleCycleNutritionSync');
+    this.cycleNutritionBoostGroup = document.getElementById('cycleNutritionBoostGroup');
+    this.cycleBoostChips = document.querySelectorAll('.cycle-boost-chip');
     this.btnOpenCycleFromSettings = document.getElementById('btnOpenCycleFromSettings');
     this.btnExpandCycleModule = document.getElementById('btnExpandCycleModule');
     this.btnExpandFinanceModule = document.getElementById('btnExpandFinanceModule');
@@ -6034,6 +6038,13 @@ class NotebookApp {
     this.isNutritionArchiveMode = false;
     this.nutritionSelectedMealFilterId = null;
     this.currentNutritionDate = null;
+    this.nutritionLutealCareBanner = document.getElementById('nutritionLutealCareBanner');
+    this.nutritionLutealQuote = document.getElementById('nutritionLutealQuote');
+    this.lutealBannerPill = document.getElementById('lutealBannerPill');
+
+    if (this.nutritionTracker && this.cycleTracker) {
+      this.nutritionTracker.setCycleTracker(this.cycleTracker);
+    }
 
     // Macro Color Picker Modal Elements (Long press on Ж, Б, У)
     this.macroColorModalBackdrop = document.getElementById('macroColorModalBackdrop');
@@ -6122,6 +6133,37 @@ class NotebookApp {
     this.nutritionSettingCarbs = document.getElementById('nutritionSettingCarbs');
     this.btnOpenNutritionFromSettings = document.getElementById('btnOpenNutritionFromSettings');
 
+    // Automatic KBJU Calculator Elements
+    this.btnOpenNutritionCalcModal = document.getElementById('btnOpenNutritionCalcModal');
+    this.btnOpenNutritionCalcFromMealSettings = document.getElementById('btnOpenNutritionCalcFromMealSettings');
+    this.nutritionCalcModalBackdrop = document.getElementById('nutritionCalcModalBackdrop');
+    this.nutritionCalcCloseBtn = document.getElementById('nutritionCalcCloseBtn');
+    this.calcGenderControl = document.getElementById('calcGenderControl');
+    this.calcGenderFemale = document.getElementById('calcGenderFemale');
+    this.calcGenderMale = document.getElementById('calcGenderMale');
+    this.calcInputAge = document.getElementById('calcInputAge');
+    this.calcInputHeight = document.getElementById('calcInputHeight');
+    this.calcInputWeight = document.getElementById('calcInputWeight');
+    this.calcSelectActivity = document.getElementById('calcSelectActivity');
+    this.calcGoalContainer = document.getElementById('calcGoalContainer');
+    this.calcSelectMacroSplit = document.getElementById('calcSelectMacroSplit');
+    this.btnApplyNutritionCalc = document.getElementById('btnApplyNutritionCalc');
+
+    // Live preview elements
+    this.calcPreviewCalories = document.getElementById('calcPreviewCalories');
+    this.calcPreviewDiffBadge = document.getElementById('calcPreviewDiffBadge');
+    this.calcSegProt = document.getElementById('calcSegProt');
+    this.calcSegFat = document.getElementById('calcSegFat');
+    this.calcSegCarb = document.getElementById('calcSegCarb');
+    this.calcPreviewProt = document.getElementById('calcPreviewProt');
+    this.calcPreviewFat = document.getElementById('calcPreviewFat');
+    this.calcPreviewCarb = document.getElementById('calcPreviewCarb');
+    this.calcPreviewProtPct = document.getElementById('calcPreviewProtPct');
+    this.calcPreviewFatPct = document.getElementById('calcPreviewFatPct');
+    this.calcPreviewCarbPct = document.getElementById('calcPreviewCarbPct');
+    this.calcPreviewBmr = document.getElementById('calcPreviewBmr');
+    this.calcPreviewTdee = document.getElementById('calcPreviewTdee');
+
     // Nutrition Settings Modal Elements
     this.nutritionSettingsModalBackdrop = document.getElementById('nutritionSettingsModalBackdrop');
     this.nutritionSettingsCloseBtn = document.getElementById('nutritionSettingsCloseBtn');
@@ -6197,6 +6239,26 @@ class NotebookApp {
     this.btnStickerBigger = document.getElementById('btnStickerBigger');
     this.btnStickerSmaller = document.getElementById('btnStickerSmaller');
     this.btnStickerDelete = document.getElementById('btnStickerDelete');
+
+    // Sheet Export to Image / Stories Elements
+    this.btnExportSheet = document.getElementById('btnExportSheet');
+    this.pastDayExportBtn = document.getElementById('pastDayExportBtn');
+    this.sheetExportModalBackdrop = document.getElementById('sheetExportModalBackdrop');
+    this.sheetExportCloseBtn = document.getElementById('sheetExportCloseBtn');
+    this.btnExportFormatStory = document.getElementById('btnExportFormatStory');
+    this.btnExportFormatSheet = document.getElementById('btnExportFormatSheet');
+    this.exportOptStickers = document.getElementById('exportOptStickers');
+    this.exportOptStamps = document.getElementById('exportOptStamps');
+    this.exportOptPet = document.getElementById('exportOptPet');
+    this.exportOptHideFinance = document.getElementById('exportOptHideFinance');
+    this.sheetExportLoading = document.getElementById('sheetExportLoading');
+    this.sheetExportPreviewImg = document.getElementById('sheetExportPreviewImg');
+    this.btnSheetExportDownload = document.getElementById('btnSheetExportDownload');
+    this.btnSheetExportShare = document.getElementById('btnSheetExportShare');
+    this.sheetExportDateBadge = document.getElementById('sheetExportDateBadge');
+    this.currentExportFormat = 'story';
+    this.currentExportBlob = null;
+    this.currentExportDataUrl = null;
 
     this.initContentDelegation();
   }
@@ -7084,6 +7146,9 @@ class NotebookApp {
     // Initialize Nutrition & Macro Tracker Event Listeners
     this.initNutritionTrackerListeners();
 
+    // Initialize Sheet Export Event Listeners
+    this.initSheetExportListeners();
+
     if (this.btnCycleStartToday) {
       this.btnCycleStartToday.addEventListener('click', () => {
         triggerHaptic([20, 40, 20]);
@@ -7131,14 +7196,12 @@ class NotebookApp {
       this.cycleAddDeleteBtn.addEventListener('click', () => {
         if (!this.editingCycleId || !this.cycleTracker) return;
         triggerHaptic(20);
-        if (confirm(this.t('cycle_confirm_delete'))) {
-          this.cycleTracker.deleteCycle(this.editingCycleId);
-          this.editingCycleId = null;
-          this.closeCycleAddModal();
-          this.refreshCycleUI('cycle_toast_deleted', '🗑️');
-        }
+        const cycle = this.cycleTracker.getHistory().find(c => c.id === this.editingCycleId);
+        const datesStr = cycle ? `${cycle.startDate} – ${cycle.endDate || '...'}` : '';
+        this.confirmDeleteCycle(this.editingCycleId, datesStr);
       });
     }
+
 
     if (this.cycleInputStartDate) {
       this.cycleInputStartDate.addEventListener('input', () => {
@@ -8050,13 +8113,14 @@ class NotebookApp {
   }
 
   // Reusable In-App Confirmation Modal (Beautiful dialog matching notebook aesthetic)
-  showConfirmModal({ title, message, icon = '🗑️', confirmText = 'Удалить', onConfirm }) {
+  showConfirmModal({ title, message, icon = '🗑️', confirmText = 'Удалить', cancelText = null, onConfirm }) {
     this.dismissActiveKeyboard();
     const backdrop = document.getElementById('confirmModalBackdrop') || this.confirmModalBackdrop;
     const titleEl = document.getElementById('confirmModalTitle') || this.confirmModalTitle;
     const msgEl = document.getElementById('confirmModalMessage') || this.confirmModalMessage;
     const iconEl = document.getElementById('confirmModalIcon') || this.confirmModalIcon;
     const approveBtn = document.getElementById('confirmModalApproveBtn') || this.confirmModalApproveBtn;
+    const cancelBtn = document.getElementById('confirmModalCancelBtn') || this.confirmModalCancelBtn;
 
     if (!backdrop) return;
 
@@ -8064,6 +8128,9 @@ class NotebookApp {
     if (msgEl) msgEl.textContent = message;
     if (iconEl) iconEl.textContent = icon;
     if (approveBtn) approveBtn.textContent = confirmText;
+    if (cancelBtn) {
+      cancelBtn.textContent = cancelText || this.t('cycle_btn_cancel') || this.t('btn_cancel') || this.t('cancel') || 'Отмена';
+    }
 
     this.pendingConfirmCallback = onConfirm;
     this._confirmModalOpenedAt = Date.now();
@@ -9241,6 +9308,37 @@ class NotebookApp {
             this.updateCycleWidget();
           };
         }
+
+        if (this.toggleCycleNutritionSync) {
+          this.toggleCycleNutritionSync.onchange = (e) => {
+            const lutealNutritionSync = e.target.checked;
+            this.cycleTracker.updateSettings({ lutealNutritionSync });
+            if (this.cycleNutritionBoostGroup) {
+              this.cycleNutritionBoostGroup.style.display = lutealNutritionSync ? 'flex' : 'none';
+            }
+            this.updateNutritionWidget();
+            if (this.nutritionModalBackdrop && this.nutritionModalBackdrop.classList.contains('open')) {
+              this.renderNutritionModalContent();
+            }
+            this.updateNutritionArchiveStamp();
+          };
+        }
+
+        if (this.cycleBoostChips && this.cycleBoostChips.length > 0) {
+          this.cycleBoostChips.forEach(chip => {
+            chip.onclick = () => {
+              const boostPercent = parseInt(chip.dataset.boost, 10) || 10;
+              this.cycleTracker.updateSettings({ lutealBoostPercent: boostPercent });
+              this.cycleBoostChips.forEach(c => c.classList.toggle('active', c === chip));
+              this.updateNutritionWidget();
+              if (this.nutritionModalBackdrop && this.nutritionModalBackdrop.classList.contains('open')) {
+                this.renderNutritionModalContent();
+              }
+              this.updateNutritionArchiveStamp();
+              triggerHaptic(15);
+            };
+          });
+        }
       }
 
       if (this.importBackupFile) {
@@ -9324,6 +9422,18 @@ class NotebookApp {
       if (this.cycleDefaultLengthRange) {
         this.cycleDefaultLengthRange.value = cSet.defaultCycleLength || 28;
         if (this.cycleDefaultLengthVal) this.cycleDefaultLengthVal.textContent = `${cSet.defaultCycleLength || 28} дн.`;
+      }
+      if (this.toggleCycleNutritionSync) {
+        this.toggleCycleNutritionSync.checked = !!cSet.lutealNutritionSync;
+      }
+      if (this.cycleNutritionBoostGroup) {
+        this.cycleNutritionBoostGroup.style.display = cSet.lutealNutritionSync ? 'flex' : 'none';
+      }
+      if (this.cycleBoostChips && this.cycleBoostChips.length > 0) {
+        const currentBoost = cSet.lutealBoostPercent || 10;
+        this.cycleBoostChips.forEach(chip => {
+          chip.classList.toggle('active', parseInt(chip.dataset.boost, 10) === currentBoost);
+        });
       }
     }
 
@@ -10185,7 +10295,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.3.13',
+      appVersion: '0.3.16',
       email: this.cloudEmail,
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
@@ -10461,7 +10571,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.3.13',
+      appVersion: '0.3.16',
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
       sections: this.tabSections || {},
@@ -13765,6 +13875,11 @@ class NotebookApp {
     // 3.1 Manage Joy FAB button visibility (hidden on past archive days or if Joy is disabled)
     this.updateJoyBottomFab?.();
 
+    // 3.2 Manage Sheet Export Button (visible ONLY on past archive days)
+    if (this.btnExportSheet) {
+      this.btnExportSheet.style.setProperty('display', isPastDay ? 'flex' : 'none', 'important');
+    }
+
     // 4. Manage Floating Return to Today & Day Navigation Bar (visible in past and future days)
     const returnWrapper = document.getElementById('pastDayReturnWrapper');
     if (returnWrapper) {
@@ -16420,6 +16535,10 @@ class NotebookApp {
     this.renderCycleModalContent();
     this.renderCalendar();
     this.updateCycleWidget();
+    this.updateNutritionWidget?.();
+    if (this.nutritionModalBackdrop && this.nutritionModalBackdrop.classList.contains('open')) {
+      this.renderNutritionModalContent();
+    }
     if (toastKey) this.showToast(this.t(toastKey), toastIcon);
   }
 
@@ -16610,7 +16729,9 @@ class NotebookApp {
       this.cycleHistoryList.innerHTML = '';
       const history = this.cycleTracker.getHistory();
       if (this.cycleHistoryCount) {
-        this.cycleHistoryCount.textContent = `${history.length} записей`;
+        const lang = this.settings?.lang || 'ru';
+        const word = lang === 'uk' ? 'записів' : (lang === 'en' ? 'entries' : 'записей');
+        this.cycleHistoryCount.textContent = `${history.length} ${word}`;
       }
 
       if (history.length === 0) {
@@ -16620,95 +16741,60 @@ class NotebookApp {
         this.cycleHistoryList.appendChild(emptyEl);
       } else {
         history.forEach((cycle, idx) => {
-          const card = document.createElement('div');
-          card.className = `cycle-history-card ${cycle.isOutlier ? 'is-outlier' : ''}`;
-          card.onclick = (e) => {
-            if (e.target.closest('.cycle-outlier-chip') || e.target.closest('.cycle-history-edit-btn')) return;
-            triggerHaptic(15);
-            this.openCycleAddModal(cycle);
-          };
-
-          const main = document.createElement('div');
-          main.className = 'cycle-history-main';
-
-          const datesEl = document.createElement('div');
-          datesEl.className = 'cycle-history-dates';
-          datesEl.textContent = `${cycle.startDate} – ${cycle.endDate || '...'}`;
-
-          const metaEl = document.createElement('div');
-          metaEl.className = 'cycle-history-meta';
+          const wrapper = document.createElement('div');
+          wrapper.className = 'cycle-history-row-wrapper';
+          wrapper.dataset.id = cycle.id;
 
           let lenText = '';
           const nextCycle = history[idx - 1]; // т.к. history отсортирована по убыванию (новейшие вверху)
           if (nextCycle) {
             const daysLen = window.Plan4UCycleTracker ? Plan4UCycleTracker.diffInDays(cycle.startDate, nextCycle.startDate) : 0;
-            lenText = `Длина: ${daysLen} дн.`;
+            const daysWord = (this.settings?.lang === 'en') ? 'days' : ((this.settings?.lang === 'uk') ? 'дн.' : 'дн.');
+            lenText = `${this.t('cycle_stat_length') || 'Длина'}: ${daysLen} ${daysWord}`;
           } else if (idx === 0) {
-            lenText = 'Текущий цикл';
+            lenText = this.t('cycle_status_current') || 'Текущий цикл';
           }
 
-          metaEl.textContent = lenText;
+          wrapper.innerHTML = `
+            <div class="cycle-history-card ${cycle.isOutlier ? 'is-outlier' : ''}">
+              <div class="cycle-history-main">
+                <div class="cycle-history-dates">${this.escapeHtml(cycle.startDate)} – ${this.escapeHtml(cycle.endDate || '...')}</div>
+                <div class="cycle-history-meta">
+                  <span class="cycle-history-duration">${this.escapeHtml(lenText)}</span>
+                  ${cycle.isOutlier ? `<span class="cycle-outlier-tag">${this.escapeHtml(this.t('cycle_outlier_badge') || '⚠️ Сбой/стресс')}</span>` : ''}
+                  ${cycle.ovulationDate ? `<span class="cycle-ovulation-tag" style="font-size: 10px; font-weight: 700; color: #7c3aed; background: rgba(124, 58, 237, 0.15); padding: 1px 6px; border-radius: 6px;">✨ ${this.escapeHtml(this.t('cycle_stage_ovulation') || 'Овуляция')}: ${this.escapeHtml(cycle.ovulationDate)}</span>` : ''}
+                </div>
+                ${cycle.notes ? `<div class="cycle-history-notes">«${this.escapeHtml(cycle.notes)}»</div>` : ''}
+              </div>
+            </div>
+            <div class="cycle-swipe-actions-right">
+              <button type="button" class="swipe-action-btn action-edit" data-action="edit" title="${this.escapeHtml(this.t('cycle_history_edit_tooltip') || 'Редактировать')}" aria-label="${this.escapeHtml(this.t('cycle_history_edit_tooltip') || 'Редактировать')}">
+                <svg class="swipe-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+              </button>
+            </div>
+          `;
 
-          if (cycle.isOutlier) {
-            const outTag = document.createElement('span');
-            outTag.className = 'cycle-outlier-tag';
-            outTag.textContent = this.t('cycle_outlier_badge');
-            metaEl.appendChild(outTag);
-          }
-
-          if (cycle.ovulationDate) {
-            const ovTag = document.createElement('span');
-            ovTag.style.cssText = 'font-size: 10px; font-weight: 700; color: #7c3aed; background: rgba(124, 58, 237, 0.15); padding: 1px 6px; border-radius: 6px;';
-            ovTag.textContent = `✨ Овуляция: ${cycle.ovulationDate}`;
-            metaEl.appendChild(ovTag);
-          }
-
-          if (cycle.notes) {
-            const notesEl = document.createElement('div');
-            notesEl.style.cssText = 'font-size: 11px; color: #64748b; font-style: italic; margin-top: 2px;';
-            notesEl.textContent = `«${cycle.notes}»`;
-            main.appendChild(notesEl);
-          }
-
-          main.prepend(datesEl);
-          main.appendChild(metaEl);
-
-          const actions = document.createElement('div');
-          actions.className = 'cycle-history-actions';
-
-          // Если цикл был помечен как аномальный (болезнь/стресс), показываем деликатный чип
-          if (cycle.isOutlier) {
-            const outlierChip = document.createElement('button');
-            outlierChip.type = 'button';
-            outlierChip.className = 'cycle-outlier-chip';
-            outlierChip.title = this.t('cycle_outlier_tooltip');
-            outlierChip.textContent = this.t('cycle_outlier_chip');
-            outlierChip.onclick = (e) => {
+          const editBtn = wrapper.querySelector('.swipe-action-btn.action-edit');
+          if (editBtn) {
+            editBtn.addEventListener('click', (e) => {
               e.stopPropagation();
               triggerHaptic(15);
-              this.cycleTracker.toggleOutlier(cycle.id);
-              this.refreshCycleUI('cycle_toast_outlier', '⚙️');
-            };
-            actions.appendChild(outlierChip);
+              wrapper.classList.remove('open', 'swiping');
+              const r = wrapper.querySelector('.cycle-history-card');
+              const a = wrapper.querySelector('.cycle-swipe-actions-right');
+              if (r) { r.style.transform = ''; r.style.transition = ''; }
+              if (a) { a.style.transform = ''; a.style.transition = ''; }
+              this.openCycleAddModal(cycle);
+            });
           }
 
-          // Аккуратная кнопка-иконка редактирования записи
-          const editBtn = document.createElement('button');
-          editBtn.type = 'button';
-          editBtn.className = 'cycle-history-edit-btn';
-          editBtn.title = this.t('cycle_history_edit_tooltip');
-          editBtn.textContent = '✏️';
-          editBtn.onclick = (e) => {
-            e.stopPropagation();
-            triggerHaptic(10);
-            this.openCycleAddModal(cycle);
-          };
-          actions.appendChild(editBtn);
-
-          card.appendChild(main);
-          card.appendChild(actions);
-          this.cycleHistoryList.appendChild(card);
+          this.cycleHistoryList.appendChild(wrapper);
         });
+
+        this.attachCycleSwipeEvents();
       }
     }
   }
@@ -16816,6 +16902,307 @@ class NotebookApp {
     triggerHaptic(20);
     this.closeCycleAddModal();
     this.refreshCycleUI();
+  }
+
+  confirmDeleteCycle(cycleId, datesStr = '') {
+    if (!cycleId || !this.cycleTracker) return;
+    const lang = this.settings?.lang || 'ru';
+    const title = lang === 'uk' ? 'Видалити запис циклу?' : (lang === 'en' ? 'Delete cycle entry?' : 'Удалить запись цикла?');
+    const msg = lang === 'uk'
+      ? `Ви впевнені, що хочете видалити запис циклу ${datesStr ? `«${datesStr}»` : ''}? Календар, фази та прогноз оновляться автоматично.`
+      : (lang === 'en'
+        ? `Are you sure you want to delete cycle record ${datesStr ? `"${datesStr}"` : ''}? Calendar, phases, and forecast will recalculate automatically.`
+        : `Вы уверены, что хотите удалить запись цикла ${datesStr ? `«${datesStr}»` : ''}? Календарь, фазы и прогноз пересчитаются автоматически.`);
+    const confirmBtnText = lang === 'uk' ? 'Видалити' : (lang === 'en' ? 'Delete' : 'Удалить');
+    const cancelBtnText = lang === 'uk' ? 'Скасувати' : (lang === 'en' ? 'Cancel' : 'Отмена');
+
+    this.showConfirmModal({
+      title,
+      message: msg,
+      icon: '🍒',
+      confirmText: confirmBtnText,
+      cancelText: cancelBtnText,
+      onConfirm: () => {
+        this.cycleTracker.deleteCycle(cycleId);
+        if (this.editingCycleId === cycleId) {
+          this.editingCycleId = null;
+        }
+        this.closeCycleAddModal();
+        this.refreshCycleUI('cycle_toast_deleted', '🗑️');
+      }
+    });
+  }
+
+  confirmClearAllCycleHistory() {
+    if (!this.cycleTracker) return;
+    const history = this.cycleTracker.getHistory();
+    if (!history || history.length === 0) return;
+    const lang = this.settings?.lang || 'ru';
+    const title = lang === 'uk' ? 'Очистити всю історію?' : (lang === 'en' ? 'Clear cycle history?' : 'Очистить всю историю?');
+    const msg = lang === 'uk'
+      ? `Ви впевнені, що хочете видалити всі ${history.length} записів циклу? Календар повернеться до початкового стану.`
+      : (lang === 'en'
+        ? `Are you sure you want to delete all ${history.length} cycle records? The cycle tracker will reset to initial state.`
+        : `Вы уверены, что хотите удалить все ${history.length} записей цикла? Календарь вернётся к начальному состоянию.`);
+    const confirmBtnText = lang === 'uk' ? 'Очистити все' : (lang === 'en' ? 'Clear all' : 'Очистить всё');
+    const cancelBtnText = lang === 'uk' ? 'Скасувати' : (lang === 'en' ? 'Cancel' : 'Отмена');
+
+    this.showConfirmModal({
+      title,
+      message: msg,
+      icon: '🗑️',
+      confirmText: confirmBtnText,
+      cancelText: cancelBtnText,
+      onConfirm: () => {
+        this.cycleTracker.clearAllHistory();
+        if (this.editingCycleId) {
+          this.editingCycleId = null;
+        }
+        this.closeCycleAddModal();
+        this.refreshCycleUI('cycle_toast_deleted', '🗑️');
+      }
+    });
+  }
+
+  // Attach touch and drag swipe gestures for cycle history rows (revealing Edit button on swipe left)
+  attachCycleSwipeEvents() {
+    if (!this.cycleHistoryList) return;
+    const wrappers = this.cycleHistoryList.querySelectorAll('.cycle-history-row-wrapper');
+    if (!wrappers.length) return;
+    let activeOpenWrapper = null;
+    const actionsWidth = 52;
+    const openThreshold = -25;
+
+    const snapOpen = (w) => {
+      if (!w) return;
+      w.classList.add('open');
+      activeOpenWrapper = w;
+      const r = w.querySelector('.cycle-history-card');
+      const a = w.querySelector('.cycle-swipe-actions-right');
+      if (r) {
+        r.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+        r.style.transform = `translate3d(-${actionsWidth}px, 0, 0)`;
+      }
+      if (a) {
+        a.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+        a.style.transform = 'translate3d(0px, 0, 0)';
+      }
+      setTimeout(() => {
+        if (w.classList.contains('open') && !w.classList.contains('swiping')) {
+          if (r) { r.style.transition = ''; r.style.transform = ''; }
+          if (a) { a.style.transition = ''; a.style.transform = ''; }
+        }
+      }, 240);
+    };
+
+    const closeWrapper = (w, animated = true) => {
+      if (!w) return;
+      const r = w.querySelector('.cycle-history-card');
+      const a = w.querySelector('.cycle-swipe-actions-right');
+      if (animated) {
+        if (r) {
+          r.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+          r.style.transform = 'translate3d(0, 0, 0)';
+        }
+        if (a) {
+          a.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+          a.style.transform = 'translate3d(100%, 0, 0)';
+        }
+        w.classList.remove('open', 'swiping');
+        setTimeout(() => {
+          if (!w.classList.contains('open') && !w.classList.contains('swiping')) {
+            if (r) { r.style.transition = ''; r.style.transform = ''; }
+            if (a) { a.style.transition = ''; a.style.transform = ''; }
+          }
+        }, 240);
+      } else {
+        w.classList.remove('open', 'swiping');
+        if (r) { r.style.transform = ''; r.style.transition = ''; }
+        if (a) { a.style.transform = ''; a.style.transition = ''; }
+      }
+      if (activeOpenWrapper === w) activeOpenWrapper = null;
+    };
+
+    const closeAllSwipes = (animated = true) => {
+      wrappers.forEach(w => {
+        if (w.classList.contains('open') || w.classList.contains('swiping')) {
+          closeWrapper(w, animated);
+        }
+      });
+      activeOpenWrapper = null;
+    };
+
+    // Close on outside pointerdown
+    const outsideTapHandler = (e) => {
+      if (activeOpenWrapper && !activeOpenWrapper.contains(e.target)) {
+        closeAllSwipes(true);
+      }
+    };
+    if (this._cycleSwipeOutsideHandler) {
+      document.removeEventListener('pointerdown', this._cycleSwipeOutsideHandler);
+    }
+    this._cycleSwipeOutsideHandler = outsideTapHandler;
+    document.addEventListener('pointerdown', this._cycleSwipeOutsideHandler, { passive: true });
+
+    wrappers.forEach(wrapper => {
+      const row = wrapper.querySelector('.cycle-history-card');
+      const actionsRight = wrapper.querySelector('.cycle-swipe-actions-right');
+      if (!row) return;
+
+      let startX = 0;
+      let startY = 0;
+      let isDragging = false;
+      let isHorizontal = null;
+      let rafId = null;
+
+      const handleStart = (clientX, clientY, target) => {
+        if (target && target.closest('.swipe-action-btn, button')) {
+          return false;
+        }
+        if (activeOpenWrapper && activeOpenWrapper !== wrapper) {
+          closeAllSwipes(true);
+        }
+        startX = clientX;
+        startY = clientY;
+        isDragging = false;
+        isHorizontal = null;
+        wrapper.classList.add('swiping');
+        if (row) row.style.transition = 'none';
+        if (actionsRight) actionsRight.style.transition = 'none';
+        return true;
+      };
+
+      const handleMove = (clientX, clientY, e) => {
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+
+        if (isHorizontal === null) {
+          if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
+            isHorizontal = Math.abs(dx) > Math.abs(dy);
+          }
+        }
+
+        if (!isHorizontal) return;
+
+        if (!isDragging) {
+          isDragging = true;
+          try { window.getSelection()?.removeAllRanges(); } catch (err) { }
+        }
+
+        if (e && e.cancelable) e.preventDefault();
+
+        const maxLeftSwipe = -actionsWidth;
+        let translateX = dx;
+        if (wrapper.classList.contains('open')) {
+          translateX = maxLeftSwipe + dx;
+          if (translateX > 0) {
+            translateX = translateX * 0.2;
+          } else if (translateX < maxLeftSwipe) {
+            translateX = maxLeftSwipe + (translateX - maxLeftSwipe) * 0.2;
+          }
+        } else {
+          if (translateX > 0) {
+            translateX = translateX * 0.2;
+          } else if (translateX < maxLeftSwipe) {
+            translateX = maxLeftSwipe + (translateX - maxLeftSwipe) * 0.25;
+          }
+        }
+
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => {
+          if (row) row.style.transform = `translate3d(${translateX}px, 0, 0)`;
+          if (wrapper.classList.contains('open')) {
+            const actionsOffset = Math.max(0, actionsWidth + translateX);
+            if (actionsRight) actionsRight.style.transform = `translate3d(${actionsOffset}px, 0, 0)`;
+          } else {
+            if (translateX < 0) {
+              const actionsOffset = Math.max(0, actionsWidth + translateX);
+              if (actionsRight) actionsRight.style.transform = `translate3d(${actionsOffset}px, 0, 0)`;
+            } else {
+              if (actionsRight) actionsRight.style.transform = 'translate3d(100%, 0, 0)';
+            }
+          }
+        });
+      };
+
+      const handleEnd = (clientX, target) => {
+        if (rafId) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+        }
+        wrapper.classList.remove('swiping');
+        if (row) row.style.transition = '';
+        if (actionsRight) actionsRight.style.transition = '';
+
+        const wasDragging = isDragging;
+        isDragging = false;
+
+        if (!wasDragging) {
+          if (wrapper.classList.contains('open') && (!target || !target.closest('.cycle-swipe-actions-right'))) {
+            closeAllSwipes(true);
+          }
+          return;
+        }
+
+        const dx = clientX - startX;
+        if (wrapper.classList.contains('open')) {
+          if (dx > 20) {
+            closeWrapper(wrapper, true);
+            triggerHaptic(15);
+          } else {
+            snapOpen(wrapper);
+          }
+        } else {
+          if (dx < openThreshold) {
+            closeAllSwipes(true);
+            snapOpen(wrapper);
+            triggerHaptic(15);
+          } else {
+            closeWrapper(wrapper, true);
+          }
+        }
+      };
+
+      if (window.PointerEvent) {
+        row.addEventListener('pointerdown', (e) => {
+          if (e.pointerType === 'mouse' && e.button !== 0) return;
+          if (!handleStart(e.clientX, e.clientY, e.target)) return;
+
+          const onPointerMove = (moveEvt) => handleMove(moveEvt.clientX, moveEvt.clientY, moveEvt);
+          const onPointerUp = (upEvt) => {
+            document.removeEventListener('pointermove', onPointerMove);
+            document.removeEventListener('pointerup', onPointerUp);
+            document.removeEventListener('pointercancel', onPointerUp);
+            handleEnd(upEvt.clientX, upEvt.target);
+          };
+
+          document.addEventListener('pointermove', onPointerMove, { passive: false });
+          document.addEventListener('pointerup', onPointerUp, { passive: true });
+          document.addEventListener('pointercancel', onPointerUp, { passive: true });
+        });
+      } else {
+        row.addEventListener('touchstart', (e) => {
+          const touch = e.touches[0];
+          if (!touch || !handleStart(touch.clientX, touch.clientY, e.target)) return;
+
+          const onTouchMove = (moveEvt) => {
+            const t = moveEvt.touches[0];
+            if (t) handleMove(t.clientX, t.clientY, moveEvt);
+          };
+          const onTouchEnd = (endEvt) => {
+            document.removeEventListener('touchmove', onTouchMove);
+            document.removeEventListener('touchend', onTouchEnd);
+            document.removeEventListener('touchcancel', onTouchEnd);
+            const t = endEvt.changedTouches[0];
+            handleEnd(t ? t.clientX : 0, endEvt.target);
+          };
+
+          document.addEventListener('touchmove', onTouchMove, { passive: false });
+          document.addEventListener('touchend', onTouchEnd, { passive: true });
+          document.addEventListener('touchcancel', onTouchEnd, { passive: true });
+        }, { passive: true });
+      }
+    });
   }
 
   /* ============================================================================
@@ -19287,6 +19674,22 @@ class NotebookApp {
       });
     }
 
+    // 6.5. Luteal Care Banner Expand/Collapse Toggle
+    if (this.nutritionLutealCareBanner) {
+      const toggleLutealBanner = () => {
+        triggerHaptic(10);
+        const isOpen = this.nutritionLutealCareBanner.classList.toggle('is-open');
+        this.nutritionLutealCareBanner.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      };
+      this.nutritionLutealCareBanner.addEventListener('click', toggleLutealBanner);
+      this.nutritionLutealCareBanner.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          toggleLutealBanner();
+        }
+      });
+    }
+
     // 6.5 Hunger & Norm Balance Scale Events (10-Step Cat Evolution & Color Submenu)
     this.setupHungerScaleInteractions();
 
@@ -19966,6 +20369,79 @@ class NotebookApp {
       });
     }
 
+    // 19b. Automatic KBJU Calculator Submenu Listeners
+    if (this.btnOpenNutritionCalcModal) {
+      this.btnOpenNutritionCalcModal.addEventListener('click', () => {
+        triggerHaptic(15);
+        this.openNutritionCalcModal();
+      });
+    }
+    if (this.btnOpenNutritionCalcFromMealSettings) {
+      this.btnOpenNutritionCalcFromMealSettings.addEventListener('click', () => {
+        triggerHaptic(15);
+        this.openNutritionCalcModal();
+      });
+    }
+    if (this.nutritionCalcCloseBtn) {
+      this.nutritionCalcCloseBtn.addEventListener('click', () => this.closeNutritionCalcModal());
+    }
+    this.bindSafeBackdrop(this.nutritionCalcModalBackdrop, () => this.closeNutritionCalcModal(), () => this._nutritionCalcModalOpenedAt);
+
+    if (this.calcGenderControl) {
+      this.calcGenderControl.addEventListener('click', (e) => {
+        const btn = e.target.closest('.calc-segment-btn');
+        if (btn) {
+          triggerHaptic(10);
+          const gender = btn.getAttribute('data-gender');
+          this.setCalcGender(gender);
+          this.updateNutritionCalcPreview();
+        }
+      });
+    }
+
+    [this.calcInputAge, this.calcInputHeight, this.calcInputWeight].forEach(input => {
+      if (input) {
+        input.addEventListener('input', () => this.updateNutritionCalcPreview());
+        input.addEventListener('change', () => this.updateNutritionCalcPreview());
+      }
+    });
+
+    if (this.calcSelectActivity) {
+      this.calcSelectActivity.addEventListener('change', () => {
+        triggerHaptic(10);
+        this.updateNutritionCalcPreview();
+      });
+    }
+
+    if (this.calcGoalContainer) {
+      this.calcGoalContainer.addEventListener('click', (e) => {
+        const card = e.target.closest('.calc-goal-card');
+        if (card) {
+          triggerHaptic(10);
+          const goal = card.getAttribute('data-goal');
+          this.setCalcGoal(goal);
+          // Auto-adjust macro scheme if optimal
+          if (this.calcSelectMacroSplit) {
+            if (goal === 'loss') this.calcSelectMacroSplit.value = 'loss_opt';
+            else if (goal === 'gain') this.calcSelectMacroSplit.value = 'athlete';
+            else this.calcSelectMacroSplit.value = 'balanced';
+          }
+          this.updateNutritionCalcPreview();
+        }
+      });
+    }
+
+    if (this.calcSelectMacroSplit) {
+      this.calcSelectMacroSplit.addEventListener('change', () => {
+        triggerHaptic(10);
+        this.updateNutritionCalcPreview();
+      });
+    }
+
+    if (this.btnApplyNutritionCalc) {
+      this.btnApplyNutritionCalc.addEventListener('click', () => this.applyNutritionCalcTargets());
+    }
+
     // Edit Meal Modal Events
     if (this.editMealModalCloseBtn) {
       this.editMealModalCloseBtn.addEventListener('click', () => this.closeMealEditModal());
@@ -20083,6 +20559,7 @@ class NotebookApp {
     setPropsOn(this.singleFoodModalBackdrop);
     setPropsOn(this.compositeDishModalBackdrop);
     setPropsOn(this.nutritionSettingsModalBackdrop);
+    setPropsOn(this.nutritionCalcModalBackdrop);
   }
 
   // --- Macro Color Picker Handlers ---
@@ -20909,8 +21386,13 @@ class NotebookApp {
       }
     } else {
       if (this.nutritionDonutCenterVal) this.nutritionDonutCenterVal.textContent = stats.totalCalories;
-      if (this.nutritionDonutCenterTarget) this.nutritionDonutCenterTarget.textContent = `/ ${stats.targets.calories} ккал`;
-      if (this.nutritionDonutCenterSub) this.nutritionDonutCenterSub.textContent = this.t('nutrition_all_day_calories') || 'за день';
+      if (this.nutritionDonutCenterTarget) {
+        this.nutritionDonutCenterTarget.textContent = `/ ${stats.targets.calories} ккал`;
+        this.nutritionDonutCenterTarget.title = '';
+      }
+      if (this.nutritionDonutCenterSub) {
+        this.nutritionDonutCenterSub.textContent = this.t('nutrition_all_day_calories') || 'за день';
+      }
 
       if (this.nutritionSelectedMealBadge) {
         this.nutritionSelectedMealBadge.style.display = 'none';
@@ -20925,6 +21407,23 @@ class NotebookApp {
 
     // 3.5. Update Interactive Hunger & Norm Balance Scale
     this.updateHungerScale(stats);
+
+    // 3.6. Update Luteal / PMS Care Banner if Synergy is active
+    if (this.nutritionLutealCareBanner) {
+      if (stats.cycleBoost && stats.cycleBoost.isBoosted) {
+        this.nutritionLutealCareBanner.style.display = 'flex';
+        if (this.nutritionLutealQuote) {
+          this.nutritionLutealQuote.textContent = stats.cycleBoost.adviceText || (this.t('nutrition_luteal_banner_desc') || 'Лютеиновая фаза: сегодня лёгкая тяга к сладкому — это нормально 🌸');
+        }
+        if (this.lutealBannerPill) {
+          this.lutealBannerPill.textContent = `+${stats.cycleBoost.percent}% к норме`;
+        }
+      } else {
+        this.nutritionLutealCareBanner.style.display = 'none';
+        this.nutritionLutealCareBanner.classList.remove('is-open');
+        this.nutritionLutealCareBanner.setAttribute('aria-expanded', 'false');
+      }
+    }
 
     // 4. Attach Click Events on Donut Sectors and Meal Badges
     if (this.nutritionDonutContainer) {
@@ -22683,6 +23182,181 @@ class NotebookApp {
       this.nutritionSettingsModalBackdrop.classList.remove('open');
       this.nutritionSettingsModalBackdrop.setAttribute('aria-hidden', 'true');
     }
+  }
+
+  // --- Automatic KBJU Calculator Submenu Modal ---
+  openNutritionCalcModal() {
+    this.dismissActiveKeyboard();
+    if (!this.nutritionCalcModalBackdrop) return;
+    this._nutritionCalcModalOpenedAt = Date.now();
+
+    // Load saved calculator parameters from localStorage if available
+    let saved = null;
+    try {
+      const raw = localStorage.getItem('plan4u_nutrition_calc_params');
+      if (raw) saved = JSON.parse(raw);
+    } catch (e) {}
+
+    if (saved && typeof saved === 'object') {
+      if (saved.gender) this.setCalcGender(saved.gender);
+      if (saved.age && this.calcInputAge) this.calcInputAge.value = saved.age;
+      if (saved.height && this.calcInputHeight) this.calcInputHeight.value = saved.height;
+      if (saved.weight && this.calcInputWeight) this.calcInputWeight.value = saved.weight;
+      if (saved.activityLevel && this.calcSelectActivity) this.calcSelectActivity.value = saved.activityLevel;
+      if (saved.goal) this.setCalcGoal(saved.goal);
+      if (saved.macroSplit && this.calcSelectMacroSplit) this.calcSelectMacroSplit.value = saved.macroSplit;
+    }
+
+    this.setupTargetSteppers(this.nutritionCalcModalBackdrop);
+    this.updateNutritionCalcPreview();
+
+    this.nutritionCalcModalBackdrop.classList.add('open');
+    this.nutritionCalcModalBackdrop.setAttribute('aria-hidden', 'false');
+  }
+
+  closeNutritionCalcModal() {
+    if (this.nutritionCalcModalBackdrop) {
+      this.nutritionCalcModalBackdrop.classList.remove('open');
+      this.nutritionCalcModalBackdrop.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  setCalcGender(gender) {
+    if (this.calcGenderControl) {
+      const btns = this.calcGenderControl.querySelectorAll('.calc-segment-btn');
+      btns.forEach(btn => {
+        const isMatch = btn.getAttribute('data-gender') === gender;
+        btn.classList.toggle('active', isMatch);
+      });
+    }
+  }
+
+  getCalcGender() {
+    const active = this.calcGenderControl?.querySelector('.calc-segment-btn.active');
+    return active ? active.getAttribute('data-gender') : 'female';
+  }
+
+  setCalcGoal(goal) {
+    if (this.calcGoalContainer) {
+      const cards = this.calcGoalContainer.querySelectorAll('.calc-goal-card');
+      cards.forEach(card => {
+        const isMatch = card.getAttribute('data-goal') === goal;
+        card.classList.toggle('active', isMatch);
+      });
+    }
+  }
+
+  getCalcGoal() {
+    const active = this.calcGoalContainer?.querySelector('.calc-goal-card.active');
+    return active ? active.getAttribute('data-goal') : 'loss';
+  }
+
+  getCalcParams() {
+    return {
+      gender: this.getCalcGender(),
+      age: Math.max(12, parseInt(this.calcInputAge?.value, 10) || 28),
+      height: Math.max(90, parseInt(this.calcInputHeight?.value, 10) || 165),
+      weight: Math.max(30, parseFloat(this.calcInputWeight?.value) || 65),
+      activityLevel: this.calcSelectActivity?.value || 'light',
+      goal: this.getCalcGoal(),
+      macroSplit: this.calcSelectMacroSplit?.value || 'loss_opt'
+    };
+  }
+
+  updateNutritionCalcPreview() {
+    const params = this.getCalcParams();
+    const result = (window.Plan4UNutritionTracker && typeof window.Plan4UNutritionTracker.calculateTargets === 'function')
+      ? window.Plan4UNutritionTracker.calculateTargets(params)
+      : (this.nutritionTracker && typeof this.nutritionTracker.calculateTargets === 'function' ? this.nutritionTracker.calculateTargets(params) : null);
+
+    if (!result) return;
+    this._lastCalcResult = result;
+
+    if (this.calcPreviewCalories) {
+      this.calcPreviewCalories.textContent = result.calorieTarget.toLocaleString('ru-RU');
+    }
+
+    if (this.calcPreviewDiffBadge) {
+      if (result.goal === 'loss' || result.diffKcal < -5) {
+        const diff = result.diffKcal || (result.calorieTarget - result.tdee);
+        this.calcPreviewDiffBadge.textContent = `${diff} ккал (дефицит -15%)`;
+        this.calcPreviewDiffBadge.className = 'calc-preview-diff-badge';
+      } else if (result.goal === 'gain' || result.diffKcal > 5) {
+        const diff = result.diffKcal || (result.calorieTarget - result.tdee);
+        this.calcPreviewDiffBadge.textContent = `+${diff} ккал (профицит +10%)`;
+        this.calcPreviewDiffBadge.className = 'calc-preview-diff-badge is-surplus';
+      } else {
+        this.calcPreviewDiffBadge.textContent = '⚖️ Баланс (поддержание)';
+        this.calcPreviewDiffBadge.className = 'calc-preview-diff-badge is-balanced';
+      }
+    }
+
+    if (this.calcSegProt) this.calcSegProt.style.width = `${result.splitPercents.p}%`;
+    if (this.calcSegFat) this.calcSegFat.style.width = `${result.splitPercents.f}%`;
+    if (this.calcSegCarb) this.calcSegCarb.style.width = `${result.splitPercents.c}%`;
+
+    if (this.calcPreviewProt) this.calcPreviewProt.textContent = result.proteinTarget;
+    if (this.calcPreviewFat) this.calcPreviewFat.textContent = result.fatTarget;
+    if (this.calcPreviewCarb) this.calcPreviewCarb.textContent = result.carbTarget;
+
+    const protKcal = result.proteinTarget * 4;
+    const fatKcal = result.fatTarget * 9;
+    const carbKcal = result.carbTarget * 4;
+
+    if (this.calcPreviewProtPct) {
+      this.calcPreviewProtPct.textContent = `${result.splitPercents.p}% • ${protKcal} ккал`;
+    }
+    if (this.calcPreviewFatPct) {
+      this.calcPreviewFatPct.textContent = `${result.splitPercents.f}% • ${fatKcal} ккал`;
+    }
+    if (this.calcPreviewCarbPct) {
+      this.calcPreviewCarbPct.textContent = `${result.splitPercents.c}% • ${carbKcal} ккал`;
+    }
+
+    if (this.calcPreviewBmr) {
+      this.calcPreviewBmr.textContent = result.bmr.toLocaleString('ru-RU');
+    }
+    if (this.calcPreviewTdee) {
+      this.calcPreviewTdee.textContent = result.tdee.toLocaleString('ru-RU');
+    }
+  }
+
+  applyNutritionCalcTargets() {
+    const params = this.getCalcParams();
+    const result = this._lastCalcResult || (this.nutritionTracker && typeof this.nutritionTracker.calculateTargets === 'function' ? this.nutritionTracker.calculateTargets(params) : null);
+    if (!result) return;
+
+    // Save parameters to localStorage for future use
+    try {
+      localStorage.setItem('plan4u_nutrition_calc_params', JSON.stringify(params));
+    } catch (e) {}
+
+    // Update settings in nutritionTracker
+    this.nutritionTracker.updateSettings({
+      calorieTarget: result.calorieTarget,
+      proteinTarget: result.proteinTarget,
+      fatTarget: result.fatTarget,
+      carbTarget: result.carbTarget
+    });
+
+    // Update input elements in Main Settings & Meal Settings
+    if (this.nutritionSettingCalories) this.nutritionSettingCalories.value = result.calorieTarget;
+    if (this.nutritionSettingProtein) this.nutritionSettingProtein.value = result.proteinTarget;
+    if (this.nutritionSettingFat) this.nutritionSettingFat.value = result.fatTarget;
+    if (this.nutritionSettingCarbs) this.nutritionSettingCarbs.value = result.carbTarget;
+
+    if (this.modalSettingCalorieTarget) this.modalSettingCalorieTarget.value = result.calorieTarget;
+    if (this.modalSettingProteinTarget) this.modalSettingProteinTarget.value = result.proteinTarget;
+    if (this.modalSettingFatTarget) this.modalSettingFatTarget.value = result.fatTarget;
+    if (this.modalSettingCarbTarget) this.modalSettingCarbTarget.value = result.carbTarget;
+
+    triggerHaptic(25);
+    this.closeNutritionCalcModal();
+    this.renderNutritionModalContent();
+    this.updateNutritionWidget();
+
+    const toastMsg = (typeof this.t === 'function' ? this.t('nutrition_calc_toast_applied') : null) || 'Суточные нормы КБЖУ обновлены! ✨';
+    this.showToast(toastMsg, '✨');
   }
 
   // --- Nutrition Statistics Modal (Calendar 4 weeks & Weekday Frequency) ---
@@ -24624,6 +25298,397 @@ class NotebookApp {
         this.openJoyModal(todayStr);
       }, 1600);
     }
+  }
+
+  /* ============================================================================
+   * 📸 SHEET EXPORT TO STORIES & IMAGE (КРАФТОВЫЙ ЭКСПОРТ ЛИСТА В СТОРИС/ГАЛЕРЕЮ)
+   * ============================================================================ */
+
+  initSheetExportListeners() {
+    // 1. Trigger buttons to open export modal
+    if (this.btnExportSheet) {
+      this.btnExportSheet.addEventListener('click', (e) => {
+        e.stopPropagation();
+        triggerHaptic(15);
+        this.openSheetExportModal();
+      });
+    }
+
+    if (this.pastDayExportBtn) {
+      this.pastDayExportBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        triggerHaptic(15);
+        this.openSheetExportModal();
+      });
+    }
+
+    // 2. Close modal & safe backdrop dismiss
+    if (this.sheetExportCloseBtn) {
+      this.sheetExportCloseBtn.addEventListener('click', () => {
+        triggerHaptic(10);
+        this.closeSheetExportModal();
+      });
+    }
+    this.bindSafeBackdrop(this.sheetExportModalBackdrop, () => this.closeSheetExportModal(), () => this._sheetExportOpenedAt);
+
+    // 3. Format toggle buttons (Stories 9:16 vs Sheet 1:1)
+    if (this.btnExportFormatStory) {
+      this.btnExportFormatStory.addEventListener('click', () => {
+        if (this.currentExportFormat === 'story') return;
+        triggerHaptic(15);
+        this.setSheetExportFormat('story');
+      });
+    }
+
+    if (this.btnExportFormatSheet) {
+      this.btnExportFormatSheet.addEventListener('click', () => {
+        if (this.currentExportFormat === 'sheet') return;
+        triggerHaptic(15);
+        this.setSheetExportFormat('sheet');
+      });
+    }
+
+    // 4. Customization checkboxes (Stickers, Stamps, Pet, Hide Finance)
+    const exportCheckboxes = [this.exportOptStickers, this.exportOptStamps, this.exportOptPet, this.exportOptHideFinance];
+    exportCheckboxes.forEach(opt => {
+      if (opt) {
+        opt.addEventListener('change', () => {
+          triggerHaptic(10);
+          this.generateSheetExportPreview();
+        });
+      }
+    });
+
+    // 5. Action buttons (Download & Share)
+    if (this.btnSheetExportDownload) {
+      this.btnSheetExportDownload.addEventListener('click', () => {
+        triggerHaptic(20);
+        this.downloadSheetExportImage();
+      });
+    }
+
+    if (this.btnSheetExportShare) {
+      this.btnSheetExportShare.addEventListener('click', () => {
+        triggerHaptic(20);
+        this.shareSheetExportImage();
+      });
+    }
+  }
+
+  openSheetExportModal() {
+    this.dismissActiveKeyboard();
+    if (!this.sheetExportModalBackdrop) return;
+    this._sheetExportOpenedAt = Date.now();
+
+    const targetDate = (this.currentTab === 'todo' && this.selectedDate) ? this.selectedDate : this.getTodayDateString();
+    if (this.sheetExportDateBadge) {
+      this.sheetExportDateBadge.textContent = this.formatDateReadable(targetDate);
+    }
+
+    this.sheetExportModalBackdrop.classList.add('open', 'active');
+    this.sheetExportModalBackdrop.setAttribute('aria-hidden', 'false');
+
+    this.generateSheetExportPreview();
+  }
+
+  closeSheetExportModal() {
+    if (!this.sheetExportModalBackdrop) return;
+    this.sheetExportModalBackdrop.classList.remove('open', 'active');
+    this.sheetExportModalBackdrop.setAttribute('aria-hidden', 'true');
+  }
+
+  setSheetExportFormat(format) {
+    this.currentExportFormat = format;
+    if (this.btnExportFormatStory) {
+      this.btnExportFormatStory.classList.toggle('active', format === 'story');
+    }
+    if (this.btnExportFormatSheet) {
+      this.btnExportFormatSheet.classList.toggle('active', format === 'sheet');
+    }
+    this.generateSheetExportPreview();
+  }
+
+  async generateSheetExportPreview() {
+    if (typeof html2canvas === 'undefined') {
+      console.warn('html2canvas library is not loaded');
+      if (this.sheetExportLoading) this.sheetExportLoading.style.display = 'none';
+      return;
+    }
+
+    if (this.sheetExportLoading) this.sheetExportLoading.style.display = 'flex';
+    if (this.sheetExportPreviewImg) this.sheetExportPreviewImg.style.opacity = '0.35';
+
+    // Allow browser to render loading spinner first
+    await new Promise(r => setTimeout(r, 60));
+
+    const liveSheet = document.getElementById('notebookSheet') || document.querySelector('.notebook-sheet');
+    if (!liveSheet) {
+      if (this.sheetExportLoading) this.sheetExportLoading.style.display = 'none';
+      return;
+    }
+
+    const targetDate = (this.currentTab === 'todo' && this.selectedDate) ? this.selectedDate : this.getTodayDateString();
+    const isDark = document.documentElement.classList.contains('theme-dark') || document.body.classList.contains('theme-dark');
+    const isStory = this.currentExportFormat === 'story';
+    const readableDate = this.formatDateReadable(targetDate);
+
+    // Create Staging Container
+    const stage = document.createElement('div');
+    stage.className = 'sheet-export-staging-container';
+    stage.style.position = 'fixed';
+    stage.style.left = '-9999px';
+    stage.style.top = '0';
+    stage.style.zIndex = '-9999';
+    stage.style.pointerEvents = 'none';
+    stage.style.boxSizing = 'border-box';
+    stage.style.display = 'flex';
+    stage.style.flexDirection = 'column';
+    stage.style.fontFamily = "var(--task-font-family, 'PT Serif', Georgia, serif)";
+
+    if (isStory) {
+      // 9:16 Story format (450 x 800 px, captured at 2x -> 900 x 1600 px)
+      stage.style.width = '450px';
+      stage.style.height = '800px';
+      stage.style.padding = '22px 18px 18px';
+      stage.style.background = isDark 
+        ? 'linear-gradient(160deg, #1e222d 0%, #151821 50%, #101219 100%)' 
+        : 'linear-gradient(160deg, #f7f1e7 0%, #ebdcc9 50%, #dfccb1 100%)';
+    } else {
+      // 1:1 Square Sheet format (560 x 560 px, captured at 2x -> 1120 x 1120 px)
+      stage.style.width = '560px';
+      stage.style.height = '560px';
+      stage.style.padding = '20px';
+      stage.style.background = isDark 
+        ? 'linear-gradient(145deg, #1c1f29 0%, #11131a 100%)' 
+        : 'linear-gradient(145deg, #f4eee3 0%, #e6d7c2 100%)';
+    }
+
+    // Top Header Badge
+    const headerEl = document.createElement('div');
+    headerEl.style.display = 'flex';
+    headerEl.style.justifyContent = 'space-between';
+    headerEl.style.alignItems = 'center';
+    headerEl.style.marginBottom = isStory ? '14px' : '10px';
+    headerEl.style.padding = '0 4px';
+
+    const brandEl = document.createElement('div');
+    brandEl.style.display = 'flex';
+    brandEl.style.alignItems = 'center';
+    brandEl.style.gap = '8px';
+    brandEl.style.fontSize = isStory ? '17px' : '16px';
+    brandEl.style.fontWeight = '700';
+    brandEl.style.color = isDark ? '#f1f5f9' : '#3e2e23';
+    brandEl.innerHTML = `<span style="font-size:20px;">📖</span><span>Plan4U</span>`;
+
+    const dateBadge = document.createElement('div');
+    dateBadge.style.fontSize = '12px';
+    dateBadge.style.fontWeight = '700';
+    dateBadge.style.color = isDark ? '#fda4af' : '#b83280';
+    dateBadge.style.background = isDark ? 'rgba(244, 114, 182, 0.15)' : 'rgba(255, 255, 255, 0.8)';
+    dateBadge.style.padding = '4px 12px';
+    dateBadge.style.borderRadius = '999px';
+    dateBadge.style.border = `1px solid ${isDark ? 'rgba(244, 114, 182, 0.35)' : 'rgba(216, 58, 136, 0.25)'}`;
+    dateBadge.textContent = readableDate;
+
+    headerEl.appendChild(brandEl);
+    headerEl.appendChild(dateBadge);
+    stage.appendChild(headerEl);
+
+    // Sheet Frame Wrapper
+    const sheetWrapper = document.createElement('div');
+    sheetWrapper.style.flex = '1';
+    sheetWrapper.style.minHeight = '0';
+    sheetWrapper.style.position = 'relative';
+    sheetWrapper.style.borderRadius = '14px';
+    sheetWrapper.style.overflow = 'hidden';
+    sheetWrapper.style.boxShadow = '0 12px 32px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.08)';
+    sheetWrapper.style.display = 'flex';
+    sheetWrapper.style.flexDirection = 'column';
+
+    // Clone live sheet into wrapper
+    const sheetClone = liveSheet.cloneNode(true);
+    sheetClone.id = 'exportNotebookSheetClone';
+    sheetClone.style.transform = 'none';
+    sheetClone.style.webkitTransform = 'none';
+    sheetClone.style.contain = 'none';
+    sheetClone.style.flex = '1';
+    sheetClone.style.height = '100%';
+    sheetClone.style.minHeight = '100%';
+    sheetClone.style.boxShadow = 'none';
+    sheetClone.style.border = 'none';
+    sheetClone.style.borderRadius = '0';
+
+    // Remove camera export button from clone
+    const exportBtn = sheetClone.querySelector('.btn-sheet-export');
+    if (exportBtn) exportBtn.remove();
+
+    // Option: Stickers
+    if (this.exportOptStickers && !this.exportOptStickers.checked) {
+      const stickers = sheetClone.querySelector('.notebook-stickers-layer');
+      if (stickers) stickers.style.display = 'none';
+    }
+
+    // Option: Stamps (Finance, Nutrition, Joy)
+    if (this.exportOptStamps && !this.exportOptStamps.checked) {
+      sheetClone.querySelectorAll('.notebook-finance-stamp, .notebook-nutrition-stamp, .notebook-joy-wrapper').forEach(el => {
+        el.style.display = 'none';
+      });
+    }
+
+    // Option: Hide Finance numbers
+    if (this.exportOptHideFinance && this.exportOptHideFinance.checked) {
+      const finStamp = sheetClone.querySelector('.notebook-finance-stamp');
+      if (finStamp) {
+        finStamp.querySelectorAll('.finance-stamp-val, .finance-stamp-total, .finance-stamp-sub, span').forEach(el => {
+          if (/\d/.test(el.textContent)) {
+            el.textContent = '•••• ₴';
+          }
+        });
+      }
+    }
+
+    // Ensure content container doesn't show scrollbars
+    const contentClone = sheetClone.querySelector('.notebook-content');
+    if (contentClone) {
+      contentClone.style.overflow = 'hidden';
+      contentClone.style.maxHeight = 'none';
+    }
+
+    sheetWrapper.appendChild(sheetClone);
+    stage.appendChild(sheetWrapper);
+
+    // Footer Bar
+    const footerEl = document.createElement('div');
+    footerEl.style.display = 'flex';
+    footerEl.style.justifyContent = 'space-between';
+    footerEl.style.alignItems = 'center';
+    footerEl.style.marginTop = isStory ? '12px' : '8px';
+    footerEl.style.padding = '0 6px';
+
+    const taglineEl = document.createElement('div');
+    taglineEl.style.fontFamily = "var(--font-handwriting, 'Caveat', cursive, sans-serif)";
+    taglineEl.style.fontSize = isStory ? '16px' : '14.5px';
+    taglineEl.style.fontWeight = '600';
+    taglineEl.style.color = isDark ? '#94a3b8' : '#7c6a58';
+    taglineEl.textContent = this.t('export_footer_tagline') || '✨ Уютный день в Plan4U';
+
+    footerEl.appendChild(taglineEl);
+
+    if (this.exportOptPet && this.exportOptPet.checked) {
+      const petBadge = document.createElement('div');
+      petBadge.style.fontSize = '12px';
+      petBadge.style.fontWeight = '700';
+      petBadge.style.color = isDark ? '#cbd5e1' : '#574235';
+      petBadge.style.display = 'flex';
+      petBadge.style.alignItems = 'center';
+      petBadge.style.gap = '5px';
+      petBadge.innerHTML = `<span>🐾</span><span>Plan4U</span>`;
+      footerEl.appendChild(petBadge);
+    }
+
+    stage.appendChild(footerEl);
+    document.body.appendChild(stage);
+
+    try {
+      const canvas = await html2canvas(stage, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        logging: false,
+        scrollX: 0,
+        scrollY: 0
+      });
+
+      const dataUrl = canvas.toDataURL('image/png');
+      this.currentExportDataUrl = dataUrl;
+
+      if (this.sheetExportPreviewImg) {
+        this.sheetExportPreviewImg.src = dataUrl;
+        this.sheetExportPreviewImg.style.opacity = '1';
+      }
+
+      canvas.toBlob((blob) => {
+        this.currentExportBlob = blob;
+      }, 'image/png');
+    } catch (err) {
+      console.error('Error generating sheet export preview:', err);
+      this.showToast('Не удалось сформировать изображение', '⚠️');
+    } finally {
+      if (stage.parentNode) stage.parentNode.removeChild(stage);
+      if (this.sheetExportLoading) this.sheetExportLoading.style.display = 'none';
+    }
+  }
+
+  downloadSheetExportImage() {
+    if (!this.currentExportDataUrl) {
+      this.showToast(this.t('export_generating') || 'Формируем картинку...', '⏳');
+      return;
+    }
+    const targetDate = (this.currentTab === 'todo' && this.selectedDate) ? this.selectedDate : this.getTodayDateString();
+    const filename = `Plan4U_${targetDate}_${this.currentExportFormat}.png`;
+
+    try {
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = this.currentExportDataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      triggerHaptic([20, 50]);
+      const msg = this.t('export_saved_toast') || 'Картинка сохранена в галерею! 📸';
+      this.showToast(msg, '📸');
+    } catch (e) {
+      console.error('Download export image error:', e);
+      this.showToast('Ошибка при сохранении фото', '⚠️');
+    }
+  }
+
+  async shareSheetExportImage() {
+    if (!this.currentExportDataUrl) {
+      this.showToast(this.t('export_generating') || 'Формируем картинку...', '⏳');
+      return;
+    }
+    const targetDate = (this.currentTab === 'todo' && this.selectedDate) ? this.selectedDate : this.getTodayDateString();
+    const filename = `Plan4U_${targetDate}_${this.currentExportFormat}.png`;
+    const shareTitle = this.t('export_share_title') || `Мой день в Plan4U 📖`;
+    const shareText = this.t('export_share_text') || `Вот как прошел мой день в блокноте Plan4U ✨`;
+
+    if (this.currentExportBlob && navigator.canShare) {
+      try {
+        const file = new File([this.currentExportBlob], filename, { type: 'image/png' });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: shareTitle,
+            text: shareText,
+            files: [file]
+          });
+          triggerHaptic(20);
+          return;
+        }
+      } catch (err) {
+        if (err.name === 'AbortError') return;
+        console.warn('Web Share API error:', err);
+      }
+    }
+
+    if (window.Capacitor?.Plugins?.Share) {
+      try {
+        await window.Capacitor.Plugins.Share.share({
+          title: shareTitle,
+          text: shareText,
+          url: this.currentExportDataUrl
+        });
+        triggerHaptic(20);
+        return;
+      } catch (err) {
+        console.warn('Capacitor share error:', err);
+      }
+    }
+
+    // Fallback if sharing direct image is not supported by browser
+    this.downloadSheetExportImage();
   }
 }
 

@@ -7,53 +7,43 @@
     "steps": [
       {
         "step": 1,
-        "webp": "assets/food_cats/cat_c1_s01.webp",
-        "png": "assets/food_cats/cat_c1_s01.png"
+        "webp": "assets/food_cats/cat_c1_s01.webp"
       },
       {
         "step": 2,
-        "webp": "assets/food_cats/cat_c1_s02.webp",
-        "png": "assets/food_cats/cat_c1_s02.png"
+        "webp": "assets/food_cats/cat_c1_s02.webp"
       },
       {
         "step": 3,
-        "webp": "assets/food_cats/cat_c1_s03.webp",
-        "png": "assets/food_cats/cat_c1_s03.png"
+        "webp": "assets/food_cats/cat_c1_s03.webp"
       },
       {
         "step": 4,
-        "webp": "assets/food_cats/cat_c1_s04.webp",
-        "png": "assets/food_cats/cat_c1_s04.png"
+        "webp": "assets/food_cats/cat_c1_s04.webp"
       },
       {
         "step": 5,
-        "webp": "assets/food_cats/cat_c1_s05.webp",
-        "png": "assets/food_cats/cat_c1_s05.png"
+        "webp": "assets/food_cats/cat_c1_s05.webp"
       },
       {
         "step": 6,
-        "webp": "assets/food_cats/cat_c1_s06.webp",
-        "png": "assets/food_cats/cat_c1_s06.png"
+        "webp": "assets/food_cats/cat_c1_s06.webp"
       },
       {
         "step": 7,
-        "webp": "assets/food_cats/cat_c1_s07.webp",
-        "png": "assets/food_cats/cat_c1_s07.png"
+        "webp": "assets/food_cats/cat_c1_s07.webp"
       },
       {
         "step": 8,
-        "webp": "assets/food_cats/cat_c1_s08.webp",
-        "png": "assets/food_cats/cat_c1_s08.png"
+        "webp": "assets/food_cats/cat_c1_s08.webp"
       },
       {
         "step": 9,
-        "webp": "assets/food_cats/cat_c1_s09.webp",
-        "png": "assets/food_cats/cat_c1_s09.png"
+        "webp": "assets/food_cats/cat_c1_s09.webp"
       },
       {
         "step": 10,
-        "webp": "assets/food_cats/cat_c1_s10.webp",
-        "png": "assets/food_cats/cat_c1_s10.png"
+        "webp": "assets/food_cats/cat_c1_s10.webp"
       }
     ]
   },
@@ -65,53 +55,43 @@
     "steps": [
       {
         "step": 1,
-        "webp": "assets/food_cats/cat_c2_s01.webp",
-        "png": "assets/food_cats/cat_c2_s01.png"
+        "webp": "assets/food_cats/cat_c2_s01.webp"
       },
       {
         "step": 2,
-        "webp": "assets/food_cats/cat_c2_s02.webp",
-        "png": "assets/food_cats/cat_c2_s02.png"
+        "webp": "assets/food_cats/cat_c2_s02.webp"
       },
       {
         "step": 3,
-        "webp": "assets/food_cats/cat_c2_s03.webp",
-        "png": "assets/food_cats/cat_c2_s03.png"
+        "webp": "assets/food_cats/cat_c2_s03.webp"
       },
       {
         "step": 4,
-        "webp": "assets/food_cats/cat_c2_s04.webp",
-        "png": "assets/food_cats/cat_c2_s04.png"
+        "webp": "assets/food_cats/cat_c2_s04.webp"
       },
       {
         "step": 5,
-        "webp": "assets/food_cats/cat_c2_s05.webp",
-        "png": "assets/food_cats/cat_c2_s05.png"
+        "webp": "assets/food_cats/cat_c2_s05.webp"
       },
       {
         "step": 6,
-        "webp": "assets/food_cats/cat_c2_s06.webp",
-        "png": "assets/food_cats/cat_c2_s06.png"
+        "webp": "assets/food_cats/cat_c2_s06.webp"
       },
       {
         "step": 7,
-        "webp": "assets/food_cats/cat_c2_s07.webp",
-        "png": "assets/food_cats/cat_c2_s07.png"
+        "webp": "assets/food_cats/cat_c2_s07.webp"
       },
       {
         "step": 8,
-        "webp": "assets/food_cats/cat_c2_s08.webp",
-        "png": "assets/food_cats/cat_c2_s08.png"
+        "webp": "assets/food_cats/cat_c2_s08.webp"
       },
       {
         "step": 9,
-        "webp": "assets/food_cats/cat_c2_s09.webp",
-        "png": "assets/food_cats/cat_c2_s09.png"
+        "webp": "assets/food_cats/cat_c2_s09.webp"
       },
       {
         "step": 10,
-        "webp": "assets/food_cats/cat_c2_s10.webp",
-        "png": "assets/food_cats/cat_c2_s10.png"
+        "webp": "assets/food_cats/cat_c2_s10.webp"
       }
     ]
   },
@@ -123,53 +103,43 @@
     "steps": [
       {
         "step": 1,
-        "webp": "assets/food_cats/cat_c3_s01.webp",
-        "png": "assets/food_cats/cat_c3_s01.png"
+        "webp": "assets/food_cats/cat_c3_s01.webp"
       },
       {
         "step": 2,
-        "webp": "assets/food_cats/cat_c3_s02.webp",
-        "png": "assets/food_cats/cat_c3_s02.png"
+        "webp": "assets/food_cats/cat_c3_s02.webp"
       },
       {
         "step": 3,
-        "webp": "assets/food_cats/cat_c3_s03.webp",
-        "png": "assets/food_cats/cat_c3_s03.png"
+        "webp": "assets/food_cats/cat_c3_s03.webp"
       },
       {
         "step": 4,
-        "webp": "assets/food_cats/cat_c3_s04.webp",
-        "png": "assets/food_cats/cat_c3_s04.png"
+        "webp": "assets/food_cats/cat_c3_s04.webp"
       },
       {
         "step": 5,
-        "webp": "assets/food_cats/cat_c3_s05.webp",
-        "png": "assets/food_cats/cat_c3_s05.png"
+        "webp": "assets/food_cats/cat_c3_s05.webp"
       },
       {
         "step": 6,
-        "webp": "assets/food_cats/cat_c3_s06.webp",
-        "png": "assets/food_cats/cat_c3_s06.png"
+        "webp": "assets/food_cats/cat_c3_s06.webp"
       },
       {
         "step": 7,
-        "webp": "assets/food_cats/cat_c3_s07.webp",
-        "png": "assets/food_cats/cat_c3_s07.png"
+        "webp": "assets/food_cats/cat_c3_s07.webp"
       },
       {
         "step": 8,
-        "webp": "assets/food_cats/cat_c3_s08.webp",
-        "png": "assets/food_cats/cat_c3_s08.png"
+        "webp": "assets/food_cats/cat_c3_s08.webp"
       },
       {
         "step": 9,
-        "webp": "assets/food_cats/cat_c3_s09.webp",
-        "png": "assets/food_cats/cat_c3_s09.png"
+        "webp": "assets/food_cats/cat_c3_s09.webp"
       },
       {
         "step": 10,
-        "webp": "assets/food_cats/cat_c3_s10.webp",
-        "png": "assets/food_cats/cat_c3_s10.png"
+        "webp": "assets/food_cats/cat_c3_s10.webp"
       }
     ]
   },
@@ -181,53 +151,43 @@
     "steps": [
       {
         "step": 1,
-        "webp": "assets/food_cats/cat_c4_s01.webp",
-        "png": "assets/food_cats/cat_c4_s01.png"
+        "webp": "assets/food_cats/cat_c4_s01.webp"
       },
       {
         "step": 2,
-        "webp": "assets/food_cats/cat_c4_s02.webp",
-        "png": "assets/food_cats/cat_c4_s02.png"
+        "webp": "assets/food_cats/cat_c4_s02.webp"
       },
       {
         "step": 3,
-        "webp": "assets/food_cats/cat_c4_s03.webp",
-        "png": "assets/food_cats/cat_c4_s03.png"
+        "webp": "assets/food_cats/cat_c4_s03.webp"
       },
       {
         "step": 4,
-        "webp": "assets/food_cats/cat_c4_s04.webp",
-        "png": "assets/food_cats/cat_c4_s04.png"
+        "webp": "assets/food_cats/cat_c4_s04.webp"
       },
       {
         "step": 5,
-        "webp": "assets/food_cats/cat_c4_s05.webp",
-        "png": "assets/food_cats/cat_c4_s05.png"
+        "webp": "assets/food_cats/cat_c4_s05.webp"
       },
       {
         "step": 6,
-        "webp": "assets/food_cats/cat_c4_s06.webp",
-        "png": "assets/food_cats/cat_c4_s06.png"
+        "webp": "assets/food_cats/cat_c4_s06.webp"
       },
       {
         "step": 7,
-        "webp": "assets/food_cats/cat_c4_s07.webp",
-        "png": "assets/food_cats/cat_c4_s07.png"
+        "webp": "assets/food_cats/cat_c4_s07.webp"
       },
       {
         "step": 8,
-        "webp": "assets/food_cats/cat_c4_s08.webp",
-        "png": "assets/food_cats/cat_c4_s08.png"
+        "webp": "assets/food_cats/cat_c4_s08.webp"
       },
       {
         "step": 9,
-        "webp": "assets/food_cats/cat_c4_s09.webp",
-        "png": "assets/food_cats/cat_c4_s09.png"
+        "webp": "assets/food_cats/cat_c4_s09.webp"
       },
       {
         "step": 10,
-        "webp": "assets/food_cats/cat_c4_s10.webp",
-        "png": "assets/food_cats/cat_c4_s10.png"
+        "webp": "assets/food_cats/cat_c4_s10.webp"
       }
     ]
   },
@@ -239,53 +199,43 @@
     "steps": [
       {
         "step": 1,
-        "webp": "assets/food_cats/cat_c5_s01.webp",
-        "png": "assets/food_cats/cat_c5_s01.png"
+        "webp": "assets/food_cats/cat_c5_s01.webp"
       },
       {
         "step": 2,
-        "webp": "assets/food_cats/cat_c5_s02.webp",
-        "png": "assets/food_cats/cat_c5_s02.png"
+        "webp": "assets/food_cats/cat_c5_s02.webp"
       },
       {
         "step": 3,
-        "webp": "assets/food_cats/cat_c5_s03.webp",
-        "png": "assets/food_cats/cat_c5_s03.png"
+        "webp": "assets/food_cats/cat_c5_s03.webp"
       },
       {
         "step": 4,
-        "webp": "assets/food_cats/cat_c5_s04.webp",
-        "png": "assets/food_cats/cat_c5_s04.png"
+        "webp": "assets/food_cats/cat_c5_s04.webp"
       },
       {
         "step": 5,
-        "webp": "assets/food_cats/cat_c5_s05.webp",
-        "png": "assets/food_cats/cat_c5_s05.png"
+        "webp": "assets/food_cats/cat_c5_s05.webp"
       },
       {
         "step": 6,
-        "webp": "assets/food_cats/cat_c5_s06.webp",
-        "png": "assets/food_cats/cat_c5_s06.png"
+        "webp": "assets/food_cats/cat_c5_s06.webp"
       },
       {
         "step": 7,
-        "webp": "assets/food_cats/cat_c5_s07.webp",
-        "png": "assets/food_cats/cat_c5_s07.png"
+        "webp": "assets/food_cats/cat_c5_s07.webp"
       },
       {
         "step": 8,
-        "webp": "assets/food_cats/cat_c5_s08.webp",
-        "png": "assets/food_cats/cat_c5_s08.png"
+        "webp": "assets/food_cats/cat_c5_s08.webp"
       },
       {
         "step": 9,
-        "webp": "assets/food_cats/cat_c5_s09.webp",
-        "png": "assets/food_cats/cat_c5_s09.png"
+        "webp": "assets/food_cats/cat_c5_s09.webp"
       },
       {
         "step": 10,
-        "webp": "assets/food_cats/cat_c5_s10.webp",
-        "png": "assets/food_cats/cat_c5_s10.png"
+        "webp": "assets/food_cats/cat_c5_s10.webp"
       }
     ]
   },
@@ -297,53 +247,43 @@
     "steps": [
       {
         "step": 1,
-        "webp": "assets/food_cats/cat_c6_s01.webp",
-        "png": "assets/food_cats/cat_c6_s01.png"
+        "webp": "assets/food_cats/cat_c6_s01.webp"
       },
       {
         "step": 2,
-        "webp": "assets/food_cats/cat_c6_s02.webp",
-        "png": "assets/food_cats/cat_c6_s02.png"
+        "webp": "assets/food_cats/cat_c6_s02.webp"
       },
       {
         "step": 3,
-        "webp": "assets/food_cats/cat_c6_s03.webp",
-        "png": "assets/food_cats/cat_c6_s03.png"
+        "webp": "assets/food_cats/cat_c6_s03.webp"
       },
       {
         "step": 4,
-        "webp": "assets/food_cats/cat_c6_s04.webp",
-        "png": "assets/food_cats/cat_c6_s04.png"
+        "webp": "assets/food_cats/cat_c6_s04.webp"
       },
       {
         "step": 5,
-        "webp": "assets/food_cats/cat_c6_s05.webp",
-        "png": "assets/food_cats/cat_c6_s05.png"
+        "webp": "assets/food_cats/cat_c6_s05.webp"
       },
       {
         "step": 6,
-        "webp": "assets/food_cats/cat_c6_s06.webp",
-        "png": "assets/food_cats/cat_c6_s06.png"
+        "webp": "assets/food_cats/cat_c6_s06.webp"
       },
       {
         "step": 7,
-        "webp": "assets/food_cats/cat_c6_s07.webp",
-        "png": "assets/food_cats/cat_c6_s07.png"
+        "webp": "assets/food_cats/cat_c6_s07.webp"
       },
       {
         "step": 8,
-        "webp": "assets/food_cats/cat_c6_s08.webp",
-        "png": "assets/food_cats/cat_c6_s08.png"
+        "webp": "assets/food_cats/cat_c6_s08.webp"
       },
       {
         "step": 9,
-        "webp": "assets/food_cats/cat_c6_s09.webp",
-        "png": "assets/food_cats/cat_c6_s09.png"
+        "webp": "assets/food_cats/cat_c6_s09.webp"
       },
       {
         "step": 10,
-        "webp": "assets/food_cats/cat_c6_s10.webp",
-        "png": "assets/food_cats/cat_c6_s10.png"
+        "webp": "assets/food_cats/cat_c6_s10.webp"
       }
     ]
   }

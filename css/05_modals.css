@@ -564,7 +564,7 @@
 }
 
 /* Make bottom-sheet modals physically 100px longer at the bottom so they NEVER detach during spring overshoot */
-.modal-sheet:not(.confirmation-sheet):not(.finance-sheet):not(.finance-cat-edit-sheet):not(.finance-entry-sheet):not(.nutrition-sheet):not(.nutrition-add-food-sheet):not(.nutrition-settings-sheet) {
+.modal-sheet:not(.confirmation-sheet):not(.finance-sheet):not(.finance-cat-edit-sheet):not(.finance-entry-sheet):not(.nutrition-sheet):not(.nutrition-add-food-sheet):not(.nutrition-settings-sheet):not(.sheet-export-sheet):not(.nutrition-calc-sheet) {
   margin-bottom: -100px !important;
   padding-bottom: calc(max(24px, calc(16px + env(safe-area-inset-bottom, 0px))) + 100px) !important;
 }
