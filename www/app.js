@@ -7199,6 +7199,10 @@ class NotebookApp {
     // preventing accidental modal dismissal when virtual keyboard collapses or viewport shifts during input blur.
     const bindSafeBackdrop = (backdropEl, closeFn, getOpenedAt) => {
       if (!backdropEl) return;
+      if (window.modalManager) {
+        // ModalManager handles global backdrop click & swipe dismissal natively
+        return;
+      }
       let startedOnBackdrop = false;
       backdropEl.addEventListener('pointerdown', (e) => {
         startedOnBackdrop = (e.target === backdropEl);

@@ -5247,6 +5247,8 @@ body.keyboard-open .modal-sheet,
   right: 0;
   bottom: 0;
   background: rgba(12, 16, 28, 0.58);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -5258,6 +5260,11 @@ body.keyboard-open .modal-sheet,
   -webkit-transform: translateZ(0);
   transform: translateZ(0);
   overflow: hidden;
+}
+
+body.modal-open {
+  overflow: hidden !important;
+  touch-action: none;
 }
 
 .modal-backdrop.open {
