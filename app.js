@@ -5777,16 +5777,24 @@ class NotebookApp {
     if (quick2) quick2.textContent = `+${Number((step * 2).toFixed(2))}`;
 
     this._stepperOpenedAt = Date.now();
-    backdrop.classList.add('open');
-    backdrop.setAttribute('aria-hidden', 'false');
+    if (window.modalManager) {
+      window.modalManager.open(backdrop, { haptic: 15 });
+    } else {
+      backdrop.classList.add('open');
+      backdrop.setAttribute('aria-hidden', 'false');
+    }
   }
 
   // Close Quick Stepper popover
   closeHabitStepper() {
     const backdrop = document.getElementById('habitStepperBackdrop');
     if (backdrop) {
-      backdrop.classList.remove('open');
-      backdrop.setAttribute('aria-hidden', 'true');
+      if (window.modalManager) {
+        window.modalManager.close(backdrop);
+      } else {
+        backdrop.classList.remove('open');
+        backdrop.setAttribute('aria-hidden', 'true');
+      }
     }
     this.currentStepperHabitId = null;
     this.currentStepperDate = null;
@@ -8624,8 +8632,12 @@ class NotebookApp {
 
     if (this.editTabModalBackdrop) {
       this._editTabModalOpenedAt = Date.now();
-      this.editTabModalBackdrop.classList.add('open');
-      this.editTabModalBackdrop.setAttribute('aria-hidden', 'false');
+      if (window.modalManager) {
+        window.modalManager.open(this.editTabModalBackdrop, { haptic: 15 });
+      } else {
+        this.editTabModalBackdrop.classList.add('open');
+        this.editTabModalBackdrop.setAttribute('aria-hidden', 'false');
+      }
     }
 
     this.clearTextSelectionAndFocus();
@@ -8633,7 +8645,7 @@ class NotebookApp {
 
     [40, 100, 200, 350].forEach(delay => {
       setTimeout(() => {
-        if (this.editTabModalBackdrop && this.editTabModalBackdrop.classList.contains('open')) {
+        if (this.editTabModalBackdrop && (this.editTabModalBackdrop.classList.contains('open') || (window.modalManager && window.modalManager.isOpen(this.editTabModalBackdrop)))) {
           if (document.activeElement === this.editTabTitleInput || (document.activeElement && document.activeElement.tagName === 'INPUT')) {
             document.activeElement.blur();
           }
@@ -8647,8 +8659,12 @@ class NotebookApp {
   closeEditTabModal() {
     this.clearTextSelectionAndFocus();
     if (this.editTabModalBackdrop) {
-      this.editTabModalBackdrop.classList.remove('open');
-      this.editTabModalBackdrop.setAttribute('aria-hidden', 'true');
+      if (window.modalManager) {
+        window.modalManager.close(this.editTabModalBackdrop);
+      } else {
+        this.editTabModalBackdrop.classList.remove('open');
+        this.editTabModalBackdrop.setAttribute('aria-hidden', 'true');
+      }
     }
     // Restore actual saved sheet and tab background
     this.renderTabs();
@@ -9170,15 +9186,23 @@ class NotebookApp {
     }
 
     if (this.sectionMenuModalBackdrop) {
-      this.sectionMenuModalBackdrop.classList.add('open');
-      this.sectionMenuModalBackdrop.setAttribute('aria-hidden', 'false');
+      if (window.modalManager) {
+        window.modalManager.open(this.sectionMenuModalBackdrop, { haptic: 15 });
+      } else {
+        this.sectionMenuModalBackdrop.classList.add('open');
+        this.sectionMenuModalBackdrop.setAttribute('aria-hidden', 'false');
+      }
     }
   }
 
   closeSectionMenuModal() {
     if (this.sectionMenuModalBackdrop) {
-      this.sectionMenuModalBackdrop.classList.remove('open');
-      this.sectionMenuModalBackdrop.setAttribute('aria-hidden', 'true');
+      if (window.modalManager) {
+        window.modalManager.close(this.sectionMenuModalBackdrop);
+      } else {
+        this.sectionMenuModalBackdrop.classList.remove('open');
+        this.sectionMenuModalBackdrop.setAttribute('aria-hidden', 'true');
+      }
     }
     this.activeSectionMenuId = null;
   }
@@ -13269,9 +13293,13 @@ class NotebookApp {
 
     this.lightboxImg.src = srcToDisplay;
     this._lightboxOpenedAt = Date.now();
-    this.imageLightboxBackdrop.classList.add('open');
-    this.imageLightboxBackdrop.setAttribute('aria-hidden', 'false');
-    triggerHaptic(15);
+    if (window.modalManager) {
+      window.modalManager.open(this.imageLightboxBackdrop, { haptic: 15 });
+    } else {
+      this.imageLightboxBackdrop.classList.add('open');
+      this.imageLightboxBackdrop.setAttribute('aria-hidden', 'false');
+      triggerHaptic(15);
+    }
   }
 
   closeLightbox() {
@@ -13282,8 +13310,12 @@ class NotebookApp {
       this.lightboxImg = document.getElementById('lightboxImg');
     }
     if (this.imageLightboxBackdrop) {
-      this.imageLightboxBackdrop.classList.remove('open');
-      this.imageLightboxBackdrop.setAttribute('aria-hidden', 'true');
+      if (window.modalManager) {
+        window.modalManager.close(this.imageLightboxBackdrop);
+      } else {
+        this.imageLightboxBackdrop.classList.remove('open');
+        this.imageLightboxBackdrop.setAttribute('aria-hidden', 'true');
+      }
     }
     if (this.lightboxImg) {
       this.lightboxImg.src = '';
@@ -19887,8 +19919,12 @@ class NotebookApp {
       }
     }
 
-    this.financeEntryModalBackdrop.classList.add('open');
-    this.financeEntryModalBackdrop.setAttribute('aria-hidden', 'false');
+    if (window.modalManager) {
+      window.modalManager.open(this.financeEntryModalBackdrop, { haptic: 15 });
+    } else {
+      this.financeEntryModalBackdrop.classList.add('open');
+      this.financeEntryModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
     this.dismissActiveKeyboard();
     if (document.activeElement && typeof document.activeElement.blur === 'function') {
       document.activeElement.blur();
@@ -19899,8 +19935,12 @@ class NotebookApp {
     this.closeFinanceDatePicker();
     this.financeEditingTxId = null;
     if (this.financeEntryModalBackdrop) {
-      this.financeEntryModalBackdrop.classList.remove('open');
-      this.financeEntryModalBackdrop.setAttribute('aria-hidden', 'true');
+      if (window.modalManager) {
+        window.modalManager.close(this.financeEntryModalBackdrop);
+      } else {
+        this.financeEntryModalBackdrop.classList.remove('open');
+        this.financeEntryModalBackdrop.setAttribute('aria-hidden', 'true');
+      }
     }
   }
 
@@ -20218,8 +20258,12 @@ class NotebookApp {
       }
     }
 
-    this.financeCategoryModalBackdrop.classList.add('open');
-    this.financeCategoryModalBackdrop.setAttribute('aria-hidden', 'false');
+    if (window.modalManager) {
+      window.modalManager.open(this.financeCategoryModalBackdrop, { haptic: 15 });
+    } else {
+      this.financeCategoryModalBackdrop.classList.add('open');
+      this.financeCategoryModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
     this.dismissActiveKeyboard();
     if (document.activeElement && typeof document.activeElement.blur === 'function') {
       document.activeElement.blur();
@@ -20228,8 +20272,12 @@ class NotebookApp {
 
   closeFinanceCategoryModal() {
     if (this.financeCategoryModalBackdrop) {
-      this.financeCategoryModalBackdrop.classList.remove('open');
-      this.financeCategoryModalBackdrop.setAttribute('aria-hidden', 'true');
+      if (window.modalManager) {
+        window.modalManager.close(this.financeCategoryModalBackdrop);
+      } else {
+        this.financeCategoryModalBackdrop.classList.remove('open');
+        this.financeCategoryModalBackdrop.setAttribute('aria-hidden', 'true');
+      }
     }
   }
 
