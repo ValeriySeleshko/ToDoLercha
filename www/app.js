@@ -3799,9 +3799,13 @@ class NotebookApp {
       this.switchHabitModalTab('stats');
       this.populateHabitForm(habit);
 
-      backdrop.classList.add('open');
-      backdrop.setAttribute('aria-hidden', 'false');
-      triggerHaptic(15);
+      if (window.modalManager) {
+        window.modalManager.open(backdrop, { haptic: 15 });
+      } else {
+        backdrop.classList.add('open');
+        backdrop.setAttribute('aria-hidden', 'false');
+        triggerHaptic(15);
+      }
 
       requestAnimationFrame(() => {
         this.renderHabitStats(habit);
@@ -3819,17 +3823,25 @@ class NotebookApp {
       this.resetHabitForm();
     }
 
-    backdrop.classList.add('open');
-    backdrop.setAttribute('aria-hidden', 'false');
-    triggerHaptic(15);
+    if (window.modalManager) {
+      window.modalManager.open(backdrop, { haptic: 15 });
+    } else {
+      backdrop.classList.add('open');
+      backdrop.setAttribute('aria-hidden', 'false');
+      triggerHaptic(15);
+    }
   }
 
   // Close the Habit Modal
   closeHabitModal() {
     const backdrop = document.getElementById('habitModalBackdrop');
     if (backdrop) {
-      backdrop.classList.remove('open');
-      backdrop.setAttribute('aria-hidden', 'true');
+      if (window.modalManager) {
+        window.modalManager.close(backdrop);
+      } else {
+        backdrop.classList.remove('open');
+        backdrop.setAttribute('aria-hidden', 'true');
+      }
     }
     const periodMenu = document.getElementById('habitPeriodDropdownMenu');
     const periodBtn = document.getElementById('habitPeriodDropdownBtn');
@@ -9619,8 +9631,12 @@ class NotebookApp {
 
     // Trigger instant hardware-composited slide-up animation immediately
     this._settingsModalOpenedAt = Date.now();
-    this.settingsModalBackdrop.classList.add('open');
-    this.settingsModalBackdrop.setAttribute('aria-hidden', 'false');
+    if (window.modalManager) {
+      window.modalManager.open(this.settingsModalBackdrop, { haptic: 15 });
+    } else {
+      this.settingsModalBackdrop.classList.add('open');
+      this.settingsModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
     if (typeof this.updateJoyDemoBadges === 'function') this.updateJoyDemoBadges();
 
     [40, 100, 200].forEach(delay => {
@@ -10137,8 +10153,12 @@ class NotebookApp {
     if (langSection) langSection.classList.remove('dropdown-open');
     this.clearTextSelectionAndFocus();
     if (this.settingsModalBackdrop) {
-      this.settingsModalBackdrop.classList.remove('open');
-      this.settingsModalBackdrop.setAttribute('aria-hidden', 'true');
+      if (window.modalManager) {
+        window.modalManager.close(this.settingsModalBackdrop);
+      } else {
+        this.settingsModalBackdrop.classList.remove('open');
+        this.settingsModalBackdrop.setAttribute('aria-hidden', 'true');
+      }
     }
   }
 
@@ -11682,8 +11702,12 @@ class NotebookApp {
     this.dismissActiveKeyboard();
     if (!this.calendarModalBackdrop) return;
     this._calendarModalOpenedAt = Date.now();
-    this.calendarModalBackdrop.classList.add('open');
-    this.calendarModalBackdrop.setAttribute('aria-hidden', 'false');
+    if (window.modalManager) {
+      window.modalManager.open(this.calendarModalBackdrop, { haptic: 15 });
+    } else {
+      this.calendarModalBackdrop.classList.add('open');
+      this.calendarModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
 
     this.tempSelectedDate = this.selectedDate || this.getTodayDateString();
     const [y, m, d] = this.tempSelectedDate.split('-').map(Number);
@@ -11694,8 +11718,12 @@ class NotebookApp {
   // Close Calendar Modal
   closeCalendarModal() {
     if (this.calendarModalBackdrop) {
-      this.calendarModalBackdrop.classList.remove('open');
-      this.calendarModalBackdrop.setAttribute('aria-hidden', 'true');
+      if (window.modalManager) {
+        window.modalManager.close(this.calendarModalBackdrop);
+      } else {
+        this.calendarModalBackdrop.classList.remove('open');
+        this.calendarModalBackdrop.setAttribute('aria-hidden', 'true');
+      }
     }
   }
 
@@ -12333,8 +12361,12 @@ class NotebookApp {
     }
 
     this._achievementsModalOpenedAt = Date.now();
-    this.achievementsModalBackdrop.classList.add('open');
-    this.achievementsModalBackdrop.setAttribute('aria-hidden', 'false');
+    if (window.modalManager) {
+      window.modalManager.open(this.achievementsModalBackdrop, { haptic: 15 });
+    } else {
+      this.achievementsModalBackdrop.classList.add('open');
+      this.achievementsModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
 
     this.renderAchievements();
     this.updateTrophyWidgetAura();
@@ -12343,8 +12375,12 @@ class NotebookApp {
   // Close Achievements Modal
   closeAchievementsModal() {
     if (this.achievementsModalBackdrop) {
-      this.achievementsModalBackdrop.classList.remove('open');
-      this.achievementsModalBackdrop.setAttribute('aria-hidden', 'true');
+      if (window.modalManager) {
+        window.modalManager.close(this.achievementsModalBackdrop);
+      } else {
+        this.achievementsModalBackdrop.classList.remove('open');
+        this.achievementsModalBackdrop.setAttribute('aria-hidden', 'true');
+      }
     }
   }
 
@@ -13112,8 +13148,12 @@ class NotebookApp {
     }
     if (!this.taskModalBackdrop) return;
     this._taskModalOpenedAt = Date.now();
-    this.taskModalBackdrop.classList.add('open');
-    this.taskModalBackdrop.setAttribute('aria-hidden', 'false');
+    if (window.modalManager) {
+      window.modalManager.open(this.taskModalBackdrop, { haptic: 15, sheetSelector: '#taskModalSheet' });
+    } else {
+      this.taskModalBackdrop.classList.add('open');
+      this.taskModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
 
     this.editingTaskId = null;
     this.tempPhotoData = null;
@@ -13144,8 +13184,12 @@ class NotebookApp {
     if (!this.taskModalBackdrop) return;
 
     this._taskModalOpenedAt = Date.now();
-    this.taskModalBackdrop.classList.add('open');
-    this.taskModalBackdrop.setAttribute('aria-hidden', 'false');
+    if (window.modalManager) {
+      window.modalManager.open(this.taskModalBackdrop, { haptic: 15, sheetSelector: '#taskModalSheet' });
+    } else {
+      this.taskModalBackdrop.classList.add('open');
+      this.taskModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
 
     this.editingTaskId = taskId;
     this.tempPhotoData = task.photo || null;
@@ -13233,8 +13277,12 @@ class NotebookApp {
       document.activeElement.blur();
     }
     if (this.taskModalBackdrop) {
-      this.taskModalBackdrop.classList.remove('open');
-      this.taskModalBackdrop.setAttribute('aria-hidden', 'true');
+      if (window.modalManager) {
+        window.modalManager.close(this.taskModalBackdrop);
+      } else {
+        this.taskModalBackdrop.classList.remove('open');
+        this.taskModalBackdrop.setAttribute('aria-hidden', 'true');
+      }
     }
     this.tempPhotoData = null;
     this.editingTaskId = null;
@@ -16857,17 +16905,25 @@ class NotebookApp {
     this.renderStickersCatalog(catToOpen);
     if (this.stickersModalBackdrop) {
       this._stickersModalOpenedAt = Date.now();
-      this.stickersModalBackdrop.classList.add('open');
-      this.stickersModalBackdrop.setAttribute('aria-hidden', 'false');
-      triggerHaptic(20);
+      if (window.modalManager) {
+        window.modalManager.open(this.stickersModalBackdrop, { haptic: 20 });
+      } else {
+        this.stickersModalBackdrop.classList.add('open');
+        this.stickersModalBackdrop.setAttribute('aria-hidden', 'false');
+        triggerHaptic(20);
+      }
     }
   }
 
   closeStickersDrawer() {
     if (this.stickersModalBackdrop) {
-      this.stickersModalBackdrop.classList.remove('open');
-      this.stickersModalBackdrop.classList.remove('is-picking-sticker');
-      this.stickersModalBackdrop.setAttribute('aria-hidden', 'true');
+      if (window.modalManager) {
+        window.modalManager.close(this.stickersModalBackdrop);
+      } else {
+        this.stickersModalBackdrop.classList.remove('open');
+        this.stickersModalBackdrop.classList.remove('is-picking-sticker');
+        this.stickersModalBackdrop.setAttribute('aria-hidden', 'true');
+      }
     }
   }
 
@@ -17283,8 +17339,12 @@ class NotebookApp {
     this.dismissActiveKeyboard();
     if (!this.cycleModalBackdrop) return;
     this._cycleModalOpenedAt = Date.now();
-    this.cycleModalBackdrop.classList.add('open');
-    this.cycleModalBackdrop.setAttribute('aria-hidden', 'false');
+    if (window.modalManager) {
+      window.modalManager.open(this.cycleModalBackdrop, { haptic: 15 });
+    } else {
+      this.cycleModalBackdrop.classList.add('open');
+      this.cycleModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
 
     this._currentModalAdvice = null; // Pick a fresh, warm, random living phrase each time the user opens the modal
     this.renderCycleModalContent();
@@ -17292,8 +17352,12 @@ class NotebookApp {
 
   closeCycleModal() {
     if (this.cycleModalBackdrop) {
-      this.cycleModalBackdrop.classList.remove('open');
-      this.cycleModalBackdrop.setAttribute('aria-hidden', 'true');
+      if (window.modalManager) {
+        window.modalManager.close(this.cycleModalBackdrop);
+      } else {
+        this.cycleModalBackdrop.classList.remove('open');
+        this.cycleModalBackdrop.setAttribute('aria-hidden', 'true');
+      }
     }
   }
 
@@ -18525,16 +18589,24 @@ class NotebookApp {
       this.financePaneCategories.style.display = this.financeActiveTab === 'categories' ? 'flex' : 'none';
     }
 
-    this.financeModalBackdrop.classList.add('open');
-    this.financeModalBackdrop.setAttribute('aria-hidden', 'false');
+    if (window.modalManager) {
+      window.modalManager.open(this.financeModalBackdrop, { haptic: 15 });
+    } else {
+      this.financeModalBackdrop.classList.add('open');
+      this.financeModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
 
     this.renderFinanceModalContent();
   }
 
   closeFinanceModal() {
     if (this.financeModalBackdrop) {
-      this.financeModalBackdrop.classList.remove('open');
-      this.financeModalBackdrop.setAttribute('aria-hidden', 'true');
+      if (window.modalManager) {
+        window.modalManager.close(this.financeModalBackdrop);
+      } else {
+        this.financeModalBackdrop.classList.remove('open');
+        this.financeModalBackdrop.setAttribute('aria-hidden', 'true');
+      }
       const sheet = this.financeModalBackdrop.querySelector('.finance-sheet');
       if (sheet) sheet.classList.remove('is-archive-mode');
     }
@@ -22136,16 +22208,24 @@ class NotebookApp {
       this.nutritionHeaderDate.textContent = this.formatDateReadable(this.currentNutritionDate);
     }
 
-    this.nutritionModalBackdrop.classList.add('open');
-    this.nutritionModalBackdrop.setAttribute('aria-hidden', 'false');
+    if (window.modalManager) {
+      window.modalManager.open(this.nutritionModalBackdrop, { haptic: 15 });
+    } else {
+      this.nutritionModalBackdrop.classList.add('open');
+      this.nutritionModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
 
     this.renderNutritionModalContent();
   }
 
   closeNutritionModal() {
     if (this.nutritionModalBackdrop) {
-      this.nutritionModalBackdrop.classList.remove('open');
-      this.nutritionModalBackdrop.setAttribute('aria-hidden', 'true');
+      if (window.modalManager) {
+        window.modalManager.close(this.nutritionModalBackdrop);
+      } else {
+        this.nutritionModalBackdrop.classList.remove('open');
+        this.nutritionModalBackdrop.setAttribute('aria-hidden', 'true');
+      }
     }
   }
 
@@ -22913,8 +22993,12 @@ class NotebookApp {
       }
     }
 
-    this.nutritionAddFoodModalBackdrop.classList.add('open');
-    this.nutritionAddFoodModalBackdrop.setAttribute('aria-hidden', 'false');
+    if (window.modalManager) {
+      window.modalManager.open(this.nutritionAddFoodModalBackdrop, { haptic: 15 });
+    } else {
+      this.nutritionAddFoodModalBackdrop.classList.add('open');
+      this.nutritionAddFoodModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
   }
 
   closeAddFoodModal() {
@@ -22930,8 +23014,12 @@ class NotebookApp {
       this.compositeDishSuggestions.style.display = 'none';
     }
     if (this.nutritionAddFoodModalBackdrop) {
-      this.nutritionAddFoodModalBackdrop.classList.remove('open');
-      this.nutritionAddFoodModalBackdrop.setAttribute('aria-hidden', 'true');
+      if (window.modalManager) {
+        window.modalManager.close(this.nutritionAddFoodModalBackdrop);
+      } else {
+        this.nutritionAddFoodModalBackdrop.classList.remove('open');
+        this.nutritionAddFoodModalBackdrop.setAttribute('aria-hidden', 'true');
+      }
     }
   }
 
@@ -23809,8 +23897,12 @@ class NotebookApp {
     this.scannerTargetMode = target;
     this.scannerIngredientIndex = ingredientIndex;
 
-    this.nutritionBarcodeScannerModalBackdrop.classList.add('open');
-    this.nutritionBarcodeScannerModalBackdrop.setAttribute('aria-hidden', 'false');
+    if (window.modalManager) {
+      window.modalManager.open(this.nutritionBarcodeScannerModalBackdrop, { haptic: 15 });
+    } else {
+      this.nutritionBarcodeScannerModalBackdrop.classList.add('open');
+      this.nutritionBarcodeScannerModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
 
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -23898,8 +23990,12 @@ class NotebookApp {
       this.nutritionScannerVideo.srcObject = null;
     }
     if (this.nutritionBarcodeScannerModalBackdrop) {
-      this.nutritionBarcodeScannerModalBackdrop.classList.remove('open');
-      this.nutritionBarcodeScannerModalBackdrop.setAttribute('aria-hidden', 'true');
+      if (window.modalManager) {
+        window.modalManager.close(this.nutritionBarcodeScannerModalBackdrop);
+      } else {
+        this.nutritionBarcodeScannerModalBackdrop.classList.remove('open');
+        this.nutritionBarcodeScannerModalBackdrop.setAttribute('aria-hidden', 'true');
+      }
     }
   }
 
@@ -24071,14 +24167,22 @@ class NotebookApp {
     this.renderCategoryIconsPicker();
     this.renderCustomMealsSettingsList();
 
-    this.nutritionSettingsModalBackdrop.classList.add('open');
-    this.nutritionSettingsModalBackdrop.setAttribute('aria-hidden', 'false');
+    if (window.modalManager) {
+      window.modalManager.open(this.nutritionSettingsModalBackdrop, { haptic: 15 });
+    } else {
+      this.nutritionSettingsModalBackdrop.classList.add('open');
+      this.nutritionSettingsModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
   }
 
   closeNutritionSettingsModal() {
     if (this.nutritionSettingsModalBackdrop) {
-      this.nutritionSettingsModalBackdrop.classList.remove('open');
-      this.nutritionSettingsModalBackdrop.setAttribute('aria-hidden', 'true');
+      if (window.modalManager) {
+        window.modalManager.close(this.nutritionSettingsModalBackdrop);
+      } else {
+        this.nutritionSettingsModalBackdrop.classList.remove('open');
+        this.nutritionSettingsModalBackdrop.setAttribute('aria-hidden', 'true');
+      }
     }
   }
 
@@ -24108,14 +24212,22 @@ class NotebookApp {
     this.setupTargetSteppers(this.nutritionCalcModalBackdrop);
     this.updateNutritionCalcPreview();
 
-    this.nutritionCalcModalBackdrop.classList.add('open');
-    this.nutritionCalcModalBackdrop.setAttribute('aria-hidden', 'false');
+    if (window.modalManager) {
+      window.modalManager.open(this.nutritionCalcModalBackdrop, { haptic: 15 });
+    } else {
+      this.nutritionCalcModalBackdrop.classList.add('open');
+      this.nutritionCalcModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
   }
 
   closeNutritionCalcModal() {
     if (this.nutritionCalcModalBackdrop) {
-      this.nutritionCalcModalBackdrop.classList.remove('open');
-      this.nutritionCalcModalBackdrop.setAttribute('aria-hidden', 'true');
+      if (window.modalManager) {
+        window.modalManager.close(this.nutritionCalcModalBackdrop);
+      } else {
+        this.nutritionCalcModalBackdrop.classList.remove('open');
+        this.nutritionCalcModalBackdrop.setAttribute('aria-hidden', 'true');
+      }
     }
   }
 
@@ -24271,14 +24383,22 @@ class NotebookApp {
 
     this.renderNutritionStatsModal();
 
-    this.nutritionStatsModalBackdrop.classList.add('open');
-    this.nutritionStatsModalBackdrop.setAttribute('aria-hidden', 'false');
+    if (window.modalManager) {
+      window.modalManager.open(this.nutritionStatsModalBackdrop, { haptic: 15 });
+    } else {
+      this.nutritionStatsModalBackdrop.classList.add('open');
+      this.nutritionStatsModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
   }
 
   closeNutritionStatsModal() {
     if (this.nutritionStatsModalBackdrop) {
-      this.nutritionStatsModalBackdrop.classList.remove('open');
-      this.nutritionStatsModalBackdrop.setAttribute('aria-hidden', 'true');
+      if (window.modalManager) {
+        window.modalManager.close(this.nutritionStatsModalBackdrop);
+      } else {
+        this.nutritionStatsModalBackdrop.classList.remove('open');
+        this.nutritionStatsModalBackdrop.setAttribute('aria-hidden', 'true');
+      }
     }
   }
 
@@ -25876,8 +25996,12 @@ class NotebookApp {
       this.joyModalStickerThumb.src = this.joyTracker.getStickerImagePath(this.currentJoySelectedStickerId);
     }
 
-    this.joyModalBackdrop.classList.add('open', 'active');
-    this.joyModalBackdrop.setAttribute('aria-hidden', 'false');
+    if (window.modalManager) {
+      window.modalManager.open(this.joyModalBackdrop, { haptic: 15 });
+    } else {
+      this.joyModalBackdrop.classList.add('open', 'active');
+      this.joyModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
 
     if (this.joyTextInput) {
       this.joyTextInput.blur();
@@ -25889,8 +26013,13 @@ class NotebookApp {
 
   closeJoyModal() {
     if (!this.joyModalBackdrop) return;
-    this.joyModalBackdrop.classList.remove('open', 'active');
-    this.joyModalBackdrop.setAttribute('aria-hidden', 'true');
+    if (window.modalManager) {
+      window.modalManager.close(this.joyModalBackdrop);
+    } else {
+      this.joyModalBackdrop.classList.remove('open', 'active');
+      this.joyModalBackdrop.setAttribute('aria-hidden', 'true');
+    }
+    this.joyModalBackdrop.classList.remove('active');
     this.dismissActiveKeyboard();
   }
 
@@ -25951,8 +26080,12 @@ class NotebookApp {
 
     this.renderJoyJarContent();
 
-    this.joyJarModalBackdrop.classList.add('open', 'active');
-    this.joyJarModalBackdrop.setAttribute('aria-hidden', 'false');
+    if (window.modalManager) {
+      window.modalManager.open(this.joyJarModalBackdrop, { haptic: 15 });
+    } else {
+      this.joyJarModalBackdrop.classList.add('open', 'active');
+      this.joyJarModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
 
     requestAnimationFrame(() => {
       this.joyJarDesk?.querySelectorAll('.notebook-joy-text').forEach(el => this.fitJoyStickerElement(el));
@@ -25961,8 +26094,13 @@ class NotebookApp {
 
   closeJoyJarModal() {
     if (!this.joyJarModalBackdrop) return;
-    this.joyJarModalBackdrop.classList.remove('open', 'active');
-    this.joyJarModalBackdrop.setAttribute('aria-hidden', 'true');
+    if (window.modalManager) {
+      window.modalManager.close(this.joyJarModalBackdrop);
+    } else {
+      this.joyJarModalBackdrop.classList.remove('open', 'active');
+      this.joyJarModalBackdrop.setAttribute('aria-hidden', 'true');
+    }
+    this.joyJarModalBackdrop.classList.remove('active');
   }
 
   renderJoyJarContent(animate = false) {
@@ -26293,16 +26431,25 @@ class NotebookApp {
       this.sheetExportDateBadge.textContent = this.formatDateReadable(targetDate);
     }
 
-    this.sheetExportModalBackdrop.classList.add('open', 'active');
-    this.sheetExportModalBackdrop.setAttribute('aria-hidden', 'false');
+    if (window.modalManager) {
+      window.modalManager.open(this.sheetExportModalBackdrop, { haptic: 15 });
+    } else {
+      this.sheetExportModalBackdrop.classList.add('open', 'active');
+      this.sheetExportModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
 
     this.generateSheetExportPreview();
   }
 
   closeSheetExportModal() {
     if (!this.sheetExportModalBackdrop) return;
-    this.sheetExportModalBackdrop.classList.remove('open', 'active');
-    this.sheetExportModalBackdrop.setAttribute('aria-hidden', 'true');
+    if (window.modalManager) {
+      window.modalManager.close(this.sheetExportModalBackdrop);
+    } else {
+      this.sheetExportModalBackdrop.classList.remove('open', 'active');
+      this.sheetExportModalBackdrop.setAttribute('aria-hidden', 'true');
+    }
+    this.sheetExportModalBackdrop.classList.remove('active');
   }
 
   setSheetExportFormat(format) {

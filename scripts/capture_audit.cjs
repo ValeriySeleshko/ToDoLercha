@@ -99,7 +99,7 @@ const MODALS = [
     name: 'image_lightbox',
     title: 'Просмотрщик картинок Lightbox',
     open: async (page) => {
-      await page.evaluate(() => window.app.openLightbox('assets/icons/app-icon.png'));
+      await page.evaluate(() => window.app.openLightbox('assets/cat_step.png'));
     },
     close: async (page) => {
       await page.evaluate(() => window.app.closeLightbox());
@@ -530,6 +530,11 @@ async function runAudit() {
   });
   page.on('pageerror', err => {
     consoleErrors.push(`[UNCAUGHT] ${err.toString()}`);
+  });
+  page.on('response', res => {
+    if (res.status() >= 400) {
+      console.log(`[HTTP ERROR ${res.status()}] ${res.url()}`);
+    }
   });
 
   await page.goto('http://localhost:3000/', { waitUntil: 'networkidle0' });

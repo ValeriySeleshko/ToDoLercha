@@ -375,8 +375,12 @@ class MaineCoonPetSystem {
     if (!this.petModalBackdrop) return;
 
     this._petModalOpenedAt = Date.now();
-    this.petModalBackdrop.classList.add('open');
-    this.petModalBackdrop.setAttribute('aria-hidden', 'false');
+    if (window.modalManager) {
+      window.modalManager.open(this.petModalBackdrop, { haptic: 15 });
+    } else {
+      this.petModalBackdrop.classList.add('open');
+      this.petModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
 
     this.renderFullModal();
     if (this.petSettingsPopup) {
@@ -387,8 +391,12 @@ class MaineCoonPetSystem {
   closePetModal() {
     this.flushSaveData();
     if (this.petModalBackdrop) {
-      this.petModalBackdrop.classList.remove('open');
-      this.petModalBackdrop.setAttribute('aria-hidden', 'true');
+      if (window.modalManager) {
+        window.modalManager.close(this.petModalBackdrop);
+      } else {
+        this.petModalBackdrop.classList.remove('open');
+        this.petModalBackdrop.setAttribute('aria-hidden', 'true');
+      }
     }
     if (this.petSettingsPopup) {
       this.petSettingsPopup.classList.remove('show');
