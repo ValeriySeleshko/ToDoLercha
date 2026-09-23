@@ -43,6 +43,7 @@ if (fs.existsSync(cssDir)) {
 // 2. Validate JS syntax
 console.log('\n[2/4] Validating JavaScript syntax...');
 const jsFiles = [
+  'modal_manager.js',
   'app.js',
   'pet_system.js',
   'stickers_system.js',
