@@ -1,4 +1,4 @@
-const CACHE_NAME = 'todo-notebook-v20260923202820';
+const CACHE_NAME = 'todo-notebook-v20260923205420';
 const ASSETS = [
   './',
   './index.html',

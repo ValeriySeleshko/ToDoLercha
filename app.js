@@ -693,6 +693,73 @@ const Plan4UStorage = {
     };
   },
 
+  // Maintain a dedicated 3-day rolling backup ring buffer
+  // Day 1 -> Slot 1, Day 2 -> Slot 2, Day 3 -> Slot 3, Day 4 -> overwrites Slot 1
+  async save3DayRollingBackup(snapshot, todayDateStr) {
+    try {
+      const todayStr = todayDateStr || new Date().toISOString().slice(0, 10);
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      let meta = null;
+      try {
+        const raw = localStorage.getItem('plan4u_3day_backup_meta');
+        if (raw) meta = JSON.parse(raw);
+      } catch (e) {}
+
+      if (!meta || typeof meta !== 'object' || !meta.slots) {
+        meta = {
+          currentSlot: 1,
+          lastDate: todayStr,
+          slots: {
+            1: null,
+            2: null,
+            3: null
+          }
+        };
+      }
+
+      let targetSlot = meta.currentSlot || 1;
+      // If today is a new calendar day compared to last backup date, advance slot to next day (1->2->3->1)
+      if (meta.lastDate && meta.lastDate !== todayStr) {
+        targetSlot = (targetSlot % 3) + 1;
+        meta.currentSlot = targetSlot;
+        meta.lastDate = todayStr;
+      } else if (!meta.lastDate) {
+        meta.lastDate = todayStr;
+      }
+
+      const slotFilename = `backups/plan4u_3day_slot_${targetSlot}.json`;
+      await this.saveFile(slotFilename, snapshot);
+
+      // Mirror into localStorage for instant offline access
+      try {
+        localStorage.setItem(`plan4u_3day_slot_${targetSlot}`, JSON.stringify(snapshot));
+      } catch (e) {}
+
+      const health = this.calculateHealth(snapshot);
+      meta.slots[targetSlot] = {
+        slot: targetSlot,
+        date: todayStr,
+        time: timeStr,
+        timestamp: Date.now(),
+        filename: slotFilename,
+        taskCount: health.taskCount || 0,
+        habitCount: health.habitCount || 0,
+        financeCount: health.financeCount || 0,
+        cycleCount: health.cycleCount || 0,
+        score: health.score || 0
+      };
+
+      localStorage.setItem('plan4u_3day_backup_meta', JSON.stringify(meta));
+      console.log(`Plan4U Storage: 3-Day Rolling backup saved to Slot ${targetSlot} for date ${todayStr}`);
+      return { targetSlot, meta };
+    } catch (e) {
+      console.warn('Plan4U Storage: Error saving 3-day rolling backup:', e);
+      return null;
+    }
+  },
+
   // Maintain a rolling ring buffer of 5 auto-backups
   async saveRollingBackup(snapshot) {
     try {
@@ -6311,12 +6378,7 @@ class NotebookApp {
     this.btnSaveToGoogleDrive = document.getElementById('btnSaveToGoogleDrive');
     this.btnDownloadLocalBackup = document.getElementById('btnDownloadLocalBackup');
     this.importBackupFile = document.getElementById('importBackupFile');
-    this.btnRestoreWifeHabits = document.getElementById('btnRestoreWifeHabits');
-    this.btnScanDeviceHabitBackups = document.getElementById('btnScanDeviceHabitBackups');
-    this.btnShowDeviceBackups = document.getElementById('btnShowDeviceBackups');
-    this.deviceBackupsListContainer = document.getElementById('deviceBackupsListContainer');
-    this.deviceBackupsListLoading = document.getElementById('deviceBackupsListLoading');
-    this.deviceBackupsListItems = document.getElementById('deviceBackupsListItems');
+    this.backup3DaySlotsList = document.getElementById('backup3DaySlotsList');
 
     // Calendar Modal elements
     this.calendarModalBackdrop = document.getElementById('calendarModalBackdrop');
@@ -9642,6 +9704,7 @@ class NotebookApp {
       this.settingsModalBackdrop.setAttribute('aria-hidden', 'false');
     }
     if (typeof this.updateJoyDemoBadges === 'function') this.updateJoyDemoBadges();
+    this.render3DayBackupUI();
 
     [40, 100, 200].forEach(delay => {
       setTimeout(() => {
@@ -9977,15 +10040,6 @@ class NotebookApp {
       }
       if (this.btnDownloadLocalBackup) {
         this.btnDownloadLocalBackup.onclick = () => this.downloadLocalBackup();
-      }
-      if (this.btnRestoreWifeHabits) {
-        this.btnRestoreWifeHabits.onclick = () => this.restoreWifeHabits();
-      }
-      if (this.btnScanDeviceHabitBackups) {
-        this.btnScanDeviceHabitBackups.onclick = () => this.scanAndMergeLatestHabitCompletions(true);
-      }
-      if (this.btnShowDeviceBackups) {
-        this.btnShowDeviceBackups.onclick = () => this.toggleDeviceBackupsList();
       }
     }
 
@@ -11664,7 +11718,8 @@ class NotebookApp {
       await Plan4UStorage.saveFile('backups/plan4u_autobackup_latest.json', fullSnapshot);
       await Plan4UStorage.saveFile(`backups/${backupFilename}`, fullSnapshot);
 
-      // 2. Rolling backup ring buffer (slots 1..5)
+      // 2. Rolling backup ring buffer (3-day rolling cycle)
+      await Plan4UStorage.save3DayRollingBackup(fullSnapshot, dateStr);
       await Plan4UStorage.saveRollingBackup(fullSnapshot);
 
       // 3. Mirror into LocalStorage
@@ -11698,6 +11753,186 @@ class NotebookApp {
         ? (this.settings.lang === 'en' ? `Auto-saved in Plan4U folder at ${timeStr}` : (this.settings.lang === 'uk' ? `Автозбережено у папку Plan4U о ${timeStr}` : `Автосохранено в папку Plan4U в ${timeStr}`))
         : (this.settings.lang === 'en' ? 'Auto-backup is currently disabled in settings' : (this.settings.lang === 'uk' ? 'Автобекап наразі призупинено в налаштуваннях' : 'Автоматический бэкап приостановлен в настройках'));
       syncText.textContent = msg;
+    }
+
+    this.render3DayBackupUI();
+  }
+
+  // Render 3-Day Rolling Backup slots in Settings
+  render3DayBackupUI() {
+    const listEl = document.getElementById('backup3DaySlotsList');
+    if (!listEl) return;
+
+    let meta = null;
+    try {
+      const raw = localStorage.getItem('plan4u_3day_backup_meta');
+      if (raw) meta = JSON.parse(raw);
+    } catch (e) {}
+
+    const slots = meta?.slots || {};
+    const currentSlot = meta?.currentSlot || 1;
+    const todayStr = this.getTodayDateString();
+
+    let html = '';
+    for (let s = 1; s <= 3; s++) {
+      const data = slots[s];
+      const isCurrentDay = (s === currentSlot) && (data?.date === todayStr);
+      const isFilled = !!data;
+
+      let dateLabel = 'Ожидает дня';
+      if (isFilled && data.date) {
+        const parts = data.date.split('-').map(Number);
+        const months = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+        const monthName = (parts.length >= 2 && parts[1] >= 1 && parts[1] <= 12) ? months[parts[1] - 1] : '';
+        dateLabel = `${parts[2]} ${monthName}, ${data.time || ''}`;
+      }
+
+      const details = isFilled
+        ? `${data.taskCount || 0} дел • ${data.habitCount || 0} привычек`
+        : 'Свободно';
+
+      const slotBadge = isCurrentDay
+        ? `<span style="font-size: 10px; font-weight: 700; color: #2563eb; background: rgba(37, 99, 235, 0.12); padding: 1px 6px; border-radius: 6px;">Сегодня</span>`
+        : `<span style="font-size: 10px; font-weight: 600; color: #64748b; background: rgba(0, 0, 0, 0.04); padding: 1px 6px; border-radius: 6px;">День ${s}</span>`;
+
+      html += `
+        <div class="backup-slot-row" style="display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; background: #ffffff; border: 1px solid ${isCurrentDay ? 'rgba(37, 99, 235, 0.35)' : 'rgba(0, 0, 0, 0.08)'}; border-radius: 9px; gap: 8px;">
+          <div style="display: flex; flex-direction: column; min-width: 0; flex: 1;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              ${slotBadge}
+              <span style="font-size: 11.5px; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                ${dateLabel}
+              </span>
+            </div>
+            <span style="font-size: 10px; color: #64748b; margin-top: 1px;">${details}</span>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+            ${isFilled ? `
+              <button type="button" class="btn-slot-restore" data-slot="${s}" style="display: inline-flex; align-items: center; justify-content: center; padding: 5px 9px; font-size: 11px; font-weight: 700; background: rgba(37, 99, 235, 0.08); color: #2563eb; border: 1px solid rgba(37, 99, 235, 0.25); border-radius: 7px; cursor: pointer; white-space: nowrap; line-height: 1;" title="Восстановить копию этого дня">
+                Восстановить
+              </button>
+              <button type="button" class="btn-slot-download" data-slot="${s}" style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; font-size: 13px; background: rgba(0, 0, 0, 0.04); color: #475569; border: 1px solid rgba(0, 0, 0, 0.12); border-radius: 7px; cursor: pointer; flex-shrink: 0; line-height: 1;" title="Скачать файл JSON">
+                💾
+              </button>
+            ` : `
+              <span style="font-size: 10.5px; color: #94a3b8; padding: 4px 6px;">Свободно</span>
+            `}
+          </div>
+        </div>
+      `;
+    }
+
+    listEl.innerHTML = html;
+
+    // Attach event listeners safely
+    listEl.querySelectorAll('.btn-slot-restore').forEach(btn => {
+      btn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const slot = parseInt(btn.dataset.slot, 10);
+        this.restoreFrom3DaySlot(slot);
+      };
+    });
+
+    listEl.querySelectorAll('.btn-slot-download').forEach(btn => {
+      btn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const slot = parseInt(btn.dataset.slot, 10);
+        this.download3DaySlot(slot);
+      };
+    });
+  }
+
+  // Restore snapshot from a specific 3-day rotation slot
+  async restoreFrom3DaySlot(slotNum) {
+    let meta = null;
+    try {
+      const raw = localStorage.getItem('plan4u_3day_backup_meta');
+      if (raw) meta = JSON.parse(raw);
+    } catch (e) {}
+
+    const slotData = meta?.slots?.[slotNum];
+    if (!slotData) {
+      this.showToast('Слот бэкапа пуст', '⚠️');
+      return;
+    }
+
+    const dateReadable = slotData.date ? this.formatDateReadable(slotData.date) : `День ${slotNum}`;
+    const question = `Восстановить базу от ${dateReadable} (${slotData.time})?\nТекущие данные блокнота будут заменены резервной копией этого дня.`;
+
+    this.showConfirmModal(question, async () => {
+      triggerHaptic([30, 50, 30]);
+      let snapshot = null;
+
+      // 1. Try Plan4UStorage
+      try {
+        snapshot = await Plan4UStorage.loadFile(slotData.filename || `backups/plan4u_3day_slot_${slotNum}.json`, null);
+      } catch (e) {}
+
+      // 2. Fallback to localStorage mirror
+      if (!snapshot) {
+        try {
+          const raw = localStorage.getItem(`plan4u_3day_slot_${slotNum}`);
+          if (raw) snapshot = JSON.parse(raw);
+        } catch (e) {}
+      }
+
+      if (snapshot && typeof snapshot === 'object') {
+        await this.applyRestoredData(snapshot);
+        this.closeSettingsModal();
+        this.showToast(`База от ${dateReadable} успешно восстановлена! ✨`, '🎉');
+      } else {
+        this.showToast('Не удалось прочитать файл резервной копии', '⚠️');
+      }
+    });
+  }
+
+  // Download snapshot from a specific 3-day rotation slot as a file
+  async download3DaySlot(slotNum) {
+    let meta = null;
+    try {
+      const raw = localStorage.getItem('plan4u_3day_backup_meta');
+      if (raw) meta = JSON.parse(raw);
+    } catch (e) {}
+
+    const slotData = meta?.slots?.[slotNum];
+    let snapshot = null;
+    try {
+      snapshot = await Plan4UStorage.loadFile(slotData?.filename || `backups/plan4u_3day_slot_${slotNum}.json`, null);
+    } catch (e) {}
+
+    if (!snapshot) {
+      try {
+        const raw = localStorage.getItem(`plan4u_3day_slot_${slotNum}`);
+        if (raw) snapshot = JSON.parse(raw);
+      } catch (e) {}
+    }
+
+    if (!snapshot) {
+      this.showToast('Резервная копия не найдена', '⚠️');
+      return;
+    }
+
+    const dateStr = slotData?.date || this.getTodayDateString();
+    const fileName = `Plan4U_Backup_${dateStr}_Day${slotNum}.json`;
+    const jsonString = JSON.stringify(snapshot, null, 2);
+
+    try {
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute('href', url);
+      downloadAnchor.setAttribute('download', fileName);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      triggerHaptic(20);
+      this.showToast(`Файл ${fileName} скачан! 💾`, '✓');
+    } catch (err) {
+      console.warn('Download error:', err);
     }
   }
 
