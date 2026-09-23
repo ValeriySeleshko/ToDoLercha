@@ -122,9 +122,38 @@
         if (typeof localStorage !== 'undefined') {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
         }
+        if (typeof window !== 'undefined' && window.Plan4UStorage && typeof window.Plan4UStorage.saveFile === 'function') {
+          window.Plan4UStorage.saveFile('finance.json', this.data);
+        }
       } catch (e) {
         console.error('Error saving finance data:', e);
       }
+    }
+
+    async hydrateFromStorage() {
+      try {
+        if (typeof window !== 'undefined' && window.Plan4UStorage && typeof window.Plan4UStorage.loadFile === 'function') {
+          const fileData = await window.Plan4UStorage.loadFile('finance.json', null);
+          if (fileData && typeof fileData === 'object') {
+            const currentTxCount = Array.isArray(this.data.transactions) ? this.data.transactions.length : 0;
+            const fileTxCount = Array.isArray(fileData.transactions) ? fileData.transactions.length : 0;
+            if (fileTxCount > currentTxCount || (fileData.settings && fileData.settings.enabled && !this.data.settings.enabled)) {
+              this.data = {
+                settings: { ...DEFAULT_SETTINGS, ...(this.data.settings || {}), ...(fileData.settings || {}) },
+                categories: (Array.isArray(fileData.categories) && fileData.categories.length > 0) ? fileData.categories : this.data.categories,
+                transactions: (Array.isArray(fileData.transactions) && fileData.transactions.length > 0) ? fileData.transactions : this.data.transactions
+              };
+              if (typeof localStorage !== 'undefined') {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+              }
+              return true;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('FinanceTracker hydration error:', e);
+      }
+      return false;
     }
 
     // --- Settings ---

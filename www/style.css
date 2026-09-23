@@ -22150,6 +22150,18 @@ body.dark-theme .nutrition-calc-settings-callout {
   background: rgba(216, 58, 136, 0.1);
   border-color: rgba(216, 58, 136, 0.35);
 }
+
+/* 23. Auto-fill Macro Card Pulse Effect */
+@keyframes macroCardAutoFillPulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+  45% { transform: scale(1.04); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0.15); border-color: #10b981; }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.nutrition-target-card.highlight-autofill {
+  animation: macroCardAutoFillPulse 0.75s cubic-bezier(0.25, 1, 0.5, 1);
+  border-color: #10b981 !important;
+}
 /* ==========================================================================
    14_SHEET_EXPORT.CSS - Plan4U Stories & Sheet Image Export & Luteal Care
    ========================================================================== */

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plan4U Food — Интеграция и Сборщик Listex.info</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+  <!-- Header -->
+  <header class="header">
+    <div class="brand-section">
+      <div class="brand-icon">🥑</div>
+      <div class="brand-text">
+        <h1>Plan4U Food × Listex</h1>
+        <p>Визуальный скрипт поиска, обогащения и пополнения базы КБЖУ</p>
+      </div>
+    </div>
+    <div class="header-badges">
+      <div class="status-badge" id="plan4uFoodCountBadge">
+        <span class="pulse-dot"></span>
+        <span>База Plan4U: <strong id="totalDbCount">76 088</strong></span>
+      </div>
+      <div class="status-badge">
+        <span>Listex кэш: <strong id="listexCacheCount">1</strong></span>
+      </div>
+      <button class="btn btn-outline" id="rebuildDbBtn" title="Пересобрать Plan4U_Food.json, js и csv">
+        ⚡ Скомпилировать базу
+      </button>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="tabs-nav">
+    <button class="tab-btn active" data-tab="single">
+      <span>🔍</span> Быстрый поиск & Добавление
+    </button>
+    <button class="tab-btn" data-tab="batch">
+      <span>📦</span> Пакетный импорт штрихкодов
+    </button>
+    <button class="tab-btn" data-tab="inspector">
+      <span>📚</span> Инспектор базы Plan4U
+    </button>
+    <button class="tab-btn" data-tab="catalog">
+      <span>🌐</span> Сборщик категорий Listex
+    </button>
+  </nav>
+
+  <!-- Tab 1: Single Product Search & Add -->
+  <div class="tab-content" id="tab-single">
+    <div class="card">
+      <h2 class="card-title">Поиск товара на Listex.info</h2>
+      <p class="card-subtitle">Введите штрихкод (EAN-13 / GTIN) или прямую ссылку на карточку товара listex.info</p>
+
+      <div class="search-wrapper">
+        <input type="text" id="searchInput" class="search-input" placeholder="Например: 4820077822765 или https://listex.info/product/..." autofocus>
+        <button class="btn btn-primary" id="searchBtn">
+          <span id="searchBtnText">Найти на Listex</span>
+          <span id="searchBtnSpinner" class="spinner" style="display: none;"></span>
+        </button>
+      </div>
+
+      <div class="quick-samples">
+        <span>Примеры:</span>
+        <span class="chip" data-query="4820077822765">4820077822765 (Хліб Бородінський)</span>
+        <span class="chip" data-query="4820155741032">4820155741032 (Хліб цільнозерновий)</span>
+        <span class="chip" data-query="4820178080118">4820178080118 (Лавашики)</span>
+        <span class="chip" data-query="4820000370844">4820000370844 (Ромашка)</span>
+      </div>
+    </div>
+
+    <!-- Product Preview Container -->
+    <div class="preview-container" id="previewContainer">
+      <div class="product-preview">
+        <div class="product-image-box">
+          <img id="productImage" src="" alt="Фото товара">
+        </div>
+
+        <div class="product-info-box">
+          <div>
+            <div class="meta-tags">
+              <span class="tag-barcode" id="productBarcode">EAN: -</span>
+              <span class="tag-brand" id="productBrand" style="display: none;">ТМ: -</span>
+              <span class="tag-weight" id="productWeight" style="display: none;">Вес: -</span>
+            </div>
+
+            <h3 class="product-title" id="productName">Название товара</h3>
+
+            <!-- 4 Macro Pills -->
+            <div class="nutrients-grid">
+              <div class="nutrient-card cal">
+                <div class="nutrient-label">Калории</div>
+                <div class="nutrient-value"><span id="productCal">0</span><span class="nutrient-unit">ккал</span></div>
+              </div>
+              <div class="nutrient-card protein">
+                <div class="nutrient-label">Белки</div>
+                <div class="nutrient-value"><span id="productP">0</span><span class="nutrient-unit">г</span></div>
+              </div>
+              <div class="nutrient-card fat">
+                <div class="nutrient-label">Жиры</div>
+                <div class="nutrient-value"><span id="productF">0</span><span class="nutrient-unit">г</span></div>
+              </div>
+              <div class="nutrient-card carbs">
+                <div class="nutrient-label">Углеводы</div>
+                <div class="nutrient-value"><span id="productC">0</span><span class="nutrient-unit">г</span></div>
+              </div>
+            </div>
+
+            <!-- Macro Ratio Bar -->
+            <div class="macro-ratio-bar" title="Соотношение Б / Ж / У">
+              <div class="ratio-p" id="ratioP" style="width: 20%;"></div>
+              <div class="ratio-f" id="ratioF" style="width: 15%;"></div>
+              <div class="ratio-c" id="ratioC" style="width: 65%;"></div>
+            </div>
+          </div>
+
+          <div class="action-row">
+            <div class="db-presence-notice" id="dbPresenceNotice">
+              <!-- Dynamically populated -->
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <a href="#" target="_blank" class="btn btn-outline" id="sourceLinkBtn">
+                🔗 Открыть на Listex
+              </a>
+              <button class="btn btn-success" id="saveProductBtn">
+                ✔ Добавить в базу Plan4U
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 2: Batch Barcode Import -->
+  <div class="tab-content" id="tab-batch" style="display: none;">
+    <div class="card">
+      <h2 class="card-title">Пакетный поиск и добавление штрихкодов</h2>
+      <p class="card-subtitle">Вставьте список штрихкодов или ссылок (по одному на строку или через запятую). Скрипт поочередно опросит Listex и сохранит проверенную еду в базу.</p>
+
+      <textarea id="batchTextarea" class="batch-textarea" placeholder="4820077822765&#10;4820155741032&#10;4820178080118&#10;..."></textarea>
+
+      <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+        <button class="btn btn-primary" id="startBatchBtn">
+          ▶ Начать пакетную обработку
+        </button>
+        <button class="btn btn-outline" id="clearBatchBtn">Очистить</button>
+        <span id="batchSummaryStats" style="font-size: 13px; color: var(--text-muted);"></span>
+      </div>
+
+      <div class="progress-container" id="batchProgressContainer">
+        <div class="progress-info">
+          <span id="batchProgressText">Обработано: 0 / 0</span>
+          <span id="batchProgressPercent">0%</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="batchProgressBar"></div>
+        </div>
+      </div>
+
+      <div class="data-table-wrapper" id="batchTableWrapper" style="display: none;">
+        <table class="data-table" id="batchTable">
+          <thead>
+            <tr>
+              <th>Штрихкод</th>
+              <th>Название</th>
+              <th>Бренд</th>
+              <th>КБЖУ (К / Б / Ж / У)</th>
+              <th>Статус</th>
+            </tr>
+          </thead>
+          <tbody id="batchTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 3: Database Inspector -->
+  <div class="tab-content" id="tab-inspector" style="display: none;">
+    <div class="card">
+      <h2 class="card-title">Инспектор базы данных Plan4U_Food</h2>
+      <p class="card-subtitle">Мгновенный поиск по уже собранной базе (76 000+ товаров со штрихкодами и КБЖУ).</p>
+
+      <div class="search-wrapper">
+        <input type="text" id="inspectorSearchInput" class="search-input" placeholder="Поиск по штрихкоду или названию (например 'хліб', 'молоко', '4820077822765')...">
+      </div>
+
+      <div class="data-table-wrapper" style="margin-top: 20px;">
+        <table class="data-table" id="inspectorTable">
+          <thead>
+            <tr>
+              <th>Штрихкод</th>
+              <th>Название</th>
+              <th>Бренд</th>
+              <th>Вес</th>
+              <th>Калории</th>
+              <th>Белки</th>
+              <th>Жиры</th>
+              <th>Углеводы</th>
+            </tr>
+          </thead>
+          <tbody id="inspectorTableBody">
+            <tr>
+              <td colspan="8" style="text-align: center; color: var(--text-dim); padding: 30px;">
+                Введите поисковый запрос выше, чтобы найти товары в базе
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 4: Catalog Crawler -->
+  <div class="tab-content" id="tab-catalog" style="display: none;">
+    <div class="card">
+      <h2 class="card-title">Сборщик категорий каталога Listex</h2>
+      <p class="card-subtitle">Выгружайте целые продуктовые отделы Listex для максимального наполнения базы Plan4U.</p>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin: 20px 0;">
+        <div class="nutrient-card" style="text-align: left; padding: 16px;">
+          <div style="font-weight: 700; margin-bottom: 6px;">🍞 Хлебобулочные изделия</div>
+          <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">Хлеб, лаваши, выпечка, сухари (~11 900 товаров)</div>
+          <button class="btn btn-outline btn-sm crawl-cat-btn" data-slug="bread" data-title="Хліб">Собрать раздел "Хлеб"</button>
+        </div>
+
+        <div class="nutrient-card" style="text-align: left; padding: 16px;">
+          <div style="font-weight: 700; margin-bottom: 6px;">🥛 Молочные продукты</div>
+          <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">Молоко, йогурты, творог, масло (~9 500 товаров)</div>
+          <button class="btn btn-outline btn-sm crawl-cat-btn" data-slug="milk-eggs" data-title="Молочні продукти">Собрать раздел</button>
+        </div>
+
+        <div class="nutrient-card" style="text-align: left; padding: 16px;">
+          <div style="font-weight: 700; margin-bottom: 6px;">🌾 Бакалея и крупы</div>
+          <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">Макароны, рис, мука, консервы (~8 500 товаров)</div>
+          <button class="btn btn-outline btn-sm crawl-cat-btn" data-slug="grosery" data-title="Бакалія">Собрать раздел</button>
+        </div>
+
+        <div class="nutrient-card" style="text-align: left; padding: 16px;">
+          <div style="font-weight: 700; margin-bottom: 6px;">🥩 Мясные продукты</div>
+          <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">Колбасы, мясо, птица, деликатесы (~6 600 товаров)</div>
+          <button class="btn btn-outline btn-sm crawl-cat-btn" data-slug="meat" data-title="М'ясні продукти">Собрать раздел</button>
+        </div>
+      </div>
+
+      <div style="padding: 16px; background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: var(--radius-md);">
+        <p style="font-size: 14px; color: #93c5fd; margin-bottom: 8px;">
+          💡 Для фонового сбора огромных категорий вы также можете запускать отдельный скрипт:
+        </p>
+        <code style="display: block; padding: 10px; background: #080c14; border-radius: 6px; font-size: 13px; color: #38bdf8;">
+          Скачать_Листекс_Каталог.bat
+        </code>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

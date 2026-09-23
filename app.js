@@ -581,8 +581,202 @@ const Plan4UStorage = {
     } catch (e) { }
 
     return defaultVal;
+  },
+
+  // List all JSON files in given subfolder (e.g. 'backups') across all layers
+  async listFiles(subDir = 'backups') {
+    if (this.initPromise) await this.initPromise.catch(() => {});
+    const fileSet = new Set();
+    const dirPath = subDir ? `${this.BASE_DIR}/${subDir}` : this.BASE_DIR;
+
+    // 1. Check Native Device Filesystem (DATA)
+    try {
+      const fs = window.Capacitor?.Plugins?.Filesystem;
+      if (fs) {
+        const res = await fs.readdir({
+          path: dirPath,
+          directory: 'DATA'
+        });
+        if (res && Array.isArray(res.files)) {
+          res.files.forEach(f => {
+            const name = typeof f === 'string' ? f : f.name;
+            if (name && name.endsWith('.json')) fileSet.add(name);
+          });
+        }
+      }
+    } catch (e) {}
+
+    // 2. Check Native Device Filesystem (DOCUMENTS)
+    try {
+      const fs = window.Capacitor?.Plugins?.Filesystem;
+      if (fs) {
+        const res = await fs.readdir({
+          path: dirPath,
+          directory: 'DOCUMENTS'
+        });
+        if (res && Array.isArray(res.files)) {
+          res.files.forEach(f => {
+            const name = typeof f === 'string' ? f : f.name;
+            if (name && name.endsWith('.json')) fileSet.add(name);
+          });
+        }
+      }
+    } catch (e) {}
+
+    // 3. Check IndexedDB
+    if (this.db) {
+      try {
+        const dbFiles = await new Promise((resolve) => {
+          const tx = this.db.transaction('files', 'readonly');
+          const store = tx.objectStore('files');
+          const req = store.getAllKeys();
+          req.onsuccess = () => resolve(req.result || []);
+          req.onerror = () => resolve([]);
+        });
+        dbFiles.forEach(k => {
+          if (typeof k === 'string' && k.startsWith(`${subDir}/`)) {
+            const base = k.replace(`${subDir}/`, '');
+            if (base.endsWith('.json')) fileSet.add(base);
+          }
+        });
+      } catch (e) {}
+    }
+
+    return Array.from(fileSet);
+  },
+
+  // Calculate health metrics of a database snapshot to prevent data degradation
+  calculateHealth(snapshot) {
+    if (!snapshot || typeof snapshot !== 'object') return { score: 0, habitCount: 0, historyDays: 0, taskCount: 0 };
+    const habits = Array.isArray(snapshot.habits) ? snapshot.habits : [];
+    const historyDates = new Set();
+    habits.forEach(h => {
+      if (h.history && typeof h.history === 'object') {
+        Object.keys(h.history).forEach(d => {
+          if (h.history[d] && (h.history[d].completed || h.history[d].value)) {
+            historyDates.add(d);
+          }
+        });
+      }
+    });
+    const historyDays = historyDates.size;
+
+    let taskCount = 0;
+    if (snapshot.tasks && typeof snapshot.tasks === 'object') {
+      ['todo', 'buy', 'watch'].forEach(k => {
+        if (Array.isArray(snapshot.tasks[k])) taskCount += snapshot.tasks[k].length;
+      });
+    }
+    if (snapshot.dailyTasks && typeof snapshot.dailyTasks === 'object') {
+      Object.values(snapshot.dailyTasks).forEach(list => {
+        if (Array.isArray(list)) taskCount += list.length;
+      });
+    }
+
+    const dayHistoryCount = (snapshot.dayHistory && typeof snapshot.dayHistory === 'object')
+      ? Object.keys(snapshot.dayHistory).length : 0;
+    const financeCount = Array.isArray(snapshot.financeData?.transactions)
+      ? snapshot.financeData.transactions.length : 0;
+    const cycleCount = Array.isArray(snapshot.cycleData?.history)
+      ? snapshot.cycleData.history.length : 0;
+
+    const score = (habits.length * 10) + (historyDays * 5) + taskCount + (dayHistoryCount * 2) + (financeCount * 2) + (cycleCount * 3);
+
+    return {
+      score,
+      habitCount: habits.length,
+      historyDays,
+      taskCount,
+      dayHistoryCount,
+      financeCount,
+      cycleCount
+    };
+  },
+
+  // Maintain a rolling ring buffer of 5 auto-backups
+  async saveRollingBackup(snapshot) {
+    try {
+      let idx = parseInt(localStorage.getItem('plan4u_rolling_backup_slot') || '1', 10);
+      if (isNaN(idx) || idx < 1 || idx > 5) idx = 1;
+      const slotFilename = `backups/plan4u_autobackup_slot_${idx}.json`;
+      await this.saveFile(slotFilename, snapshot);
+      const nextIdx = (idx % 5) + 1;
+      localStorage.setItem('plan4u_rolling_backup_slot', String(nextIdx));
+      console.log(`Plan4U Storage: Rolling backup saved to slot ${idx} (next: ${nextIdx})`);
+    } catch (e) {
+      console.warn('Plan4U Storage: Error saving rolling backup:', e);
+    }
+  },
+
+  // Create an immutable pre-upgrade snapshot before any new code or migration touches data
+  async createPreUpgradeSnapshot(oldVer, newVer) {
+    try {
+      console.log(`Plan4U Storage: Creating immutable pre-upgrade snapshot (v${oldVer} -> v${newVer})...`);
+      let snapshot = null;
+      if (window.appInstance && typeof window.appInstance.getBackupSnapshot === 'function') {
+        snapshot = window.appInstance.getBackupSnapshot();
+      } else {
+        const habits = JSON.parse(localStorage.getItem('plan4u_habits') || '[]');
+        const tasks = JSON.parse(localStorage.getItem('todo_notebook_tasks') || '{}');
+        const dailyTasks = JSON.parse(localStorage.getItem('todo_notebook_daily_tasks') || '{}');
+        const dayHistory = JSON.parse(localStorage.getItem('todo_notebook_day_history') || '{}');
+        const finance = JSON.parse(localStorage.getItem('plan4u_finance_data') || '{}');
+        const cycle = JSON.parse(localStorage.getItem('plan4u_cycle_data') || '{}');
+        const nutrition = JSON.parse(localStorage.getItem('plan4u_nutrition_data') || '{}');
+        const stickers = JSON.parse(localStorage.getItem('todo_notebook_stickers') || '{}');
+        const settings = JSON.parse(localStorage.getItem('todo_notebook_app_settings') || '{}');
+        const tabs = JSON.parse(localStorage.getItem('plan4u_tabs.json') || '[]');
+
+        snapshot = {
+          version: 4,
+          appName: 'Plan4U',
+          appVersion: oldVer || 'legacy',
+          isPreUpgrade: true,
+          oldVersion: oldVer,
+          targetVersion: newVer,
+          timestamp: new Date().toISOString(),
+          habits,
+          tasks,
+          dailyTasks,
+          dayHistory,
+          financeData: finance,
+          cycleData: cycle,
+          nutritionData: nutrition,
+          stickers,
+          settings,
+          tabs
+        };
+      }
+
+      const health = this.calculateHealth(snapshot);
+      if (health.score > 0) {
+        const cleanOld = (oldVer || 'initial').replace(/[^a-zA-Z0-9._-]/g, '_');
+        const cleanNew = (newVer || 'latest').replace(/[^a-zA-Z0-9._-]/g, '_');
+        const filename = `backups/pre_upgrade_${cleanOld}_to_${cleanNew}_${Date.now()}.json`;
+        await this.saveFile(filename, snapshot);
+        console.log(`Plan4U Storage: Pre-upgrade snapshot created: ${filename} (health score: ${health.score})`);
+      }
+    } catch (e) {
+      console.warn('Plan4U Storage: Error creating pre-upgrade snapshot:', e);
+    }
+  },
+
+  // Verify app version and trigger Pre-Upgrade Snapshot if upgraded
+  async checkAndPerformPreUpgradeSnapshot(currentVersion) {
+    try {
+      const storedVersion = localStorage.getItem('plan4u_installed_version');
+      if (storedVersion !== currentVersion) {
+        console.log(`Plan4U Storage: App version changed from "${storedVersion}" to "${currentVersion}"`);
+        await this.createPreUpgradeSnapshot(storedVersion, currentVersion);
+        localStorage.setItem('plan4u_installed_version', currentVersion);
+      }
+    } catch (e) {
+      console.warn('Plan4U Storage: Version check error:', e);
+    }
   }
 };
+
+const APP_VERSION = '0.3.17';
 
 // Initialize dedicated storage on app launch
 Plan4UStorage.init();
@@ -1317,6 +1511,12 @@ class NotebookApp {
     window.appInstance = this;
     window.app = this;
     this._isHydrating = false;
+
+    // Guaranteed Pre-Upgrade Version Snapshot: ensures an immutable snapshot exists before running app code
+    if (window.Plan4UStorage && typeof Plan4UStorage.checkAndPerformPreUpgradeSnapshot === 'function') {
+      Plan4UStorage.checkAndPerformPreUpgradeSnapshot(APP_VERSION);
+    }
+
     this.hasDeferredTaskFlag = localStorage.getItem('todo_notebook_flag_defer') === '1';
     this.hasExportedBackupFlag = localStorage.getItem('todo_notebook_flag_backup') === '1';
     this.initCloudSync();
@@ -1383,7 +1583,7 @@ class NotebookApp {
     this.updateNutritionArchiveStamp?.();
     this.updateJoyUI();
     this.updateModulesHubState();
-    this.checkEveningJoyTrigger();
+    // this.checkEveningJoyTrigger(); // Отключено автоматическое открытие при старте
     this.cleanLegacyLocalStorageKeys();
     this.syncFromNativeWidget().finally(() => {
       this.syncWithNativeWidget();
@@ -1407,156 +1607,202 @@ class NotebookApp {
     this.revealAppWhenReady();
   }
 
-  // Hydrate persistent data from Plan4UStorage when LocalStorage is empty/cleared (e.g. after cache wipe)
+  // Hydrate persistent data from Plan4UStorage with granular, independent checks per subsystem
   async hydrateFromStorage() {
     try {
       await Plan4UStorage.initPromise;
+      this._isHydrating = true;
 
-      const hasLocalDaily = localStorage.getItem('todo_notebook_daily_tasks') || localStorage.getItem('plan4u_daily_tasks.json');
-      const hasLocalTasks = localStorage.getItem('todo_notebook_tasks') || localStorage.getItem('plan4u_tasks.json');
+      const [
+        savedDaily,
+        savedTasks,
+        savedTabs,
+        savedSettings,
+        savedSections,
+        savedAchievements,
+        savedDayHistory,
+        savedHistory,
+        savedPet,
+        savedStickers,
+        savedHabits,
+        autoBackup,
+        protectedPoint
+      ] = await Promise.all([
+        Plan4UStorage.loadFile('daily_tasks.json', null),
+        Plan4UStorage.loadFile('tasks.json', null),
+        Plan4UStorage.loadFile('tabs.json', null),
+        Plan4UStorage.loadFile('settings.json', null),
+        Plan4UStorage.loadFile('sections.json', null),
+        Plan4UStorage.loadFile('achievements.json', null),
+        Plan4UStorage.loadFile('day_history.json', null),
+        Plan4UStorage.loadFile('history.json', null),
+        Plan4UStorage.loadFile('pet.json', null),
+        Plan4UStorage.loadFile('stickers.json', null),
+        Plan4UStorage.loadFile('habits.json', null),
+        Plan4UStorage.loadFile('backups/plan4u_autobackup_latest.json', null),
+        Plan4UStorage.loadFile('backups/plan4u_protected_restore_point.json', null)
+      ]);
 
-      // Only restore from disk if LocalStorage had NO data (e.g. WebView cache was cleared by Android)
-      if (!hasLocalDaily && !hasLocalTasks) {
-        this._isHydrating = true;
-        const [
-          savedDaily,
-          savedTasks,
-          savedTabs,
-          savedSettings,
-          savedSections,
-          savedAchievements,
-          savedDayHistory,
-          savedHistory,
-          savedPet,
-          savedStickers,
-          savedHabits
-        ] = await Promise.all([
-          Plan4UStorage.loadFile('daily_tasks.json', null),
-          Plan4UStorage.loadFile('tasks.json', null),
-          Plan4UStorage.loadFile('tabs.json', null),
-          Plan4UStorage.loadFile('settings.json', null),
-          Plan4UStorage.loadFile('sections.json', null),
-          Plan4UStorage.loadFile('achievements.json', null),
-          Plan4UStorage.loadFile('day_history.json', null),
-          Plan4UStorage.loadFile('history.json', null),
-          Plan4UStorage.loadFile('pet.json', null),
-          Plan4UStorage.loadFile('stickers.json', null),
-          Plan4UStorage.loadFile('habits.json', null)
-        ]);
+      let hasRestored = false;
+      let habitsRestored = false;
 
-        if (this.nutritionTracker && typeof this.nutritionTracker.hydrateFromStorage === 'function') {
-          this.nutritionTracker.hydrateFromStorage().catch(() => {});
-        }
+      // 1. Daily Tasks: restore if memory is empty or missing data
+      const memoryHasDaily = this.dailyTasks && Object.keys(this.dailyTasks).some(d => Array.isArray(this.dailyTasks[d]) && this.dailyTasks[d].length > 0);
+      if (!memoryHasDaily && savedDaily && typeof savedDaily === 'object' && Object.keys(savedDaily).length > 0) {
+        this.dailyTasks = savedDaily;
+        hasRestored = true;
+      }
 
-        let hasRestored = false;
-
-        if (savedDaily && typeof savedDaily === 'object' && Object.keys(savedDaily).length > 0) {
-          this.dailyTasks = savedDaily;
-          hasRestored = true;
-        }
-
-        if (savedTasks && typeof savedTasks === 'object') {
+      // 2. Tasks: restore / merge if missing
+      if (savedTasks && typeof savedTasks === 'object') {
+        const memoryHasTasks = this.tasks && ['todo', 'buy', 'watch'].some(k => Array.isArray(this.tasks[k]) && this.tasks[k].length > 0);
+        if (!memoryHasTasks) {
           this.tasks = { ...this.tasks, ...savedTasks };
           hasRestored = true;
         }
-
-        const todayStr = this.getTodayDateString();
-        const targetDate = this.selectedDate || todayStr;
-        if (this.dailyTasks[targetDate]) {
-          this.tasks.todo = this.dailyTasks[targetDate];
-        }
-
-        if (Array.isArray(savedTabs) && savedTabs.length > 0) {
-          this.tabs = savedTabs;
-          hasRestored = true;
-        }
-
-        if (savedSettings && typeof savedSettings === 'object') {
-          this.settings = { ...DEFAULT_SETTINGS, ...savedSettings };
-          this.applySettings();
-        }
-
-        if (savedSections && typeof savedSections === 'object') {
-          this.tabSections = savedSections;
-        }
-
-        if (savedAchievements && typeof savedAchievements === 'object') {
-          this.achievementsData = savedAchievements;
-        }
-
-        if (savedDayHistory && typeof savedDayHistory === 'object') {
-          this.dayHistory = savedDayHistory;
-        }
-
-        if (savedHistory && typeof savedHistory === 'object') {
-          this.history = savedHistory;
-        }
-
-        if (savedPet && this.petSystem && typeof this.petSystem.restorePetData === 'function') {
-          this.petSystem.restorePetData(savedPet);
-        }
-
-        if (savedStickers && typeof savedStickers === 'object') {
-          this.stickers = savedStickers;
-          this.renderStickers();
-        }
-
-        if (Array.isArray(savedHabits) && savedHabits.length > 0) {
-          this.habits = savedHabits;
-          this.saveHabits();
-          this.renderHabits();
-          this.updateWeekDaysProgress();
-          this.scheduleAllHabitReminders();
-        }
-
-        if (hasRestored) {
-          this.rolloverPastUncompletedTasks();
-          this.saveDailyTasks();
-          this.saveTasks();
-          this.saveTabs();
-          this.saveSettings();
-          this.saveStickers();
-          this.renderTabs();
-          this.render();
-          this.updateDateWidget();
-          this.updateWorkloadWidget();
-          this.syncWithNativeWidget();
-        }
       }
 
-      // Always verify custom tab sections and restore from disk or autobackup if needed
-      try {
-        const [diskSections, autoBackup] = await Promise.all([
-          Plan4UStorage.loadFile('sections.json', null),
-          Plan4UStorage.loadFile('backups/plan4u_autobackup_latest.json', null)
-        ]);
-        let sectionsUpdated = false;
-        const backupSecs = autoBackup?.sections || autoBackup?.tabSections;
+      const todayStr = this.getTodayDateString();
+      const targetDate = this.selectedDate || todayStr;
+      if (this.dailyTasks && this.dailyTasks[targetDate]) {
+        this.tasks.todo = this.dailyTasks[targetDate];
+      }
 
-        [diskSections, backupSecs].forEach(source => {
-          if (source && typeof source === 'object') {
-            Object.keys(source).forEach(tabId => {
-              if (!this.tabSections) this.tabSections = {};
-              if (!this.tabSections[tabId] || (this.tabSections[tabId].length <= 1 && source[tabId].length > 1)) {
-                this.tabSections[tabId] = source[tabId];
-                sectionsUpdated = true;
-              }
-            });
+      // 3. Tabs: restore if missing
+      if ((!this.tabs || this.tabs.length === 0) && Array.isArray(savedTabs) && savedTabs.length > 0) {
+        this.tabs = savedTabs;
+        hasRestored = true;
+      }
+
+      // 4. Settings
+      if ((!this.settings || Object.keys(this.settings).length <= 2) && savedSettings && typeof savedSettings === 'object') {
+        this.settings = { ...DEFAULT_SETTINGS, ...savedSettings };
+        this.applySettings();
+        hasRestored = true;
+      }
+
+      // 5. Habits: multi-layer recovery from habits.json, autobackup, or protectedPoint
+      const currentHabitCount = Array.isArray(this.habits) ? this.habits.length : 0;
+      const isMemoryHabitsWiped = (!this.habits || currentHabitCount <= 2);
+
+      const backupSources = [
+        protectedPoint?.habits,
+        autoBackup?.habits,
+        savedHabits
+      ];
+
+      for (const candidate of backupSources) {
+        if (Array.isArray(candidate) && candidate.length > 2) {
+          if (isMemoryHabitsWiped) {
+            console.log('Plan4U Storage: Restoring habits from persistent snapshot...');
+            this.habits = candidate;
+            habitsRestored = true;
+            hasRestored = true;
+            break;
           }
-        });
-
-        if (typeof this.recoverMissingTabSections === 'function') {
-          const recovered = this.recoverMissingTabSections();
-          if (recovered) sectionsUpdated = true;
         }
-
-        if (sectionsUpdated) {
-          this.saveSections();
-          this.render();
-        }
-      } catch (secHydrateErr) {
-        console.warn('Storage sections hydration check:', secHydrateErr);
       }
+
+      if (!habitsRestored && isMemoryHabitsWiped && Array.isArray(savedHabits) && savedHabits.length > 0) {
+        this.habits = savedHabits;
+        habitsRestored = true;
+        hasRestored = true;
+      }
+
+      if (habitsRestored) {
+        this.saveHabits();
+        this.renderHabits();
+        this.updateWeekDaysProgress();
+        this.scheduleAllHabitReminders();
+      }
+
+      // 6. Finance Tracker
+      if (this.financeTracker && typeof this.financeTracker.hydrateFromStorage === 'function') {
+        await this.financeTracker.hydrateFromStorage().catch(() => {});
+        this.updateFinanceWidget?.();
+        this.updateFinanceArchiveStamp?.();
+      }
+
+      // 7. Cycle Tracker
+      if (this.cycleTracker && typeof this.cycleTracker.hydrateFromStorage === 'function') {
+        await this.cycleTracker.hydrateFromStorage().catch(() => {});
+        this.updateCycleWidget?.();
+      }
+
+      // 8. Nutrition Tracker
+      if (this.nutritionTracker && typeof this.nutritionTracker.hydrateFromStorage === 'function') {
+        await this.nutritionTracker.hydrateFromStorage().catch(() => {});
+        this.updateNutritionWidget?.();
+      }
+
+      // 9. Day History
+      if ((!this.dayHistory || Object.keys(this.dayHistory).length === 0) && savedDayHistory && typeof savedDayHistory === 'object') {
+        this.dayHistory = savedDayHistory;
+        this.saveDayHistory();
+      }
+
+      // 10. Achievements
+      if ((!this.achievementsData || Object.keys(this.achievementsData.unlocked || {}).length === 0) && savedAchievements && typeof savedAchievements === 'object') {
+        this.achievementsData = savedAchievements;
+        this.saveAchievementsData();
+      }
+
+      // 11. Autocomplete History
+      if (savedHistory && typeof savedHistory === 'object') {
+        this.history = { ...this.history, ...savedHistory };
+      }
+
+      // 12. Pet System
+      if (savedPet && this.petSystem && typeof this.petSystem.restorePetData === 'function') {
+        this.petSystem.restorePetData(savedPet);
+      }
+
+      // 13. Stickers
+      if ((!this.stickers || Object.keys(this.stickers).length === 0) && savedStickers && typeof savedStickers === 'object') {
+        this.stickers = savedStickers;
+        this.renderStickers();
+        this.saveStickers();
+      }
+
+      // 14. Tab Sections
+      const backupSecs = autoBackup?.sections || autoBackup?.tabSections || protectedPoint?.sections;
+      let sectionsUpdated = false;
+      [savedSections, backupSecs].forEach(source => {
+        if (source && typeof source === 'object') {
+          Object.keys(source).forEach(tabId => {
+            if (!this.tabSections) this.tabSections = {};
+            if (!this.tabSections[tabId] || (this.tabSections[tabId].length <= 1 && source[tabId].length > 1)) {
+              this.tabSections[tabId] = source[tabId];
+              sectionsUpdated = true;
+            }
+          });
+        }
+      });
+      if (typeof this.recoverMissingTabSections === 'function') {
+        const recovered = this.recoverMissingTabSections();
+        if (recovered) sectionsUpdated = true;
+      }
+      if (sectionsUpdated) {
+        this.saveSections();
+      }
+
+      if (hasRestored) {
+        this.rolloverPastUncompletedTasks();
+        this.saveDailyTasks();
+        this.saveTasks();
+        this.saveTabs();
+        this.saveSettings();
+        this.renderTabs();
+        this.render();
+        this.updateDateWidget();
+        this.updateWorkloadWidget();
+        this.syncWithNativeWidget();
+      }
+
+      setTimeout(() => {
+        this.scanAndMergeLatestHabitCompletions?.(false);
+      }, 1200);
+
     } catch (e) {
       console.warn('Storage hydration error:', e);
     } finally {
@@ -3095,13 +3341,44 @@ class NotebookApp {
       console.warn('Could not load habits:', e);
     }
 
-    // Check if habits list contains old mock placeholders from early prototypes
-    const isOldDefault = habitsList.some(h => h.id === 'h_read' || h.id === 'h_meditate' || h.id === 'h_vitamin_d' || h.id === 'h_zaryadka');
+    // Auto-recovery: if habits on device were accidentally wiped by APK update / AddFoodTracker bug
+    // (leaving only 2 empty starter habits 'h_water' and 'h_steps') while the user has real notebook data,
+    // restore the wife's full habits dataset with 149 days of history.
+    const isAccidentalCleanWipe = (
+      habitsList.length === 2 &&
+      habitsList.some(h => h.id === 'h_water') &&
+      habitsList.some(h => h.id === 'h_steps') &&
+      (!habitsList[0].history || Object.keys(habitsList[0].history).length === 0) &&
+      (!habitsList[1].history || Object.keys(habitsList[1].history).length === 0) &&
+      (localStorage.getItem('todo_notebook_daily_tasks') || localStorage.getItem('plan4u_daily_tasks.json'))
+    );
 
-    // Initial starter habits apply ONLY on brand-new clean installs or ancient prototypes.
-    // Existing user habits (including updates on device) are NEVER wiped, reset, or overwritten!
-    if (!habitsList || habitsList.length === 0 || isOldDefault) {
-      if (window.INITIAL_HABITS && Array.isArray(window.INITIAL_HABITS) && window.INITIAL_HABITS.length > 0) {
+    if (isAccidentalCleanWipe && window.WIFE_HABITS_BACKUP && Array.isArray(window.WIFE_HABITS_BACKUP)) {
+      console.log('Plan4U: Detected accidental habits wipe bug! Auto-recovering wife personal habits with full history...');
+      habitsList = JSON.parse(JSON.stringify(window.WIFE_HABITS_BACKUP));
+      localStorage.setItem('plan4u_habits', JSON.stringify(habitsList));
+      localStorage.setItem('plan4u_habits_preset_id', 'wife_v1');
+      if (window.Plan4UStorage && typeof Plan4UStorage.saveFile === 'function') {
+        Plan4UStorage.saveFile('habits.json', habitsList);
+      }
+      setTimeout(() => {
+        this.showToast('Привычки и 149 дней истории успешно восстановлены! 🎉', '✨');
+      }, 1500);
+    } else if (!habitsList || habitsList.length === 0) {
+      // ONLY load initial starter habits if the habits list is strictly empty!
+      // NEVER overwrite existing habits of any user under any circumstances!
+      let restoredFromStorage = null;
+      try {
+        const rawStorage = localStorage.getItem('plan4u_habits.json');
+        if (rawStorage) {
+          const parsed = JSON.parse(rawStorage);
+          if (Array.isArray(parsed) && parsed.length > 0) restoredFromStorage = parsed;
+        }
+      } catch (e) {}
+
+      if (restoredFromStorage) {
+        habitsList = restoredFromStorage;
+      } else if (window.INITIAL_HABITS && Array.isArray(window.INITIAL_HABITS) && window.INITIAL_HABITS.length > 0) {
         habitsList = JSON.parse(JSON.stringify(window.INITIAL_HABITS));
       } else {
         // Clean public 2 habits baseline: Water & Steps
@@ -4000,6 +4277,283 @@ class NotebookApp {
       this.updateWeekDaysProgress();
       this.closeHabitModal();
       triggerHaptic(15);
+    }
+  }
+
+  // Restore wife's full personal habits archive with 149 days of history
+  restoreWifeHabits() {
+    if (!window.WIFE_HABITS_BACKUP || !Array.isArray(window.WIFE_HABITS_BACKUP)) {
+      this.showToast('Архив личных привычек не найден в системе', '⚠️');
+      return;
+    }
+    const confirmTitle = 'Восстановить личные привычки?';
+    const confirmMsg = 'Восстановить 7 привычек и 149 дней истории выполнения (Витамин D, Зарядка, Библия, Массаж лица, Треня, Шаги, Без сладкого)?';
+    const doRestore = () => {
+      const archive = JSON.parse(JSON.stringify(window.WIFE_HABITS_BACKUP));
+      archive.forEach(bh => {
+        const target = (this.habits || []).find(h => h.id === bh.id);
+        if (target && target.history) {
+          bh.history = { ...bh.history, ...target.history };
+        }
+      });
+      this.habits = archive;
+      this.saveHabits();
+      this.renderHabits();
+      this.updateWeekDaysProgress();
+      this.scheduleAllHabitReminders();
+      triggerHaptic([30, 40, 30]);
+      this.showToast('Все 7 привычек и 149 дней истории успешно восстановлены! 🎉', '✨');
+      setTimeout(() => {
+        this.scanAndMergeLatestHabitCompletions?.(false);
+      }, 500);
+    };
+    if (this.showConfirmModal) {
+      this.showConfirmModal({
+        title: confirmTitle,
+        message: confirmMsg,
+        icon: '🔄',
+        confirmText: 'Восстановить',
+        onConfirm: doRestore
+      });
+    } else {
+      doRestore();
+    }
+  }
+
+  // Scan device filesystem (Documents/Plan4U/backups and Data/Plan4U/backups) and IndexedDB
+  // for recent backups that have habit completions for the current week / September
+  async scanAndMergeLatestHabitCompletions(showFeedback = false) {
+    try {
+      const fs = window.Capacitor?.Plugins?.Filesystem;
+      let candidateFiles = [];
+
+      // 1. Filesystem scan in DOCUMENTS and DATA
+      if (fs) {
+        for (const directory of ['DOCUMENTS', 'DATA']) {
+          try {
+            const res = await fs.readdir({
+              path: 'Plan4U/backups',
+              directory
+            });
+            if (res && res.files) {
+              for (const f of res.files) {
+                const name = typeof f === 'string' ? f : f.name;
+                if (name && name.endsWith('.json')) {
+                  candidateFiles.push({ name, directory });
+                }
+              }
+            }
+          } catch (e) { }
+        }
+      }
+
+      // 2. IndexedDB scan
+      if (window.Plan4UStorage && Plan4UStorage.db) {
+        try {
+          const keys = await new Promise((resolve) => {
+            const tx = Plan4UStorage.db.transaction('files', 'readonly');
+            const req = tx.objectStore('files').getAllKeys();
+            req.onsuccess = () => resolve(req.result || []);
+            req.onerror = () => resolve([]);
+          });
+          keys.forEach(k => {
+            if (typeof k === 'string' && k.startsWith('backups/') && k.endsWith('.json')) {
+              candidateFiles.push({ idbKey: k });
+            }
+          });
+        } catch (e) { }
+      }
+
+      // Sort candidate files: newest first by timestamp in filename
+      candidateFiles.sort((a, b) => {
+        const nameA = a.name || a.idbKey || '';
+        const nameB = b.name || b.idbKey || '';
+        return nameB.localeCompare(nameA);
+      });
+
+      let bestCompletions = {};
+      let totalMerged = 0;
+      let foundDate = '';
+
+      for (const item of candidateFiles) {
+        try {
+          let snapshot = null;
+          if (item.name && fs) {
+            const fileRes = await fs.readFile({
+              path: `Plan4U/backups/${item.name}`,
+              directory: item.directory,
+              encoding: 'utf8'
+            });
+            if (fileRes && fileRes.data) {
+              snapshot = typeof fileRes.data === 'string' ? JSON.parse(fileRes.data) : fileRes.data;
+            }
+          } else if (item.idbKey && window.Plan4UStorage && Plan4UStorage.db) {
+            snapshot = await new Promise((resolve) => {
+              const tx = Plan4UStorage.db.transaction('files', 'readonly');
+              const req = tx.objectStore('files').get(item.idbKey);
+              req.onsuccess = () => {
+                if (req.result && req.result.content) {
+                  try { resolve(JSON.parse(req.result.content)); } catch(e) { resolve(null); }
+                } else resolve(null);
+              };
+              req.onerror = () => resolve(null);
+            });
+          }
+
+          if (snapshot && Array.isArray(snapshot.habits) && snapshot.habits.length > 0) {
+            snapshot.habits.forEach(bh => {
+              if (bh.history && typeof bh.history === 'object') {
+                Object.keys(bh.history).forEach(ds => {
+                  if (bh.history[ds] && (bh.history[ds].completed || bh.history[ds].value)) {
+                    if (!bestCompletions[bh.id]) bestCompletions[bh.id] = {};
+                    if (!bestCompletions[bh.id][ds]) {
+                      bestCompletions[bh.id][ds] = bh.history[ds];
+                      totalMerged++;
+                      if (ds > foundDate) foundDate = ds;
+                    }
+                  }
+                });
+              }
+            });
+          }
+        } catch (err) { }
+      }
+
+      // Merge collected completions into this.habits
+      if (totalMerged > 0 && this.habits && Array.isArray(this.habits)) {
+        let hasNew = false;
+        this.habits.forEach(h => {
+          if (!h.history) h.history = {};
+          if (bestCompletions[h.id]) {
+            Object.keys(bestCompletions[h.id]).forEach(ds => {
+              if (!h.history[ds]) {
+                h.history[ds] = bestCompletions[h.id][ds];
+                hasNew = true;
+              }
+            });
+          }
+        });
+
+        if (hasNew) {
+          this.saveHabits();
+          this.renderHabits();
+          this.updateWeekDaysProgress();
+          console.log(`Plan4U: Successfully merged ${totalMerged} completions up to ${foundDate} from device backups!`);
+          if (showFeedback) {
+            triggerHaptic([30, 40, 30]);
+            this.showToast(`Восстановлено отметок: ${totalMerged} (до ${foundDate})! 🎉`, '✨');
+          }
+          return true;
+        }
+      }
+
+      if (showFeedback) {
+        this.showToast('Новых дополнительных отметок в бэкапах не найдено', 'ℹ️');
+      }
+      return false;
+    } catch (e) {
+      console.warn('Error scanning device backups:', e);
+      if (showFeedback) {
+        this.showToast('Ошибка при сканировании бэкапов', '⚠️');
+      }
+      return false;
+    }
+  }
+
+  // Toggle and render list of persistent backups found on device
+  async toggleDeviceBackupsList() {
+    triggerHaptic(15);
+    if (!this.deviceBackupsListContainer) return;
+    const isVisible = this.deviceBackupsListContainer.style.display !== 'none';
+    if (isVisible) {
+      this.deviceBackupsListContainer.style.display = 'none';
+      return;
+    }
+
+    this.deviceBackupsListContainer.style.display = 'block';
+    if (this.deviceBackupsListLoading) this.deviceBackupsListLoading.style.display = 'block';
+    if (this.deviceBackupsListItems) this.deviceBackupsListItems.innerHTML = '';
+
+    try {
+      const files = await Plan4UStorage.listFiles('backups');
+      files.sort((a, b) => b.localeCompare(a));
+
+      if (this.deviceBackupsListLoading) this.deviceBackupsListLoading.style.display = 'none';
+
+      if (files.length === 0) {
+        if (this.deviceBackupsListItems) {
+          this.deviceBackupsListItems.innerHTML = '<div style="color: #94a3b8; text-align: center; padding: 6px;">Точек восстановления пока нет</div>';
+        }
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+      for (const fileName of files.slice(0, 15)) {
+        const itemDiv = document.createElement('div');
+        itemDiv.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 7px 8px; background: #ffffff; border: 1px solid rgba(0,0,0,0.06); border-radius: 6px; gap: 6px;';
+
+        let badgeText = 'Бэкап';
+        let badgeColor = '#64748b';
+        if (fileName.startsWith('pre_upgrade')) {
+          badgeText = 'До обновления';
+          badgeColor = '#d97706';
+        } else if (fileName.includes('protected_restore_point')) {
+          badgeText = 'Защищённый';
+          badgeColor = '#dc2626';
+        } else if (fileName.includes('autobackup_latest')) {
+          badgeText = 'Свежий авто';
+          badgeColor = '#059669';
+        } else if (fileName.includes('slot_')) {
+          badgeText = 'Ротация';
+          badgeColor = '#2563eb';
+        }
+
+        const infoDiv = document.createElement('div');
+        infoDiv.style.cssText = 'display: flex; flex-direction: column; overflow: hidden;';
+
+        const titleDiv = document.createElement('div');
+        titleDiv.style.cssText = 'font-weight: 600; color: #1e293b; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+        titleDiv.textContent = fileName.replace('.json', '');
+
+        const badgeSpan = document.createElement('span');
+        badgeSpan.style.cssText = `font-size: 9.5px; font-weight: 700; color: ${badgeColor};`;
+        badgeSpan.textContent = badgeText;
+
+        infoDiv.appendChild(titleDiv);
+        infoDiv.appendChild(badgeSpan);
+
+        const restoreBtn = document.createElement('button');
+        restoreBtn.type = 'button';
+        restoreBtn.style.cssText = 'background: #2563eb; color: #ffffff; border: none; border-radius: 5px; padding: 5px 9px; font-size: 11px; font-weight: 600; cursor: pointer; flex-shrink: 0;';
+        restoreBtn.textContent = 'Восстановить';
+        restoreBtn.onclick = async () => {
+          triggerHaptic(25);
+          if (confirm(`Восстановить данные из точки: ${fileName}?`)) {
+            const snapshot = await Plan4UStorage.loadFile(`backups/${fileName}`, null);
+            if (snapshot && typeof snapshot === 'object') {
+              await this.applyRestoredData(snapshot);
+              this.showToast(`Данные успешно восстановлены (${badgeText})! 🎉`, '✨');
+              this.deviceBackupsListContainer.style.display = 'none';
+            } else {
+              this.showToast('Не удалось прочитать выбранную точку восстановления', '⚠️');
+            }
+          }
+        };
+
+        itemDiv.appendChild(infoDiv);
+        itemDiv.appendChild(restoreBtn);
+        fragment.appendChild(itemDiv);
+      }
+
+      if (this.deviceBackupsListItems) {
+        this.deviceBackupsListItems.appendChild(fragment);
+      }
+    } catch (err) {
+      console.warn('Error listing device backups:', err);
+      if (this.deviceBackupsListLoading) this.deviceBackupsListLoading.style.display = 'none';
+      if (this.deviceBackupsListItems) {
+        this.deviceBackupsListItems.innerHTML = '<div style="color: #ef4444; text-align: center; padding: 6px;">Ошибка при чтении бэкапов</div>';
+      }
     }
   }
 
@@ -5737,6 +6291,12 @@ class NotebookApp {
     this.btnSaveToGoogleDrive = document.getElementById('btnSaveToGoogleDrive');
     this.btnDownloadLocalBackup = document.getElementById('btnDownloadLocalBackup');
     this.importBackupFile = document.getElementById('importBackupFile');
+    this.btnRestoreWifeHabits = document.getElementById('btnRestoreWifeHabits');
+    this.btnScanDeviceHabitBackups = document.getElementById('btnScanDeviceHabitBackups');
+    this.btnShowDeviceBackups = document.getElementById('btnShowDeviceBackups');
+    this.deviceBackupsListContainer = document.getElementById('deviceBackupsListContainer');
+    this.deviceBackupsListLoading = document.getElementById('deviceBackupsListLoading');
+    this.deviceBackupsListItems = document.getElementById('deviceBackupsListItems');
 
     // Calendar Modal elements
     this.calendarModalBackdrop = document.getElementById('calendarModalBackdrop');
@@ -9350,6 +9910,15 @@ class NotebookApp {
       if (this.btnDownloadLocalBackup) {
         this.btnDownloadLocalBackup.onclick = () => this.downloadLocalBackup();
       }
+      if (this.btnRestoreWifeHabits) {
+        this.btnRestoreWifeHabits.onclick = () => this.restoreWifeHabits();
+      }
+      if (this.btnScanDeviceHabitBackups) {
+        this.btnScanDeviceHabitBackups.onclick = () => this.scanAndMergeLatestHabitCompletions(true);
+      }
+      if (this.btnShowDeviceBackups) {
+        this.btnShowDeviceBackups.onclick = () => this.toggleDeviceBackupsList();
+      }
     }
 
     // Fast synchronous value updates
@@ -10422,9 +10991,25 @@ class NotebookApp {
       this.saveSections();
     }
 
-    // 3. Daily Tasks (all dates)
+    // 3. Daily Tasks (all dates) - deep merge to avoid dropping current or historical days
     if (data.dailyTasks && typeof data.dailyTasks === 'object') {
-      this.dailyTasks = data.dailyTasks;
+      if (!this.dailyTasks || typeof this.dailyTasks !== 'object') {
+        this.dailyTasks = data.dailyTasks;
+      } else {
+        Object.keys(data.dailyTasks).forEach(d => {
+          if (!this.dailyTasks[d]) {
+            this.dailyTasks[d] = data.dailyTasks[d];
+          } else {
+            const existingIds = new Set(this.dailyTasks[d].map(t => t.id));
+            (data.dailyTasks[d] || []).forEach(incomingTask => {
+              if (incomingTask && incomingTask.id && !existingIds.has(incomingTask.id)) {
+                this.dailyTasks[d].push(incomingTask);
+                existingIds.add(incomingTask.id);
+              }
+            });
+          }
+        });
+      }
     }
 
     // 4. Tasks (custom tabs, buy, watch, etc.)
@@ -10489,10 +11074,27 @@ class NotebookApp {
     this.saveSettings();
     this.saveStickers();
 
-    // 11b. Habits
+    // 11b. Habits - Merge histories so past 149 days and fresh checkmarks combine
     if (Array.isArray(data.habits)) {
-      this.habits = data.habits;
+      if (this.habits && Array.isArray(this.habits) && this.habits.length > 0) {
+        data.habits.forEach(bh => {
+          const target = this.habits.find(h => h.id === bh.id);
+          if (target) {
+            if (!target.history) target.history = {};
+            target.history = { ...target.history, ...bh.history };
+            if (bh.reminderEnabled !== undefined) target.reminderEnabled = bh.reminderEnabled;
+            if (bh.reminderTime) target.reminderTime = bh.reminderTime;
+          } else {
+            this.habits.push(bh);
+          }
+        });
+      } else {
+        this.habits = data.habits;
+      }
       this.saveHabits();
+      this.renderHabits();
+      this.updateWeekDaysProgress();
+      this.scheduleAllHabitReminders();
     }
 
     // 11c. Cycle Tracker (Female calendar data & settings)
@@ -10523,6 +11125,24 @@ class NotebookApp {
         }
       } catch (e) {
         console.warn('Could not restore finance tracker data:', e);
+      }
+    }
+
+    // 11e. Nutrition Tracker (Daily entries, recipes, custom foods)
+    if (data.nutritionData && typeof data.nutritionData === 'object') {
+      try {
+        localStorage.setItem('plan4u_nutrition_data', JSON.stringify(data.nutritionData));
+        if (this.nutritionTracker) {
+          this.nutritionTracker.data = data.nutritionData;
+          if (Array.isArray(data.nutritionCustomFoods)) {
+            this.nutritionTracker.customFoods = data.nutritionCustomFoods;
+            localStorage.setItem('plan4u_nutrition_custom_foods', JSON.stringify(data.nutritionCustomFoods));
+          }
+          this.updateNutritionWidget?.();
+          this.updateNutritionArchiveStamp?.();
+        }
+      } catch (e) {
+        console.warn('Could not restore nutrition tracker data:', e);
       }
     }
 
@@ -10571,7 +11191,7 @@ class NotebookApp {
     return {
       version: 4,
       appName: 'Plan4U',
-      appVersion: '0.3.16',
+      appVersion: typeof APP_VERSION !== 'undefined' ? APP_VERSION : '0.3.17',
       timestamp: new Date().toISOString(),
       tabs: this.tabs,
       sections: this.tabSections || {},
@@ -10586,6 +11206,9 @@ class NotebookApp {
       streak: this.streakData,
       stickers: this.stickers || {},
       cycleData: this.cycleTracker ? this.cycleTracker.data : (JSON.parse(localStorage.getItem('plan4u_cycle_data') || 'null')),
+      financeData: this.financeTracker ? this.financeTracker.data : (JSON.parse(localStorage.getItem('plan4u_finance_data') || 'null')),
+      nutritionData: this.nutritionTracker ? this.nutritionTracker.data : (JSON.parse(localStorage.getItem('plan4u_nutrition_data') || 'null')),
+      nutritionCustomFoods: this.nutritionTracker ? this.nutritionTracker.customFoods : (JSON.parse(localStorage.getItem('plan4u_nutrition_custom_foods') || '[]')),
       pet: this.petSystem ? this.petSystem.getPetSnapshot() : (JSON.parse(localStorage.getItem('plan4u_pet_data') || '{}'))
     };
   }
@@ -10797,11 +11420,11 @@ class NotebookApp {
     reader.onload = async (event) => {
       try {
         const data = JSON.parse(event.target.result);
-        if (data && (data.tabs || data.tasks || data.dailyTasks || data.settings || data.sections || data.tabSections)) {
+        if (data && (data.tabs || data.tasks || data.dailyTasks || data.settings || data.sections || data.tabSections || data.habits)) {
           await this.applyRestoredData(data);
           this.closeSettingsModal();
           triggerHaptic([30, 40, 30]);
-          this.showToast('Все данные, разделы, настройки и питомец успешно восстановлены! ✨', '🎉');
+          this.showToast('Все данные, разделы, настройки и привычки успешно восстановлены! ✨', '🎉');
         } else {
           this.showToast('Неверный формат файла бэкапа', '⚠️');
         }
@@ -10934,12 +11557,45 @@ class NotebookApp {
         backupTime: timeStr
       };
 
+      const candidateHealth = Plan4UStorage.calculateHealth(fullSnapshot);
+
+      // Check existing latest autobackup before overwriting
+      const existingLatest = await Plan4UStorage.loadFile('backups/plan4u_autobackup_latest.json', null);
+      if (existingLatest) {
+        const existingHealth = Plan4UStorage.calculateHealth(existingLatest);
+
+        // Anti-Degradation Guard:
+        // If existing backup was healthy (had > 2 habits, or > 10 history days, or score >= 40)
+        // and candidate snapshot has collapsed, PREVENT overwriting the healthy latest backup!
+        const habitsCollapsed = (existingHealth.habitCount > 2 && candidateHealth.habitCount <= 2 && candidateHealth.historyDays <= 2);
+        const scoreCollapsed = (existingHealth.score >= 50 && candidateHealth.score < (existingHealth.score * 0.45));
+
+        if (habitsCollapsed || scoreCollapsed) {
+          console.warn('Plan4U Anti-Degradation Guard: Severe data loss detected! Preserving previous healthy backup.', {
+            existingHealth,
+            candidateHealth
+          });
+
+          // 1. Ensure existing backup is permanently secured as protected restore point
+          await Plan4UStorage.saveFile('backups/plan4u_protected_restore_point.json', existingLatest);
+
+          // 2. Save degraded data to an incident file for inspection, but DO NOT poison plan4u_autobackup_latest.json
+          await Plan4UStorage.saveFile(`backups/incident_degraded_${Date.now()}.json`, fullSnapshot);
+
+          this.updateAutoBackupStatusUI(timeStr);
+          return;
+        }
+      }
+
       // 1. Save to dedicated device filesystem Plan4U/backups/
       const backupFilename = this.getFormattedBackupFilename('Plan4U');
       await Plan4UStorage.saveFile('backups/plan4u_autobackup_latest.json', fullSnapshot);
       await Plan4UStorage.saveFile(`backups/${backupFilename}`, fullSnapshot);
 
-      // 2. Mirror into LocalStorage
+      // 2. Rolling backup ring buffer (slots 1..5)
+      await Plan4UStorage.saveRollingBackup(fullSnapshot);
+
+      // 3. Mirror into LocalStorage
       localStorage.setItem('plan4u_last_autobackup_time', timeStr);
       localStorage.setItem('plan4u_last_autobackup_date', dateStr);
 
@@ -19755,6 +20411,35 @@ class NotebookApp {
       }
     });
 
+    // Auto-calculate calories if user edits macros and calories are 0 or auto-calculated (4 * P + 9 * F + 4 * C)
+    const handleSingleMacroChange = () => {
+      const p = Math.max(0, parseFloat(String(this.singleFoodProt100?.value || '0').replace(',', '.')) || 0);
+      const f = Math.max(0, parseFloat(String(this.singleFoodFat100?.value || '0').replace(',', '.')) || 0);
+      const c = Math.max(0, parseFloat(String(this.singleFoodCarb100?.value || '0').replace(',', '.')) || 0);
+      const curCal = parseFloat(String(this.singleFoodKcal100?.value || '0').replace(',', '.')) || 0;
+
+      if (curCal === 0 || this.singleFoodKcal100?._autoCalculated) {
+        const autoKcal = Math.round(p * 4 + f * 9 + c * 4);
+        if (autoKcal > 0) {
+          if (this.singleFoodKcal100) {
+            this.singleFoodKcal100.value = autoKcal;
+            this.singleFoodKcal100._autoCalculated = true;
+          }
+        }
+      }
+      this.recalculateSingleFoodPortion();
+    };
+
+    [this.singleFoodProt100, this.singleFoodFat100, this.singleFoodCarb100].forEach(inp => {
+      if (inp) inp.addEventListener('input', handleSingleMacroChange);
+    });
+
+    if (this.singleFoodKcal100) {
+      this.singleFoodKcal100.addEventListener('input', () => {
+        this.singleFoodKcal100._autoCalculated = false;
+      });
+    }
+
     // Quick increment chips for food serving weight (+1, +5, +10, +50, +100, Clear)
     if (this.foodQuickChips) {
       const preventFocusAndDismiss = (e) => {
@@ -19913,9 +20598,35 @@ class NotebookApp {
         }
       });
 
+      const tryAutoFillByName = () => {
+        const name = (this.singleFoodName?.value || '').trim();
+        if (!name || !this.nutritionTracker) return;
+        const curKcal = parseFloat(this.singleFoodKcal100?.value) || 0;
+        const curProt = parseFloat(this.singleFoodProt100?.value) || 0;
+        const curFat = parseFloat(this.singleFoodFat100?.value) || 0;
+        const curCarb = parseFloat(this.singleFoodCarb100?.value) || 0;
+        if (curKcal === 0 && curProt === 0 && curFat === 0 && curCarb === 0) {
+          const match = (typeof this.nutritionTracker.findFoodByName === 'function')
+            ? this.nutritionTracker.findFoodByName(name)
+            : null;
+          if (match && ((match.caloriesPer100g || match.calories || 0) > 0 || (match.proteinPer100g || 0) > 0)) {
+            this.applyScannedFoodToSingle(match);
+          }
+        }
+      };
+
+      this.singleFoodName.addEventListener('blur', () => {
+        setTimeout(() => {
+          tryAutoFillByName();
+        }, 250);
+      });
+
       this.singleFoodName.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && this.singleFoodSuggestions) {
           this.singleFoodSuggestions.style.display = 'none';
+        } else if (e.key === 'Enter') {
+          if (this.singleFoodSuggestions) this.singleFoodSuggestions.style.display = 'none';
+          tryAutoFillByName();
         }
       });
     }
@@ -23096,16 +23807,30 @@ class NotebookApp {
     }
   }
 
+  highlightMacroCards() {
+    const cards = document.querySelectorAll('#paneFoodSingle .nutrition-target-card');
+    cards.forEach(card => {
+      card.classList.remove('highlight-autofill');
+      void card.offsetWidth;
+      card.classList.add('highlight-autofill');
+      setTimeout(() => card.classList.remove('highlight-autofill'), 850);
+    });
+  }
+
   async onBarcodeScanned(barcode) {
     triggerHaptic([30, 50, 30]);
     this.stopBarcodeScanner();
 
-    this.showToast('Поиск в Open Food Facts... 🔍');
+    this.showToast(this.t('nutrition_scanner_searching') || 'Поиск продукта и КБЖУ... 🔍');
 
     try {
       const food = await this.nutritionTracker.lookupBarcode(barcode);
       if (food) {
-        this.showToast(`Найдено: ${food.name}`, '🥗');
+        const c = food.caloriesPer100g || 0;
+        const p = food.proteinPer100g || 0;
+        const f = food.fatPer100g || 0;
+        const cb = food.carbsPer100g || 0;
+        this.showToast(`Найдено: ${food.name} (${c} ккал • Б:${p} Ж:${f} У:${cb})`, '🥗');
         if (this.scannerTargetMode === 'composite' && this.scannerIngredientIndex != null) {
           this.applyScannedFoodToComposite(food, this.scannerIngredientIndex);
         } else {
@@ -23116,6 +23841,8 @@ class NotebookApp {
         if (this.scannerTargetMode === 'single' && this.singleFoodName) {
           this.singleFoodName.value = `Продукт ${barcode}`;
           this.singleFoodName.dataset.scannedBarcode = barcode;
+          this.singleFoodName.focus();
+          try { this.singleFoodName.select(); } catch (_) {}
         }
       }
     } catch (e) {
@@ -23125,25 +23852,100 @@ class NotebookApp {
 
   applyScannedFoodToSingle(food) {
     if (!food) return;
+
+    let cal = food.caloriesPer100g ?? food.calories100g ?? food.per100g?.calories ?? food.calories ?? 0;
+    let prot = food.proteinPer100g ?? food.protein100g ?? food.per100g?.protein ?? food.protein ?? 0;
+    let fat = food.fatPer100g ?? food.fat100g ?? food.per100g?.fat ?? food.fat ?? 0;
+    let carb = food.carbsPer100g ?? food.carbs100g ?? food.per100g?.carbs ?? food.carbs ?? 0;
+
+    cal = Math.max(0, parseFloat(String(cal).replace(',', '.')) || 0);
+    prot = Math.max(0, Math.round((parseFloat(String(prot).replace(',', '.')) || 0) * 10) / 10);
+    fat = Math.max(0, Math.round((parseFloat(String(fat).replace(',', '.')) || 0) * 10) / 10);
+    carb = Math.max(0, Math.round((parseFloat(String(carb).replace(',', '.')) || 0) * 10) / 10);
+
+    // If calories are 0 but macros exist, calculate: 4 * P + 9 * F + 4 * C
+    if (!cal && (prot > 0 || fat > 0 || carb > 0)) {
+      cal = Math.round(prot * 4 + fat * 9 + carb * 4);
+    }
+
+    // If all KBJU are 0, try smart fallback from built-in food database by food name
+    if (cal === 0 && prot === 0 && fat === 0 && carb === 0 && food.name && this.nutritionTracker) {
+      const fallback = (typeof this.nutritionTracker.findFoodByName === 'function')
+        ? this.nutritionTracker.findFoodByName(food.name)
+        : null;
+      if (fallback) {
+        cal = fallback.caloriesPer100g || fallback.calories || 0;
+        prot = fallback.proteinPer100g || fallback.protein || 0;
+        fat = fallback.fatPer100g || fallback.fat || 0;
+        carb = fallback.carbsPer100g || fallback.carbs || 0;
+      }
+    }
+
     if (this.singleFoodName) {
       this.singleFoodName.value = food.name;
       this.singleFoodName.dataset.scannedBarcode = food.barcode || '';
     }
-    if (this.singleFoodKcal100) this.singleFoodKcal100.value = food.caloriesPer100g || 0;
-    if (this.singleFoodProt100) this.singleFoodProt100.value = food.proteinPer100g || 0;
-    if (this.singleFoodFat100) this.singleFoodFat100.value = food.fatPer100g || 0;
-    if (this.singleFoodCarb100) this.singleFoodCarb100.value = food.carbsPer100g || 0;
+
+    if (this.singleFoodKcal100) {
+      this.singleFoodKcal100.value = cal;
+      this.singleFoodKcal100._autoCalculated = (cal > 0);
+      this.singleFoodKcal100.dispatchEvent(new Event('input', { bubbles: true }));
+      this.singleFoodKcal100.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    if (this.singleFoodProt100) {
+      this.singleFoodProt100.value = prot;
+      this.singleFoodProt100.dispatchEvent(new Event('input', { bubbles: true }));
+      this.singleFoodProt100.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    if (this.singleFoodFat100) {
+      this.singleFoodFat100.value = fat;
+      this.singleFoodFat100.dispatchEvent(new Event('input', { bubbles: true }));
+      this.singleFoodFat100.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    if (this.singleFoodCarb100) {
+      this.singleFoodCarb100.value = carb;
+      this.singleFoodCarb100.dispatchEvent(new Event('input', { bubbles: true }));
+      this.singleFoodCarb100.dispatchEvent(new Event('change', { bubbles: true }));
+    }
 
     this.recalculateSingleFoodPortion();
+    this.highlightMacroCards();
   }
 
   applyScannedFoodToComposite(food, idx) {
     if (!food || !this.currentCompositeIngredients[idx]) return;
+
+    let cal = food.caloriesPer100g ?? food.calories100g ?? food.per100g?.calories ?? food.calories ?? 0;
+    let prot = food.proteinPer100g ?? food.protein100g ?? food.per100g?.protein ?? food.protein ?? 0;
+    let fat = food.fatPer100g ?? food.fat100g ?? food.per100g?.fat ?? food.fat ?? 0;
+    let carb = food.carbsPer100g ?? food.carbs100g ?? food.per100g?.carbs ?? food.carbs ?? 0;
+
+    cal = Math.max(0, parseFloat(String(cal).replace(',', '.')) || 0);
+    prot = Math.max(0, Math.round((parseFloat(String(prot).replace(',', '.')) || 0) * 10) / 10);
+    fat = Math.max(0, Math.round((parseFloat(String(fat).replace(',', '.')) || 0) * 10) / 10);
+    carb = Math.max(0, Math.round((parseFloat(String(carb).replace(',', '.')) || 0) * 10) / 10);
+
+    if (!cal && (prot > 0 || fat > 0 || carb > 0)) {
+      cal = Math.round(prot * 4 + fat * 9 + carb * 4);
+    }
+
+    if (cal === 0 && prot === 0 && fat === 0 && carb === 0 && food.name && this.nutritionTracker) {
+      const fallback = (typeof this.nutritionTracker.findFoodByName === 'function')
+        ? this.nutritionTracker.findFoodByName(food.name)
+        : null;
+      if (fallback) {
+        cal = fallback.caloriesPer100g || fallback.calories || 0;
+        prot = fallback.proteinPer100g || fallback.protein || 0;
+        fat = fallback.fatPer100g || fallback.fat || 0;
+        carb = fallback.carbsPer100g || fallback.carbs || 0;
+      }
+    }
+
     this.currentCompositeIngredients[idx].name = food.name;
-    this.currentCompositeIngredients[idx].calories100g = food.caloriesPer100g || 0;
-    this.currentCompositeIngredients[idx].protein100g = food.proteinPer100g || 0;
-    this.currentCompositeIngredients[idx].fat100g = food.fatPer100g || 0;
-    this.currentCompositeIngredients[idx].carbs100g = food.carbsPer100g || 0;
+    this.currentCompositeIngredients[idx].calories100g = cal;
+    this.currentCompositeIngredients[idx].protein100g = prot;
+    this.currentCompositeIngredients[idx].fat100g = fat;
+    this.currentCompositeIngredients[idx].carbs100g = carb;
     this.currentCompositeIngredients[idx].isCollapsed = true; // Сворачиваем в минималистичный блок после сканирования / выбора
 
     this.renderCompositeIngredientsList();
@@ -25290,14 +26092,8 @@ class NotebookApp {
   }
 
   checkEveningJoyTrigger() {
-    if (!this.joyTracker) return;
-    const todayStr = this.getTodayDateString();
-    if (this.joyTracker.shouldTriggerEveningPrompt(todayStr)) {
-      setTimeout(() => {
-        if (document.querySelector('.modal-backdrop.open, .modal-backdrop.active')) return;
-        this.openJoyModal(todayStr);
-      }, 1600);
-    }
+    // Автоматическое открытие окна при старте приложения отключено
+    return;
   }
 
   /* ============================================================================

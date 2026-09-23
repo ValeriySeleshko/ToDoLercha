@@ -120,6 +120,344 @@
     { id: 'meal_snack', name: 'Перекус', icon: 'assets/nutrition_icons/meal_icon_9.webp', color: '#ec4899', order: 4 }
   ];
 
+  // --- Реестр эталонных продуктов и готовых блюд с точным КБЖУ (Offline-First Knowledge Base) ---
+  const BUILTIN_FOODS = [
+    // 1. Крупы, каши и бобовые
+    { name: 'Гречка отварная', aliases: ['гречка', 'гречневая каша', 'греча', 'каша гречневая', 'buckwheat'], calories: 110, protein: 4.2, fat: 1.1, carbs: 21.3 },
+    { name: 'Гречка сухая (ядрица)', aliases: ['гречневая крупа сухая', 'гречка ядрица', 'гречневая крупа'], calories: 343, protein: 13, fat: 3.4, carbs: 71.5 },
+    { name: 'Рис белый отварной', aliases: ['рис отварной', 'рис вареный', 'белый рис', 'рис', 'rice'], calories: 130, protein: 2.7, fat: 0.3, carbs: 28.2 },
+    { name: 'Рис белый сухой', aliases: ['рис крупа', 'крупа рисовая', 'рис сухой'], calories: 360, protein: 7, fat: 1, carbs: 79 },
+    { name: 'Рис бурый отварной', aliases: ['бурый рис', 'коричневый рис'], calories: 111, protein: 2.6, fat: 0.9, carbs: 23 },
+    { name: 'Овсяная каша на воде', aliases: ['овсянка', 'овсяная каша', 'каша овсяная', 'oatmeal'], calories: 88, protein: 3, fat: 1.7, carbs: 15 },
+    { name: 'Овсяная каша на молоке', aliases: ['овсянка на молоке', 'овсяная каша молочная'], calories: 115, protein: 4.5, fat: 3.2, carbs: 17.5 },
+    { name: 'Овсяные хлопья (Геркулес)', aliases: ['геркулес', 'овсяные хлопья', 'хлопья овсяные', 'овсянка сухая'], calories: 366, protein: 12.3, fat: 6.2, carbs: 61.8 },
+    { name: 'Макароны отварные', aliases: ['макароны', 'паста отварная', 'спагетти отварные', 'макароны вареные', 'паста', 'pasta'], calories: 158, protein: 5.8, fat: 0.9, carbs: 30.9 },
+    { name: 'Макароны сухие', aliases: ['макаронные изделия', 'спагетти', 'перья', 'рожки', 'макароны твердых сортов'], calories: 371, protein: 13, fat: 1.5, carbs: 75 },
+    { name: 'Булгур отварной', aliases: ['булгур', 'каша булгур', 'булгур вареный'], calories: 83, protein: 3.1, fat: 0.2, carbs: 18.6 },
+    { name: 'Кускус отварной', aliases: ['кускус', 'кус-кус'], calories: 112, protein: 3.8, fat: 0.2, carbs: 23.2 },
+    { name: 'Пшенная каша отварная', aliases: ['пшенная каша', 'пшенка', 'пшено отварное', 'пшено'], calories: 90, protein: 3, fat: 0.7, carbs: 17 },
+    { name: 'Перловая каша отварная', aliases: ['перловая каша', 'перловка', 'перловая крупа'], calories: 109, protein: 3.1, fat: 0.4, carbs: 22.2 },
+    { name: 'Киноа отварная', aliases: ['киноа', 'киноа вареная'], calories: 120, protein: 4.4, fat: 1.9, carbs: 21.3 },
+    { name: 'Чечевица отварная', aliases: ['чечевица', 'чечевица вареная'], calories: 116, protein: 9, fat: 0.4, carbs: 20 },
+    { name: 'Фасоль отварная', aliases: ['фасоль красная', 'фасоль белая', 'фасоль', 'beans'], calories: 127, protein: 8.7, fat: 0.5, carbs: 22.8 },
+    { name: 'Нут отварной', aliases: ['нут', 'турецкий горох'], calories: 164, protein: 8.9, fat: 2.6, carbs: 27.4 },
+    { name: 'Гороховое пюре / каша', aliases: ['гороховая каша', 'горох отварной', 'гороховое пюре'], calories: 118, protein: 8.3, fat: 0.4, carbs: 21.1 },
+
+    // 2. Мясо и птица
+    { name: 'Куриное филе (грудка) запеченное', aliases: ['куриное филе', 'куриная грудка', 'филе курицы', 'грудка куриная', 'курица филе', 'chicken breast'], calories: 165, protein: 31, fat: 3.6, carbs: 0 },
+    { name: 'Куриная грудка отварная', aliases: ['вареная грудка', 'курица вареная', 'отварная курица', 'грудка вареная'], calories: 137, protein: 29.8, fat: 1.8, carbs: 0 },
+    { name: 'Куриное бедро без кожи', aliases: ['куриное бедро', 'бедро куриное', 'бедра куриные'], calories: 170, protein: 24, fat: 8, carbs: 0 },
+    { name: 'Куриная голень без кожи', aliases: ['куриная голень', 'ножка куриная', 'куриные ножки'], calories: 160, protein: 23, fat: 7.5, carbs: 0 },
+    { name: 'Курица запеченная с кожей', aliases: ['курица запеченная', 'жареная курица', 'курица гриль', 'курица'], calories: 220, protein: 25, fat: 13, carbs: 0 },
+    { name: 'Индейка филе запеченное', aliases: ['филе индейки', 'грудка индейки', 'индейка грудка', 'индейка филе', 'индейка'], calories: 145, protein: 30, fat: 2.5, carbs: 0 },
+    { name: 'Говядина нежирная запеченная', aliases: ['говядина', 'говядина запеченная', 'говядина отварная', 'beef'], calories: 187, protein: 26, fat: 9, carbs: 0 },
+    { name: 'Говяжий стейк / вырезка', aliases: ['стейк из говядины', 'вырезка говяжья', 'стейк', 'ростбиф'], calories: 218, protein: 26, fat: 12, carbs: 0 },
+    { name: 'Телятина', aliases: ['телятина отварная', 'телятина запеченная'], calories: 131, protein: 24, fat: 3.5, carbs: 0 },
+    { name: 'Свинина нежирная', aliases: ['свинина', 'свиная вырезка', 'свиной карбонад', 'pork'], calories: 195, protein: 26, fat: 10, carbs: 0 },
+    { name: 'Фарш куриный', aliases: ['куриный фарш'], calories: 143, protein: 18, fat: 8, carbs: 0 },
+    { name: 'Фарш говяжий нежирный', aliases: ['говяжий фарш'], calories: 215, protein: 19, fat: 15, carbs: 0 },
+    { name: 'Фарш домашний (говядина + свинина)', aliases: ['домашний фарш', 'свино-говяжий фарш'], calories: 260, protein: 16, fat: 21, carbs: 0 },
+    { name: 'Печень куриная', aliases: ['куриная печень', 'печенка куриная'], calories: 137, protein: 20.4, fat: 5.9, carbs: 0.7 },
+    { name: 'Печень говяжья', aliases: ['говяжья печень'], calories: 135, protein: 20, fat: 3.6, carbs: 4 },
+    { name: 'Котлеты мясные домашние', aliases: ['котлета', 'котлеты', 'биточки', 'котлеты из говядины'], calories: 230, protein: 14, fat: 16, carbs: 7 },
+    { name: 'Сосиски молочные', aliases: ['сосиски', 'сосиска', 'сардельки'], calories: 260, protein: 11, fat: 23, carbs: 1.5 },
+    { name: 'Ветчина из индейки / нежирная', aliases: ['ветчина', 'ветчина из индейки'], calories: 110, protein: 18, fat: 4, carbs: 1 },
+
+    // 3. Рыба и морепродукты
+    { name: 'Лосось (сёмга) запеченный', aliases: ['лосось', 'семга', 'сёмга', 'форель запеченная', 'salmon'], calories: 208, protein: 20, fat: 13, carbs: 0 },
+    { name: 'Форель слабосоленая', aliases: ['слабосоленая форель', 'семга слабосоленая', 'лосось слабосоленый'], calories: 190, protein: 21, fat: 12, carbs: 0 },
+    { name: 'Тунец в собственном соку', aliases: ['тунец консервированный', 'тунец в с/с', 'тунец'], calories: 116, protein: 26, fat: 1, carbs: 0 },
+    { name: 'Минтай на пару / отварной', aliases: ['минтай', 'филе минтая'], calories: 72, protein: 16, fat: 0.9, carbs: 0 },
+    { name: 'Треска отварная / запеченная', aliases: ['треска', 'филе трески'], calories: 78, protein: 17.8, fat: 0.7, carbs: 0 },
+    { name: 'Скумбрия запеченная', aliases: ['скумбрия', 'скумбрия горячего копчения'], calories: 262, protein: 18, fat: 20.5, carbs: 0 },
+    { name: 'Сельдь слабосоленая', aliases: ['сельдь', 'селедка', 'селедочка'], calories: 217, protein: 19.8, fat: 15.4, carbs: 0 },
+    { name: 'Горбуша запеченная', aliases: ['горбуша', 'филе горбуши'], calories: 142, protein: 20.5, fat: 6.5, carbs: 0 },
+    { name: 'Судак запеченный', aliases: ['судак', 'филе судака'], calories: 84, protein: 18.4, fat: 1.1, carbs: 0 },
+    { name: 'Креветки отварные', aliases: ['креветки', 'креветка', 'королевские креветки', 'shrimp'], calories: 99, protein: 24, fat: 0.3, carbs: 0.2 },
+    { name: 'Кальмар отварной', aliases: ['кальмар', 'кальмары'], calories: 92, protein: 18, fat: 1.4, carbs: 2 },
+    { name: 'Мидии отварные', aliases: ['мидии'], calories: 86, protein: 12, fat: 2.2, carbs: 3.7 },
+    { name: 'Крабовые палочки', aliases: ['крабовые палочки'], calories: 100, protein: 6, fat: 1, carbs: 15 },
+
+    // 4. Яйца и молочные продукты
+    { name: 'Яйцо куриное вареное (1 шт ~55г)', aliases: ['яйцо', 'яйца', 'яйцо куриное', 'яйцо вареное', 'яйцо всмятку', 'яйцо вкрутую', 'egg'], calories: 157, protein: 12.7, fat: 11.5, carbs: 0.7 },
+    { name: 'Яичный белок', aliases: ['белок яичный', 'белок яйца'], calories: 52, protein: 11, fat: 0.2, carbs: 0.7 },
+    { name: 'Яичный желток', aliases: ['желток яичный', 'желток'], calories: 322, protein: 16, fat: 27, carbs: 3.6 },
+    { name: 'Яичница из 2 яиц', aliases: ['яичница', 'глазунья', 'яичница глазунья'], calories: 200, protein: 14, fat: 15, carbs: 1 },
+    { name: 'Омлет классический на молоке', aliases: ['омлет', 'омлет из яиц'], calories: 154, protein: 10, fat: 11.5, carbs: 2 },
+    { name: 'Творог 0% (обезжиренный)', aliases: ['творог 0%', 'обезжиренный творог', 'творог мягкий 0%'], calories: 71, protein: 16.5, fat: 0.5, carbs: 1.3 },
+    { name: 'Творог 2%', aliases: ['творог 2%', 'творог 2.5%'], calories: 86, protein: 16, fat: 2, carbs: 1.5 },
+    { name: 'Творог 5%', aliases: ['творог 5%', 'творог классический 5%', 'творог'], calories: 121, protein: 17, fat: 5, carbs: 1.8 },
+    { name: 'Творог 9%', aliases: ['творог 9%', 'творог жирный 9%'], calories: 159, protein: 16, fat: 9, carbs: 2 },
+    { name: 'Молоко 1.5%', aliases: ['молоко 1.5%', 'молоко нежирное 1.5%'], calories: 44, protein: 2.8, fat: 1.5, carbs: 4.7 },
+    { name: 'Молоко 2.5%', aliases: ['молоко 2.5%', 'молоко пастеризованное 2.5%', 'молоко питьевое 2.5%', 'молоко', 'milk'], calories: 54, protein: 2.9, fat: 2.5, carbs: 4.8 },
+    { name: 'Молоко 3.2%', aliases: ['молоко 3.2%', 'молоко отборное', 'молоко пастеризованное 3.2%'], calories: 59, protein: 3.0, fat: 3.2, carbs: 4.7 },
+    { name: 'Кефир 1%', aliases: ['кефир 1%'], calories: 40, protein: 2.8, fat: 1, carbs: 4 },
+    { name: 'Кефир 2.5%', aliases: ['кефир 2.5%', 'кефир'], calories: 53, protein: 2.9, fat: 2.5, carbs: 4 },
+    { name: 'Ряженка 2.5%', aliases: ['ряженка', 'ряженка 2.5%'], calories: 54, protein: 2.9, fat: 2.5, carbs: 4.2 },
+    { name: 'Сметана 10%', aliases: ['сметана 10%'], calories: 115, protein: 3, fat: 10, carbs: 2.9 },
+    { name: 'Сметана 15%', aliases: ['сметана 15%', 'сметана'], calories: 162, protein: 2.6, fat: 15, carbs: 3.6 },
+    { name: 'Сметана 20%', aliases: ['сметана 20%'], calories: 206, protein: 2.5, fat: 20, carbs: 3.4 },
+    { name: 'Йогурт греческий натуральный', aliases: ['греческий йогурт', 'йогурт натуральный', 'йогурт без сахара'], calories: 73, protein: 10, fat: 2, carbs: 3.6 },
+    { name: 'Йогурт питьевой классический', aliases: ['йогурт', 'йогурт питьевой'], calories: 66, protein: 3.2, fat: 2.5, carbs: 8 },
+    { name: 'Сыр Российский (45-50%)', aliases: ['сыр российский', 'российский сыр', 'сыр твердый', 'сыр'], calories: 363, protein: 24, fat: 29.5, carbs: 0 },
+    { name: 'Сыр Гауда', aliases: ['сыр гауда', 'гауда'], calories: 356, protein: 25, fat: 27.5, carbs: 0 },
+    { name: 'Сыр Моцарелла', aliases: ['моцарелла', 'сыр моцарелла', 'mozzarella'], calories: 280, protein: 22, fat: 20, carbs: 2.2 },
+    { name: 'Сыр Пармезан', aliases: ['пармезан', 'сыр пармезан', 'parmesan'], calories: 431, protein: 38, fat: 29, carbs: 4 },
+    { name: 'Сыр Сулугуни', aliases: ['сулугуни', 'сыр сулугуни'], calories: 286, protein: 20, fat: 22, carbs: 0 },
+    { name: 'Сыр Фета', aliases: ['фета', 'сыр фета', 'брынза'], calories: 264, protein: 14, fat: 21, carbs: 4 },
+    { name: 'Сыр творожный (сливочный)', aliases: ['творожный сыр', 'кремчиз', 'сливочный сыр'], calories: 240, protein: 6, fat: 23, carbs: 3 },
+    { name: 'Масло сливочное 82.5%', aliases: ['масло сливочное', 'сливочное масло 82.5%', 'масло 82.5%', 'сливочное масло'], calories: 748, protein: 0.6, fat: 82.5, carbs: 0.8 },
+    { name: 'Масло сливочное 72.5%', aliases: ['масло крестьянское', 'сливочное масло 72.5%', 'масло 72.5%'], calories: 662, protein: 1, fat: 72.5, carbs: 1.4 },
+
+    // 5. Овощи, грибы и зелень
+    { name: 'Огурец свежий', aliases: ['огурец', 'огурцы', 'огурчик', 'cucumber'], calories: 15, protein: 0.8, fat: 0.1, carbs: 3 },
+    { name: 'Помидор свежий (томат)', aliases: ['помидор', 'помидоры', 'томат', 'томаты', 'черри', 'tomato'], calories: 18, protein: 0.9, fat: 0.2, carbs: 3.9 },
+    { name: 'Картофель отварной', aliases: ['картофель', 'картошка', 'картофель отварной', 'вареная картошка', 'potato'], calories: 87, protein: 2, fat: 0.1, carbs: 20 },
+    { name: 'Картофель жареный', aliases: ['жареная картошка', 'картофель жареный', 'картошка жареная'], calories: 192, protein: 2.8, fat: 9.5, carbs: 24 },
+    { name: 'Картофельное пюре на молоке', aliases: ['картофельное пюре', 'пюре', 'пюрешка'], calories: 106, protein: 2, fat: 4, carbs: 15 },
+    { name: 'Морковь свежая', aliases: ['морковь', 'морковка', 'carrot'], calories: 35, protein: 1.3, fat: 0.1, carbs: 7 },
+    { name: 'Капуста белокочанная', aliases: ['капуста', 'капуста свежая', 'cabbage'], calories: 25, protein: 1.8, fat: 0.1, carbs: 4.7 },
+    { name: 'Брокколи', aliases: ['брокколи', 'капуста брокколи', 'broccoli'], calories: 34, protein: 2.8, fat: 0.4, carbs: 6.6 },
+    { name: 'Цветная капуста', aliases: ['цветная капуста'], calories: 25, protein: 2, fat: 0.3, carbs: 5 },
+    { name: 'Кабачок свежий', aliases: ['кабачок', 'кабачки', 'цукини'], calories: 17, protein: 0.6, fat: 0.3, carbs: 3.1 },
+    { name: 'Баклажан свежий', aliases: ['баклажан', 'баклажаны'], calories: 25, protein: 1, fat: 0.2, carbs: 5.7 },
+    { name: 'Перец болгарский сладкий', aliases: ['болгарский перец', 'перец сладкий', 'перец'], calories: 27, protein: 1.3, fat: 0.1, carbs: 5.3 },
+    { name: 'Свёкла отварная', aliases: ['свекла', 'свёкла', 'свекла отварная'], calories: 44, protein: 1.7, fat: 0.2, carbs: 9.6 },
+    { name: 'Лук репчатый', aliases: ['лук репчатый', 'лук', 'onion'], calories: 40, protein: 1.4, fat: 0.2, carbs: 8.2 },
+    { name: 'Лук зеленый', aliases: ['зеленый лук', 'зелёный лук'], calories: 20, protein: 1.3, fat: 0.1, carbs: 4.6 },
+    { name: 'Чеснок', aliases: ['чеснок', 'garlic'], calories: 149, protein: 6.4, fat: 0.5, carbs: 33 },
+    { name: 'Шпинат свежий', aliases: ['шпинат', 'spinach'], calories: 23, protein: 2.9, fat: 0.4, carbs: 3.6 },
+    { name: 'Салат листовой / Айсберг', aliases: ['салат айсберг', 'айсберг', 'листья салата', 'салат листовой'], calories: 14, protein: 1.2, fat: 0.2, carbs: 2.3 },
+    { name: 'Укроп / Петрушка', aliases: ['укроп', 'петрушка', 'зелень'], calories: 40, protein: 3, fat: 0.5, carbs: 6 },
+    { name: 'Авокадо', aliases: ['авокадо', 'avocado'], calories: 160, protein: 2, fat: 14.7, carbs: 8.5 },
+    { name: 'Шампиньоны свежие', aliases: ['шампиньоны', 'грибы шампиньоны', 'грибы'], calories: 27, protein: 4.3, fat: 1, carbs: 1 },
+    { name: 'Кукуруза консервированная', aliases: ['кукуруза консервированная', 'кукуруза'], calories: 86, protein: 2.2, fat: 1.2, carbs: 18 },
+    { name: 'Горошек зеленый консервированный', aliases: ['зеленый горошек', 'горошек консервированный', 'горошек'], calories: 73, protein: 5, fat: 0.2, carbs: 12.8 },
+
+    // 6. Фрукты, ягоды и сухофрукты
+    { name: 'Яблоко свежее', aliases: ['яблоко', 'яблоки', 'яблочко', 'apple'], calories: 52, protein: 0.3, fat: 0.2, carbs: 13.8 },
+    { name: 'Банан свежий', aliases: ['банан', 'бананы', 'banana'], calories: 89, protein: 1.1, fat: 0.3, carbs: 22.8 },
+    { name: 'Апельсин', aliases: ['апельсин', 'апельсины', 'orange'], calories: 47, protein: 0.9, fat: 0.1, carbs: 11.8 },
+    { name: 'Мандарин', aliases: ['мандарин', 'мандарины'], calories: 53, protein: 0.8, fat: 0.3, carbs: 13.3 },
+    { name: 'Грейпфрут', aliases: ['грейпфрут'], calories: 42, protein: 0.8, fat: 0.1, carbs: 10.7 },
+    { name: 'Лимон', aliases: ['лимон', 'лимоны', 'lemon'], calories: 29, protein: 1.1, fat: 0.3, carbs: 9.3 },
+    { name: 'Груша', aliases: ['груша', 'груши', 'pear'], calories: 57, protein: 0.4, fat: 0.1, carbs: 15.2 },
+    { name: 'Персик', aliases: ['персик', 'персики', 'peach'], calories: 39, protein: 0.9, fat: 0.3, carbs: 9.5 },
+    { name: 'Абрикос', aliases: ['абрикос', 'абрикосы'], calories: 48, protein: 1.4, fat: 0.4, carbs: 11.1 },
+    { name: 'Киви', aliases: ['киви', 'kiwi'], calories: 61, protein: 1.1, fat: 0.5, carbs: 14.7 },
+    { name: 'Виноград', aliases: ['виноград', 'виноград кишмиш', 'grapes'], calories: 67, protein: 0.6, fat: 0.2, carbs: 17.5 },
+    { name: 'Арбуз', aliases: ['арбуз', 'watermelon'], calories: 30, protein: 0.6, fat: 0.2, carbs: 7.6 },
+    { name: 'Дыня', aliases: ['дыня', 'melon'], calories: 34, protein: 0.8, fat: 0.2, carbs: 8.2 },
+    { name: 'Ананас свежий', aliases: ['ананас', 'pineapple'], calories: 50, protein: 0.5, fat: 0.1, carbs: 13.1 },
+    { name: 'Манго', aliases: ['манго', 'mango'], calories: 60, protein: 0.8, fat: 0.4, carbs: 15 },
+    { name: 'Клубника свежая', aliases: ['клубника', 'клубничка', 'strawberry'], calories: 33, protein: 0.7, fat: 0.3, carbs: 7.7 },
+    { name: 'Малина свежая', aliases: ['малина', 'ягода малина'], calories: 52, protein: 1.2, fat: 0.7, carbs: 11.9 },
+    { name: 'Черника / Голубика', aliases: ['черника', 'голубика', 'blueberry'], calories: 57, protein: 0.7, fat: 0.3, carbs: 14.5 },
+    { name: 'Вишня свежая', aliases: ['вишня', 'вишни'], calories: 50, protein: 1, fat: 0.3, carbs: 12 },
+    { name: 'Черешня', aliases: ['черешня'], calories: 63, protein: 1.1, fat: 0.4, carbs: 16 },
+    { name: 'Курага', aliases: ['курага', 'сушеный абрикос'], calories: 241, protein: 3.4, fat: 0.5, carbs: 62.6 },
+    { name: 'Изюм', aliases: ['изюм'], calories: 299, protein: 3, fat: 0.5, carbs: 79 },
+    { name: 'Чернослив', aliases: ['чернослив'], calories: 240, protein: 2.2, fat: 0.4, carbs: 63.9 },
+    { name: 'Финики', aliases: ['финики', 'финик'], calories: 282, protein: 2.5, fat: 0.4, carbs: 75 },
+
+    // 7. Хлеб, выпечка, снеки
+    { name: 'Хлеб белый пшеничный', aliases: ['хлеб белый', 'белый хлеб', 'хлеб пшеничный', 'bread'], calories: 265, protein: 9, fat: 3.2, carbs: 49 },
+    { name: 'Хлеб ржаной (Бородинский)', aliases: ['хлеб ржаной', 'ржаной хлеб', 'хлеб бородинский', 'бородинский хлеб', 'черный хлеб'], calories: 205, protein: 6.8, fat: 1.3, carbs: 40.7 },
+    { name: 'Хлеб цельнозерновой', aliases: ['цельнозерновой хлеб', 'хлеб из цельного зерна'], calories: 247, protein: 13, fat: 4.2, carbs: 41 },
+    { name: 'Батон нарезной', aliases: ['батон', 'батон нарезной'], calories: 260, protein: 7.5, fat: 3, carbs: 51 },
+    { name: 'Лаваш тонкий армянский', aliases: ['лаваш', 'тонкий лаваш', 'лаваш армянский'], calories: 236, protein: 7.9, fat: 1, carbs: 47.6 },
+    { name: 'Хлебцы цельнозерновые (Dr. Korner / др.)', aliases: ['хлебцы', 'хлебцы цельнозерновые', 'хлебец'], calories: 320, protein: 11, fat: 2.5, carbs: 65 },
+    { name: 'Круассан классический', aliases: ['круассан', 'круасан'], calories: 406, protein: 8.2, fat: 21, carbs: 45.8 },
+    { name: 'Печенье овсяное', aliases: ['овсяное печенье', 'печенье овсяное'], calories: 437, protein: 6.5, fat: 14.4, carbs: 71.8 },
+    { name: 'Печенье песочное / сахарное', aliases: ['печенье', 'песочное печенье', 'печенье к чаю'], calories: 480, protein: 6, fat: 22, carbs: 65 },
+
+    // 8. Орехи, семена и масла
+    { name: 'Грецкий орех', aliases: ['грецкий орех', 'грецкие орехи', 'walnut'], calories: 654, protein: 15.2, fat: 65.2, carbs: 7 },
+    { name: 'Миндаль', aliases: ['миндаль', 'орех миндаль', 'almond'], calories: 579, protein: 21.2, fat: 49.9, carbs: 21.6 },
+    { name: 'Фундук', aliases: ['фундук', 'лесной орех'], calories: 628, protein: 15, fat: 61, carbs: 17 },
+    { name: 'Кешью', aliases: ['кешью', 'орех кешью'], calories: 553, protein: 18.2, fat: 43.8, carbs: 30.2 },
+    { name: 'Арахис', aliases: ['арахис', 'земляной орех', 'peanut'], calories: 567, protein: 25.8, fat: 49.2, carbs: 16.1 },
+    { name: 'Фисташки', aliases: ['фисташки'], calories: 560, protein: 20, fat: 45, carbs: 28 },
+    { name: 'Семена подсолнечника (семечки)', aliases: ['семечки', 'семена подсолнечника', 'семечки очищенные'], calories: 584, protein: 20.8, fat: 51.5, carbs: 20 },
+    { name: 'Семена тыквы', aliases: ['тыквенные семечки', 'семена тыквы'], calories: 559, protein: 30, fat: 49, carbs: 11 },
+    { name: 'Семена льна', aliases: ['семена льна', 'лен'], calories: 534, protein: 18.3, fat: 42.2, carbs: 28.9 },
+    { name: 'Семена чиа', aliases: ['семена чиа', 'чиа'], calories: 486, protein: 16.5, fat: 30.7, carbs: 42.1 },
+    { name: 'Масло подсолнечное рафинированное', aliases: ['масло подсолнечное', 'подсолнечное масло', 'масло растительное', 'растительное масло', 'sunflower oil', 'refined sunflower oil'], calories: 884, protein: 0, fat: 100, carbs: 0 },
+    { name: 'Масло оливковое Extra Virgin', aliases: ['масло оливковое', 'оливковое масло', 'olive oil'], calories: 884, protein: 0, fat: 100, carbs: 0 },
+
+    // 9. Популярные готовые блюда
+    { name: 'Борщ с говядиной', aliases: ['борщ', 'борщ со сметаной', 'украинский борщ', 'красный борщ'], calories: 65, protein: 4, fat: 3, carbs: 5.5 },
+    { name: 'Щи из свежей капусты', aliases: ['щи', 'щи мясные'], calories: 45, protein: 2.5, fat: 2, carbs: 4.2 },
+    { name: 'Суп куриный с лапшой', aliases: ['куриный суп', 'суп лапша', 'куриная лапша', 'бульон куриный'], calories: 50, protein: 4.2, fat: 1.8, carbs: 4.5 },
+    { name: 'Суп гороховый с копченостями', aliases: ['гороховый суп', 'суп гороховый'], calories: 66, protein: 4.4, fat: 2.4, carbs: 8.5 },
+    { name: 'Солянка мясная сборная', aliases: ['солянка', 'солянка мясная'], calories: 85, protein: 5.5, fat: 5.5, carbs: 3.5 },
+    { name: 'Крем-суп тыквенный', aliases: ['тыквенный суп', 'крем-суп из тыквы'], calories: 60, protein: 1.5, fat: 3, carbs: 7 },
+    { name: 'Крем-суп грибной', aliases: ['грибной суп', 'грибной крем-суп'], calories: 75, protein: 2, fat: 4.5, carbs: 6 },
+    { name: 'Плов с курицей', aliases: ['плов', 'плов с курицей'], calories: 160, protein: 8, fat: 6, carbs: 18 },
+    { name: 'Плов с говядиной', aliases: ['плов с мясом', 'плов с говядиной', 'узбекский плов'], calories: 190, protein: 9, fat: 8, carbs: 20 },
+    { name: 'Салат Цезарь с курицей', aliases: ['цезарь', 'салат цезарь', 'caesar salad'], calories: 150, protein: 12, fat: 9, carbs: 5 },
+    { name: 'Салат Оливье с колбасой', aliases: ['оливье', 'салат оливье'], calories: 198, protein: 5.5, fat: 16.5, carbs: 7 },
+    { name: 'Салат Греческий', aliases: ['греческий салат', 'greek salad'], calories: 110, protein: 3.2, fat: 9.5, carbs: 4 },
+    { name: 'Салат Винегрет', aliases: ['винегрет', 'салат винегрет'], calories: 90, protein: 1.7, fat: 4.8, carbs: 10 },
+    { name: 'Салат овощной с маслом', aliases: ['овощной салат', 'салат из огурцов и помидоров'], calories: 75, protein: 1, fat: 6, carbs: 4 },
+    { name: 'Пельмени отварные (с мясом)', aliases: ['пельмени', 'пельмешки', 'пельмени со сметаной'], calories: 275, protein: 12, fat: 14, carbs: 25 },
+    { name: 'Вареники с картофелем', aliases: ['вареники', 'вареники с картошкой'], calories: 185, protein: 4, fat: 3.5, carbs: 34 },
+    { name: 'Вареники с творогом', aliases: ['вареники с творогом'], calories: 210, protein: 9.5, fat: 5, carbs: 31 },
+    { name: 'Сырники творожные', aliases: ['сырники', 'сырник', 'творожные сырники'], calories: 215, protein: 14, fat: 9, carbs: 19 },
+    { name: 'Блины классические', aliases: ['блины', 'блинчики', 'блин'], calories: 233, protein: 6.1, fat: 10.2, carbs: 30.4 },
+    { name: 'Оладьи на кефире', aliases: ['оладьи', 'оладушки'], calories: 227, protein: 5.5, fat: 9, carbs: 31 },
+    { name: 'Запеканка творожная', aliases: ['запеканка', 'творожная запеканка'], calories: 170, protein: 15, fat: 6, carbs: 14 },
+    { name: 'Шаурма с курицей', aliases: ['шаурма', 'шаверма', 'донер'], calories: 185, protein: 9.5, fat: 8.5, carbs: 17 },
+    { name: 'Пицца Маргарита', aliases: ['пицца', 'пицца маргарита', 'pizza'], calories: 250, protein: 10, fat: 9, carbs: 31 },
+    { name: 'Бургер с говядиной', aliases: ['бургер', 'гамбургер', 'чизбургер', 'burger'], calories: 260, protein: 13, fat: 12, carbs: 24 },
+
+    // 10. Сладости, десерты и напитки
+    { name: 'Шоколад молочный', aliases: ['шоколад молочный', 'молочный шоколад', 'плитка шоколада', 'milka', 'alpen gold'], calories: 535, protein: 7.6, fat: 29.7, carbs: 59.4 },
+    { name: 'Шоколад темный 70%', aliases: ['шоколад темный', 'темный шоколад', 'горький шоколад 70%'], calories: 546, protein: 8.5, fat: 42.6, carbs: 30.8 },
+    { name: 'Шоколад горький 85%', aliases: ['горький шоколад', 'шоколад горький 85%'], calories: 580, protein: 10, fat: 50, carbs: 20 },
+    { name: 'Ореховая паста (Nutella / Nutti)', aliases: ['nutella', 'нутелла', 'шоколадная паста', 'ореховая паста'], calories: 539, protein: 6.3, fat: 30.9, carbs: 57.5 },
+    { name: 'Зефир классический', aliases: ['зефир', 'зефир белый'], calories: 318, protein: 0.8, fat: 0.1, carbs: 78.5 },
+    { name: 'Пастила', aliases: ['пастила', 'белевская пастила'], calories: 310, protein: 0.5, fat: 0, carbs: 80 },
+    { name: 'Мармелад желейный', aliases: ['мармелад', 'желейные конфеты'], calories: 321, protein: 0.4, fat: 0.1, carbs: 79.4 },
+    { name: 'Мёд натуральный', aliases: ['мед', 'мёд', 'honey'], calories: 304, protein: 0.3, fat: 0, carbs: 82.4 },
+    { name: 'Сахар белый', aliases: ['сахар', 'сахарный песок', 'sugar'], calories: 387, protein: 0, fat: 0, carbs: 100 },
+    { name: 'Варенье / Джем', aliases: ['варенье', 'джем', 'повидло'], calories: 240, protein: 0.4, fat: 0.2, carbs: 60 },
+    { name: 'Мороженое пломбир', aliases: ['мороженое', 'пломбир', 'стаканчик пломбир'], calories: 227, protein: 3.7, fat: 15, carbs: 20.4 },
+    { name: 'Кофе черный без сахара (эспрессо/американо)', aliases: ['кофе', 'эспрессо', 'американо', 'кофе черный', 'coffee'], calories: 2, protein: 0.2, fat: 0, carbs: 0.3 },
+    { name: 'Кофе с молоком без сахара', aliases: ['кофе с молоком', 'кофе молоко'], calories: 35, protein: 1.8, fat: 1.5, carbs: 3 },
+    { name: 'Капучино без сахара', aliases: ['капучино', 'cappuccino'], calories: 45, protein: 2.5, fat: 2.2, carbs: 3.8 },
+    { name: 'Латте без сахара', aliases: ['латте', 'latte'], calories: 55, protein: 3.1, fat: 2.8, carbs: 4.5 },
+    { name: 'Чай без сахара (черный / зеленый)', aliases: ['чай', 'черный чай', 'зеленый чай', 'tea'], calories: 1, protein: 0, fat: 0, carbs: 0.2 },
+    { name: 'Кола (Coca-Cola / Добрый Кола)', aliases: ['кока кола', 'coca-cola', 'кола', 'добрый кола', 'пепси', 'pepsi', 'coke'], calories: 42, protein: 0, fat: 0, carbs: 10.6 },
+    { name: 'Кола без сахара (Zero / Без сахара)', aliases: ['кола зеро', 'coca-cola zero', 'кола без сахара'], calories: 0.3, protein: 0, fat: 0, carbs: 0 },
+    { name: 'Сок апельсиновый 100%', aliases: ['апельсиновый сок', 'сок апельсиновый', 'сок'], calories: 45, protein: 0.7, fat: 0.2, carbs: 10.2 },
+    { name: 'Сок яблочный 100%', aliases: ['яблочный сок', 'сок яблочный'], calories: 46, protein: 0.5, fat: 0.1, carbs: 11 },
+    { name: 'Морс клюквенный', aliases: ['морс', 'морс клюквенный'], calories: 40, protein: 0.1, fat: 0, carbs: 10 },
+    { name: 'Протеиновый батончик', aliases: ['протеиновый батончик', 'батончик протеиновый', 'protein bar'], calories: 360, protein: 30, fat: 12, carbs: 33 },
+    { name: 'Сывороточный протеин (порошок)', aliases: ['протеин', 'сывороточный протеин', 'вей протеин', 'whey protein'], calories: 380, protein: 78, fat: 5, carbs: 6 }
+  ];
+
+  // Реестр частых штрихкодов продуктов
+  const COMMON_BARCODES = {
+    '5449000000996': { name: 'Coca-Cola', calories: 42, protein: 0, fat: 0, carbs: 10.6 },
+    '4607053473544': { name: 'Молоко Простоквашино 2.5%', calories: 54, protein: 2.9, fat: 2.5, carbs: 4.8 },
+    '4607053473537': { name: 'Молоко Простоквашино Отборное', calories: 63, protein: 3.2, fat: 3.5, carbs: 4.7 },
+    '4601662000016': { name: 'Молоко Parmalat 3.5%', calories: 62, protein: 3, fat: 3.5, carbs: 4.7 },
+    '4600605008515': { name: 'Макароны Makfa Перья', calories: 356, protein: 12, fat: 1.3, carbs: 70.5 },
+    '4605829006040': { name: 'Хлеб пшеничный', calories: 278, protein: 8, fat: 6, carbs: 48 },
+    '4601347004179': { name: 'Хлеб Бородинский', calories: 200, protein: 7, fat: 1.5, carbs: 40 },
+    '4601347002212': { name: 'Батон нарезной', calories: 260, protein: 7.5, fat: 3, carbs: 51 },
+    '4607015630329': { name: 'Творог Простоквашино 5%', calories: 121, protein: 16, fat: 5, carbs: 3 },
+    '4605496000078': { name: 'Хлопья овсяные Ясно Солнышко №2', calories: 310, protein: 12, fat: 6, carbs: 62 },
+    '7622210286864': { name: 'Шоколад Milka Молочный', calories: 539, protein: 6.3, fat: 31, carbs: 58 },
+    '7622210100917': { name: 'Milka Choco', calories: 505, protein: 5.7, fat: 24, carbs: 65 },
+    '3017620422003': { name: 'Паста Nutella', calories: 539, protein: 6.3, fat: 30.9, carbs: 57.5 },
+    '4820000000000': { name: 'Масло подсолнечное рафинированное', calories: 884, protein: 0, fat: 100, carbs: 0 }
+  };
+
+  /**
+   * Комплексное извлечение КБЖУ из любых структур ответов Open Food Facts API
+   */
+  function extractNutrients(product) {
+    if (!product) return { calories: 0, protein: 0, fat: 0, carbs: 0 };
+    const nut = product.nutriments || product.nutrition || {};
+
+    // 1. Белки (г)
+    let p = nut['proteins_100g'] ?? nut['proteins_value'] ?? nut['proteins'] ??
+            nut['protein_100g'] ?? nut['protein_value'] ?? nut['protein'] ??
+            nut['proteins_serving'] ?? 0;
+    p = Math.max(0, Math.round((Number(p) || 0) * 10) / 10);
+
+    // 2. Жиры (г)
+    let f = nut['fat_100g'] ?? nut['fat_value'] ?? nut['fat'] ??
+            nut['fats_100g'] ?? nut['lipides_100g'] ?? nut['lipids_100g'] ??
+            nut['fat_serving'] ?? nut['saturated-fat_100g'] ?? 0;
+    f = Math.max(0, Math.round((Number(f) || 0) * 10) / 10);
+
+    // 3. Углеводы (г)
+    let c = nut['carbohydrates_100g'] ?? nut['carbohydrates_value'] ?? nut['carbohydrates'] ??
+            nut['carbs_100g'] ?? nut['carbs_value'] ?? nut['carbs'] ??
+            nut['glucides_100g'] ?? nut['carbohydrates_serving'] ?? nut['sugars_100g'] ?? 0;
+    c = Math.max(0, Math.round((Number(c) || 0) * 10) / 10);
+
+    // 4. Калории (ккал)
+    let kcal = nut['energy-kcal_100g'] ?? nut['energy-kcal_value'] ?? nut['energy-kcal'] ??
+               nut['energy_kcal_100g'] ?? nut['energy_kcal'] ?? nut['energy-kcal_serving'];
+
+    if (kcal == null) {
+      const kj = nut['energy-kj_100g'] ?? nut['energy-kj_value'] ?? nut['energy-kj'] ?? nut['energy-kj_serving'];
+      if (kj != null && Number(kj) > 0) {
+        kcal = Math.round(Number(kj) / 4.184);
+      }
+    }
+
+    if (kcal == null) {
+      const nrg = nut['energy_100g'] ?? nut['energy_value'] ?? nut['energy'] ?? nut['energy_serving'];
+      if (nrg != null && Number(nrg) > 0) {
+        const unit = String(nut['energy_unit'] || '').toLowerCase();
+        if (unit === 'kcal') {
+          kcal = Math.round(Number(nrg));
+        } else if (unit === 'kj' || Number(nrg) > 900) {
+          kcal = Math.round(Number(nrg) / 4.184);
+        } else {
+          kcal = Math.round(Number(nrg));
+        }
+      }
+    }
+
+    kcal = Math.max(0, Math.round(Number(kcal) || 0));
+
+    // 5. Формула Этуотера: если калории нулевые или пропущены в базе, но есть БЖУ
+    if (kcal === 0 && (p > 0 || f > 0 || c > 0)) {
+      kcal = Math.round(p * 4 + f * 9 + c * 4);
+    }
+
+    return { calories: kcal, protein: p, fat: f, carbs: c };
+  }
+
+  /**
+   * Интеллектуальный поиск продукта / блюда во встроенной базе эталонных продуктов
+   */
+  function findBuiltinFood(query) {
+    if (!query || typeof query !== 'string') return null;
+    const cleanQ = query.trim().toLowerCase()
+      .replace(/[\(\)\[\],\.«»"']/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (!cleanQ || cleanQ.length < 2) return null;
+
+    // 1. Точное совпадение по имени или псевдониму
+    let hit = BUILTIN_FOODS.find(f => f.name.toLowerCase() === cleanQ || f.aliases.some(a => a.toLowerCase() === cleanQ));
+    if (hit) return hit;
+
+    // 2. Совпадение по началу строки (startsWith)
+    hit = BUILTIN_FOODS.find(f => f.name.toLowerCase().startsWith(cleanQ) || f.aliases.some(a => a.toLowerCase().startsWith(cleanQ)));
+    if (hit) return hit;
+
+    // 3. Вхождение подстроки (substring)
+    hit = BUILTIN_FOODS.find(f => cleanQ.includes(f.name.toLowerCase()) || f.aliases.some(a => cleanQ.includes(a.toLowerCase())));
+    if (hit) return hit;
+
+    // 4. Пословный поиск по ключевым словам
+    const words = cleanQ.split(' ').filter(w => w.length > 2);
+    if (words.length > 0) {
+      hit = BUILTIN_FOODS.find(f => {
+        const text = (f.name + ' ' + f.aliases.join(' ')).toLowerCase();
+        return words.every(w => text.includes(w));
+      });
+      if (hit) return hit;
+
+      // Поиск по первому значимому слову (например: «яблоко», «молоко», «гречка»)
+      hit = BUILTIN_FOODS.find(f => {
+        const text = (f.name + ' ' + f.aliases.join(' ')).toLowerCase();
+        return text.includes(words[0]);
+      });
+      if (hit) return hit;
+    }
+
+    return null;
+  }
+
   class NutritionTracker {
     constructor() {
       this.data = this.loadData();
@@ -757,58 +1095,169 @@
       };
     }
 
+    findFoodByName(query) {
+      if (!query || typeof query !== 'string') return null;
+      const q = query.trim().toLowerCase();
+      if (!q) return null;
+
+      // 1. Проверяем локальные сохраненные продукты пользователя
+      if (Array.isArray(this.customFoods)) {
+        const customHit = this.customFoods.find(f => f.name && f.name.toLowerCase() === q);
+        if (customHit) return customHit;
+      }
+
+      // 2. Проверяем составные рецепты пользователя
+      if (Array.isArray(this.recipes)) {
+        const recipeHit = this.recipes.find(r => r.name && r.name.toLowerCase() === q);
+        if (recipeHit) {
+          return {
+            id: recipeHit.id,
+            name: recipeHit.name,
+            caloriesPer100g: recipeHit.calories100g || recipeHit.per100g?.calories || 0,
+            proteinPer100g: recipeHit.protein100g || recipeHit.per100g?.protein || 0,
+            fatPer100g: recipeHit.fat100g || recipeHit.per100g?.fat || 0,
+            carbsPer100g: recipeHit.carbs100g || recipeHit.per100g?.carbs || 0,
+            recipe: recipeHit,
+            isComposite: true,
+            source: 'recipe'
+          };
+        }
+      }
+
+      // 3. Поиск во встроенной базе эталонных продуктов
+      const bHit = findBuiltinFood(query);
+      if (bHit) {
+        return {
+          id: 'builtin_' + bHit.name.toLowerCase().replace(/[^a-zа-я0-9]/gi, '_'),
+          name: bHit.name,
+          calories: bHit.calories,
+          caloriesPer100g: bHit.calories,
+          protein: bHit.protein,
+          proteinPer100g: bHit.protein,
+          fat: bHit.fat,
+          fatPer100g: bHit.fat,
+          carbs: bHit.carbs,
+          carbsPer100g: bHit.carbs,
+          isCustom: false,
+          isBuiltin: true,
+          source: 'builtin'
+        };
+      }
+
+      return null;
+    }
+
     // --- Custom Foods & Open Food Facts ---
     async lookupBarcode(barcode) {
       const code = String(barcode || '').trim();
       if (!code) return null;
 
-      // 1. Проверяем локальную базу пользователя
+      // 1. Проверяем локальную базу пользователя (только если есть валидные КБЖУ)
       const local = this.customFoods.find(f => f.barcode === code);
-      if (local) {
+      if (local && (Number(local.caloriesPer100g) > 0 || Number(local.proteinPer100g) > 0 || Number(local.fatPer100g) > 0 || Number(local.carbsPer100g) > 0)) {
         return { ...local, source: 'local' };
       }
 
-      // 2. Запрос в Open Food Facts API (с поддержкой локализации ru/world)
-      try {
-        const url = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json`;
-        const res = await fetch(url, { headers: { 'User-Agent': 'Plan4U-App/1.0 (contact@plan4u.app)' } });
-        if (!res.ok) return null;
-        const data = await res.json();
-        if (data.status === 1 && data.product) {
-          const p = data.product;
-          const nut = p.nutriments || {};
+      // 2. Проверяем реестр частых штрихкодов продуктов
+      if (COMMON_BARCODES[code]) {
+        const bItem = COMMON_BARCODES[code];
+        const item = {
+          id: 'barcode_' + code,
+          barcode: code,
+          name: bItem.name,
+          caloriesPer100g: bItem.calories,
+          proteinPer100g: bItem.protein,
+          fatPer100g: bItem.fat,
+          carbsPer100g: bItem.carbs,
+          source: 'builtin_barcode'
+        };
+        this.saveCustomFood(item);
+        return item;
+      }
 
-          let c100 = nut['energy-kcal_100g'] ?? nut['energy-kcal_value'] ?? nut['energy-kcal'];
-          if (c100 == null && nut['energy-kj_100g']) {
-            c100 = Math.round(nut['energy-kj_100g'] / 4.184);
+      // 3. Запрос в Open Food Facts API с несколькими зеркалами и тайм-аутом
+      const endpoints = [
+        `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json`,
+        `https://ru.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json`,
+        `https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(code)}.json`
+      ];
+
+      for (const url of endpoints) {
+        try {
+          const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+          const timeoutId = controller ? setTimeout(() => controller.abort(), 3500) : null;
+          const res = await fetch(url, {
+            headers: { 'User-Agent': 'Plan4U-App/1.0 (contact@plan4u.app)' },
+            signal: controller?.signal
+          });
+          if (timeoutId) clearTimeout(timeoutId);
+          if (!res.ok) continue;
+
+          const data = await res.json();
+          if (data && data.product) {
+            const p = data.product;
+            let nut = extractNutrients(p);
+
+            const name = p.product_name_ru || p.product_name || p.generic_name_ru || p.generic_name || (local && local.name) || `Продукт ${code}`;
+            let brand = '';
+            if (Array.isArray(p.brands)) {
+              brand = p.brands.filter(Boolean).join(', ');
+            } else if (typeof p.brands === 'string') {
+              brand = p.brands.trim();
+            }
+            const displayName = brand && !name.toLowerCase().includes(brand.toLowerCase()) ? `${name} (${brand})` : name;
+
+            // Если в Open Food Facts пищевая ценность нулевая/не заполнена, пробуем сопоставить по названию
+            if (nut.calories === 0 && nut.protein === 0 && nut.fat === 0 && nut.carbs === 0) {
+              const matchedFood = findBuiltinFood(name);
+              if (matchedFood) {
+                nut = {
+                  calories: matchedFood.calories,
+                  protein: matchedFood.protein,
+                  fat: matchedFood.fat,
+                  carbs: matchedFood.carbs
+                };
+              }
+            }
+
+            const item = {
+              id: 'food_' + code,
+              barcode: code,
+              name: displayName,
+              caloriesPer100g: nut.calories,
+              proteinPer100g: nut.protein,
+              fatPer100g: nut.fat,
+              carbsPer100g: nut.carbs,
+              source: 'openfoodfacts'
+            };
+
+            this.saveCustomFood(item);
+            return item;
           }
-          c100 = Math.round(Number(c100) || 0);
+        } catch (e) {
+          // Пробуем следующее зеркало
+        }
+      }
 
-          const p100 = Math.round((Number(nut['proteins_100g'] ?? nut['proteins'] ?? 0)) * 10) / 10;
-          const f100 = Math.round((Number(nut['fat_100g'] ?? nut['fat'] ?? 0)) * 10) / 10;
-          const cb100 = Math.round((Number(nut['carbohydrates_100g'] ?? nut['carbohydrates'] ?? 0)) * 10) / 10;
-
-          const name = p.product_name_ru || p.product_name || p.generic_name_ru || p.generic_name || `Продукт ${code}`;
-          const brand = p.brands || '';
-
+      // 4. Если штрихкод не найден в сети, но есть в локальной базе с именем
+      if (local && local.name) {
+        const matchedFood = findBuiltinFood(local.name);
+        if (matchedFood) {
           const item = {
-            id: 'food_' + code,
+            id: local.id || ('food_' + code),
             barcode: code,
-            name: brand ? `${name} (${brand})` : name,
-            caloriesPer100g: c100,
-            proteinPer100g: p100,
-            fatPer100g: f100,
-            carbsPer100g: cb100,
-            source: 'openfoodfacts'
+            name: local.name,
+            caloriesPer100g: matchedFood.calories,
+            proteinPer100g: matchedFood.protein,
+            fatPer100g: matchedFood.fat,
+            carbsPer100g: matchedFood.carbs,
+            source: 'builtin_matched'
           };
-
-          // Кэшируем в локальную базу
           this.saveCustomFood(item);
           return item;
         }
-      } catch (e) {
-        console.warn('Plan4UNutritionTracker: Open Food Facts lookup error', e);
       }
+
       return null;
     }
 
@@ -848,11 +1297,29 @@
           source: f.source || 'custom'
         }));
 
-      // Объединяем локальные свои блюда и рецепты, устраняя возможные дубликаты
+      // 3. Поиск во встроенной базе эталонных продуктов (offline-first)
+      const builtinMatches = BUILTIN_FOODS
+        .filter(f => {
+          const text = (f.name + ' ' + f.aliases.join(' ')).toLowerCase();
+          return text.includes(q);
+        })
+        .map(f => ({
+          id: 'builtin_' + f.name.toLowerCase().replace(/[^a-zа-я0-9]/gi, '_'),
+          name: f.name,
+          caloriesPer100g: f.calories,
+          proteinPer100g: f.protein,
+          fatPer100g: f.fat,
+          carbsPer100g: f.carbs,
+          isCustom: false,
+          isBuiltin: true,
+          source: 'builtin'
+        }));
+
+      // Объединяем локальные свои блюда, рецепты и встроенную базу
       const localSeen = new Set();
       const localCombined = [];
 
-      for (const item of [...recipeMatches, ...customMatches]) {
+      for (const item of [...recipeMatches, ...customMatches, ...builtinMatches]) {
         const key = item.barcode ? `b_${item.barcode}` : `n_${(item.name || '').toLowerCase()}`;
         if (!localSeen.has(key)) {
           localSeen.add(key);
@@ -881,10 +1348,10 @@
         return (b.updatedAt || 0) - (a.updatedAt || 0);
       });
 
-      // 3. Запрос в Open Food Facts Search API (Search-a-licious)
+      // 4. Запрос в Open Food Facts Search API (Search-a-licious)
       let remoteMatches = [];
       const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-      const timeoutId = controller ? setTimeout(() => controller.abort(), 6000) : null;
+      const timeoutId = controller ? setTimeout(() => controller.abort(), 5000) : null;
       try {
         const isLocalWeb = typeof window !== 'undefined' && 
                            window.location && 
@@ -923,18 +1390,7 @@
           remoteMatches = items
             .filter(p => p && (p.product_name_ru || p.product_name || p.generic_name_ru || p.generic_name))
             .map(p => {
-              const nut = p.nutriments || {};
-              let c100 = nut['energy-kcal_100g'] ?? nut['energy-kcal_value'] ?? nut['energy-kcal'];
-              if (c100 == null && nut['energy-kj_100g']) {
-                c100 = Math.round(nut['energy-kj_100g'] / 4.184);
-              } else if (c100 == null && nut['energy_100g']) {
-                c100 = Math.round(nut['energy_100g'] / 4.184);
-              }
-              c100 = Math.round(Number(c100) || 0);
-
-              const p100 = Math.round((Number(nut['proteins_100g'] ?? nut['proteins_value'] ?? nut['proteins'] ?? 0)) * 10) / 10;
-              const f100 = Math.round((Number(nut['fat_100g'] ?? nut['fat_value'] ?? nut['fat'] ?? 0)) * 10) / 10;
-              const cb100 = Math.round((Number(nut['carbohydrates_100g'] ?? nut['carbohydrates_value'] ?? nut['carbohydrates'] ?? 0)) * 10) / 10;
+              let nut = extractNutrients(p);
 
               const name = p.product_name_ru || p.product_name || p.generic_name_ru || p.generic_name || `Продукт ${p.code || ''}`;
               let brand = '';
@@ -947,14 +1403,27 @@
               const displayName = brand && !name.toLowerCase().includes(brand.toLowerCase()) ? `${name} (${brand})` : name;
               const code = p.code || '';
 
+              // Если в Open Food Facts нутриенты нулевые, сопоставляем по имени
+              if (nut.calories === 0 && nut.protein === 0 && nut.fat === 0 && nut.carbs === 0) {
+                const matchedFood = findBuiltinFood(name);
+                if (matchedFood) {
+                  nut = {
+                    calories: matchedFood.calories,
+                    protein: matchedFood.protein,
+                    fat: matchedFood.fat,
+                    carbs: matchedFood.carbs
+                  };
+                }
+              }
+
               return {
                 id: 'off_' + (code || Math.random().toString(36).slice(2, 9)),
                 barcode: code,
                 name: displayName,
-                caloriesPer100g: c100,
-                proteinPer100g: p100,
-                fatPer100g: f100,
-                carbsPer100g: cb100,
+                caloriesPer100g: nut.calories,
+                proteinPer100g: nut.protein,
+                fatPer100g: nut.fat,
+                carbsPer100g: nut.carbs,
                 isCustom: false,
                 source: 'openfoodfacts'
               };
@@ -970,7 +1439,7 @@
         if (timeoutId) clearTimeout(timeoutId);
       }
 
-      // 4. Финальное объединение: СВОИ БЛЮДА И РЕЦЕПТЫ СТРОГО ПЕРВЫМИ!
+      // 5. Финальное объединение: СВОИ БЛЮДА, РЕЦЕПТЫ И ВСТРОЕННЫЕ СТРОГО ПЕРВЫМИ!
       const seen = new Set();
       const combined = [];
       for (const item of [...localCombined, ...remoteMatches]) {

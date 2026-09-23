@@ -1,0 +1,352 @@
+const fs = require('fs');
+
+const html = fs.readFileSync('index.html', 'utf8');
+
+// Search for all elements that are hidden by default or have backdrop or popup or dropdown
+const items = [
+  {
+    id: 'modulesHubDropdown',
+    backdrop: null,
+    name: 'Меню хаба модулей (✦ Modules Hub)',
+    type: 'Выпадающее меню (Dropdown)',
+    selector: '#modulesHubDropdown',
+    trigger: 'Клик по кнопке «✦» (widgetModulesHub) в шапке блокнота',
+    description: 'Вертикальный список быстрого доступа к модулям: Финансы, Питание, Женский календарь, Банка радости.'
+  },
+  {
+    id: 'taskModalBackdrop',
+    backdrop: '#taskModalBackdrop',
+    name: 'Новая запись / Редактирование записи',
+    type: 'Модальное окно / Нижняя шторка (Modal Sheet)',
+    selector: '#taskModalBackdrop, #taskModalSheet',
+    trigger: 'Кнопка «+» добавления записи на листе блокнота или клик по существующей задаче/заметке',
+    description: 'Создание/редактирование записей (типы: Заметка, Чек-лист, Привычка, Список), выбор приоритета, установка времени/дедлайна, прикрепление фото, выбор блока.'
+  },
+  {
+    id: 'newTabModalBackdrop',
+    backdrop: '#newTabModalBackdrop',
+    name: 'Новая вкладка',
+    type: 'Модальное окно (Modal Dialog)',
+    selector: '#newTabModalBackdrop',
+    trigger: 'Кнопка «+» в строке вкладок блокнота',
+    description: 'Создание нового пользовательского списка / вкладки (ввод названия).'
+  },
+  {
+    id: 'editTabModalBackdrop',
+    backdrop: '#editTabModalBackdrop',
+    name: 'Настройка вкладки',
+    type: 'Модальное окно (Modal Sheet)',
+    selector: '#editTabModalBackdrop',
+    trigger: 'Долгое нажатие (Long-press) на корешок любой вкладки блокнота',
+    description: 'Переименование вкладки, выбор цвета ярлычка, выбор фонового паттерна листа (клетка, точка, линейка, крафт и др.), очистка или удаление вкладки.'
+  },
+  {
+    id: 'habitModalBackdrop',
+    backdrop: '#habitModalBackdrop',
+    name: 'Новая привычка / Редактирование привычки',
+    type: 'Модальное окно / Шторка (Modal Sheet)',
+    selector: '#habitModalBackdrop',
+    trigger: 'Кнопка «+ Привычка» на плашке привычек или клик/лонгпресс по привычке',
+    description: 'Создание привычки, выбор иконки, регулярности (каждый день, по дням недели, раз в N дней), цели/шага, времени напоминания и аналитика выполнения.'
+  },
+  {
+    id: 'habitPeriodDropdownWrap',
+    backdrop: null,
+    name: 'Выбор периода графиков привычки',
+    type: 'Выпадающее меню (Dropdown)',
+    selector: '#habitPeriodDropdownMenu',
+    trigger: 'Кнопка с текущим периодом в модалке привычки (Неделя / Месяц / Год / Всё время)',
+    description: 'Переключение временного интервала для отображения графиков и статистики привычки.'
+  },
+  {
+    id: 'habitStepperBackdrop',
+    backdrop: '#habitStepperBackdrop',
+    name: 'Быстрый ввод прогресса привычки (Степпер)',
+    type: 'Всплывающий поповер / Мини-шторка (Popover Sheet)',
+    selector: '#habitStepperBackdrop, #habitStepperSheet',
+    trigger: 'Клик по привычке с числовой целью (например, выпито 3/8 стаканов воды)',
+    description: 'Быстрое увеличение/уменьшение прогресса с кнопками + / - и сохранением текущего значения.'
+  },
+  {
+    id: 'newSectionModalBackdrop',
+    backdrop: '#newSectionModalBackdrop',
+    name: 'Новый блок (раздел) / Переименование блока',
+    type: 'Модальное окно (Modal Dialog)',
+    selector: '#newSectionModalBackdrop',
+    trigger: 'Кнопка «+ Добавить блок» на листе блокнота',
+    description: 'Создание или редактирование заголовка блока задач/заметок, выбор эмодзи и цвета акцента.'
+  },
+  {
+    id: 'sectionMenuModalBackdrop',
+    backdrop: '#sectionMenuModalBackdrop',
+    name: 'Управление блоком (Меню раздела)',
+    type: 'Нижняя шторка действий (Action Sheet)',
+    selector: '#sectionMenuModalBackdrop',
+    trigger: 'Долгое нажатие (Long-press) или контекстный клик на заголовок/бейдж блока',
+    description: 'Действия с блоком: переименовать, свернуть/развернуть, сменить цвет/эмодзи, переместить или удалить блок.'
+  },
+  {
+    id: 'settingsModalBackdrop',
+    backdrop: '#settingsModalBackdrop',
+    name: '⚙️ Настройки',
+    type: 'Полноэкранная модальная шторка (Modal Sheet)',
+    selector: '#settingsModalBackdrop',
+    trigger: 'Иконка шестерёнки в правом верхнем углу шапки',
+    description: 'Общие настройки блокнота: язык интерфейса, тема/акцентный цвет, приветственный экран, анимации, звуки, тактильный отклик, экспорт/импорт бэкапа данных, сброс.'
+  },
+  {
+    id: 'langDropdownMenu',
+    backdrop: null,
+    name: 'Выбор языка приложения',
+    type: 'Выпадающее меню (Dropdown)',
+    selector: '#langDropdownMenu',
+    trigger: 'Клик по селектору языка в окне «Настройки»',
+    description: 'Выбор между языками интерфейса: Русский, Українська, English.'
+  },
+  {
+    id: 'calendarModalBackdrop',
+    backdrop: '#calendarModalBackdrop',
+    name: '📅 Календарь блокнота',
+    type: 'Модальная шторка (Modal Sheet)',
+    selector: '#calendarModalBackdrop',
+    trigger: 'Клик по виджету даты в шапке блокнота',
+    description: 'Интерактивный календарь на месяц: быстрый переход к листу любого дня, просмотр заполненности и статуса выполнения дней.'
+  },
+  {
+    id: 'cycleModalBackdrop',
+    backdrop: '#cycleModalBackdrop',
+    name: '🍒 Календарь цикла и женского здоровья',
+    type: 'Полноэкранная модальная шторка (Modal Sheet)',
+    selector: '#cycleModalBackdrop',
+    trigger: 'Круглый виджет с вишенками (widgetCycle) в шапке / хабе модулей',
+    description: 'Трекер менструального цикла, прогноз овуляции и фаз, симптомы, настроение, история циклов и аналитика.'
+  },
+  {
+    id: 'cycleAddModalBackdrop',
+    backdrop: '#cycleAddModalBackdrop',
+    name: 'Запись цикла (Симптомы и дни)',
+    type: 'Модальное окно (Modal Dialog)',
+    selector: '#cycleAddModalBackdrop',
+    trigger: 'Кнопка добавления/отметки начала/конца периода в календаре цикла',
+    description: 'Ввод деталей дня: интенсивность выделений, симптомы, самочувствие, заметки.'
+  },
+  {
+    id: 'financeModalBackdrop',
+    backdrop: '#financeModalBackdrop',
+    name: '💰 Финансы',
+    type: 'Полноэкранная модальная шторка (Modal Sheet)',
+    selector: '#financeModalBackdrop',
+    trigger: 'Круглый виджет «₴» (widgetFinance) в шапке / хабе модулей',
+    description: 'Главное меню финансового учета: баланс, расходы и доходы по категориям, диаграмма расходов, история транзакций.'
+  },
+  {
+    id: 'financeEntryModalBackdrop',
+    backdrop: '#financeEntryModalBackdrop',
+    name: 'Ввод суммы растраты / дохода (Калькулятор финансов)',
+    type: 'Модальное окно (Modal Sheet)',
+    selector: '#financeEntryModalBackdrop',
+    trigger: 'Клик по категории расходов или кнопке «+» в модуле «Финансы»',
+    description: 'Цифровая клавиатура калькулятора для ввода суммы, выбора даты, комментария к трате/доходу.'
+  },
+  {
+    id: 'financeCategoryModalBackdrop',
+    backdrop: '#financeCategoryModalBackdrop',
+    name: 'Управление категорией финансов',
+    type: 'Модальное окно (Modal Sheet)',
+    selector: '#financeCategoryModalBackdrop',
+    trigger: 'Кнопка «+ Добавить категорию» или лонг-пресс по категории расходов',
+    description: 'Создание/редактирование категории: название, тип (расход/доход), выбор иконки из сетки пикера, лимит бюджета.'
+  },
+  {
+    id: 'financeDatePickerModalBackdrop',
+    backdrop: '#financeDatePickerModalBackdrop',
+    name: 'Выбор даты финансовой операции',
+    type: 'Всплывающий мини-календарь (DatePicker Modal)',
+    selector: '#financeDatePickerModalBackdrop',
+    trigger: 'Клик по кнопке даты в модалке ввода суммы финансов',
+    description: 'Компактный календарь для выбора заднего числа или конкретного дня операции.'
+  },
+  {
+    id: 'joyModalBackdrop',
+    backdrop: '#joyModalBackdrop',
+    name: 'За что я благодарен сегодня? (Заметить радость)',
+    type: 'Модальное окно (Modal Sheet)',
+    selector: '#joyModalBackdrop',
+    trigger: 'Круглый виджет «☀️» (widgetJoy) в шапке / хабе модулей',
+    description: 'Запись момента благодарности/радости дня, выбор настроения, прикрепление декоративного стикера.'
+  },
+  {
+    id: 'joyJarModalBackdrop',
+    backdrop: '#joyJarModalBackdrop',
+    name: '🫙 Банка радости',
+    type: 'Модальная шторка (Modal Sheet)',
+    selector: '#joyJarModalBackdrop',
+    trigger: 'Клик по иконке стеклянной банки радости в меню записи радости',
+    description: 'Коллекция всех сохраненных бумажных записок с теплыми воспоминаниями и моментами счастья.'
+  },
+  {
+    id: 'joyStickerPickerBackdrop',
+    backdrop: '#joyStickerPickerBackdrop',
+    name: 'Выбор бумажного стикера для радости',
+    type: 'Модальное окно выбора (Picker Sheet)',
+    selector: '#joyStickerPickerBackdrop',
+    trigger: 'Клик по стикеру в форме записи радости',
+    description: 'Сетка доступных стилизованных бумажных стикеров для наклеивания на записку.'
+  },
+  {
+    id: 'nutritionModalBackdrop',
+    backdrop: '#nutritionModalBackdrop',
+    name: '🥑 Питание (Трекер калорий и КБЖУ)',
+    type: 'Полноэкранная модальная шторка (Modal Sheet)',
+    selector: '#nutritionModalBackdrop',
+    trigger: 'Круглый виджет «🥑» (widgetNutrition) в шапке / хабе модулей',
+    description: 'Дневник питания за день: шкала сытости с котиком, кольца КБЖУ, приёмы пищи (Завтрак, Обед, Ужин, Перекус), добавление продуктов.'
+  },
+  {
+    id: 'hungerCatColorPopup',
+    backdrop: null,
+    name: 'Выбор окраса котика шкалы сытости',
+    type: 'Всплывающий поповер (Color Picker Popup)',
+    selector: '#hungerCatColorPopup',
+    trigger: 'Долгое нажатие или клик правой кнопкой мыши по котику на шкале сытости',
+    description: 'Палитра смены окраса котика (рыжий, серый, белый, чёрный и т.д.).'
+  },
+  {
+    id: 'nutritionAddFoodModalBackdrop',
+    backdrop: '#nutritionAddFoodModalBackdrop',
+    name: 'Добавить еду',
+    type: 'Полноэкранная модальная шторка (Modal Sheet)',
+    selector: '#nutritionAddFoodModalBackdrop',
+    trigger: 'Кнопка «+ Добавить продукт» в любом приёме пищи (Завтрак, Обед...)',
+    description: 'Поиск продуктов по базе (АТБ, Сильпо, общая база), ручное добавление блюда, расчёт граммовки, сканирование штрихкода.'
+  },
+  {
+    id: 'nutritionBarcodeScannerModalBackdrop',
+    backdrop: '#nutritionBarcodeScannerModalBackdrop',
+    name: 'Сканер штрихкодов продуктов',
+    type: 'Полноэкранный оверлей камеры (Scanner Overlay)',
+    selector: '#nutritionBarcodeScannerModalBackdrop',
+    trigger: 'Кнопка со штрихкодом в окне добавления еды',
+    description: 'Камера смартфона с лазерным видоискателем и кнопкой включения фонарика для мгновенного распознавания продуктов по штрихкоду.'
+  },
+  {
+    id: 'nutritionStatsModalBackdrop',
+    backdrop: '#nutritionStatsModalBackdrop',
+    name: '🥑 Статистика питания',
+    type: 'Модальная шторка (Modal Sheet)',
+    selector: '#nutritionStatsModalBackdrop',
+    trigger: 'Кнопка графика/статистики в шапке модуля «Питание»',
+    description: 'Аналитика за неделю/месяц: средний калораж, баланс белков/жиров/углеводов, процент достижения цели.'
+  },
+  {
+    id: 'nutritionSettingsModalBackdrop',
+    backdrop: '#nutritionSettingsModalBackdrop',
+    name: '⚙️ Настройки питания',
+    type: 'Модальная шторка (Modal Sheet)',
+    selector: '#nutritionSettingsModalBackdrop',
+    trigger: 'Иконка шестерёнки внутри модуля «Питание»',
+    description: 'Настройка дневной нормы калорий и БЖУ, добавление/скрытие приёмов пищи, быстрый запуск калькулятора Миффлина — Сан-Жеора.'
+  },
+  {
+    id: 'nutritionCalcModalBackdrop',
+    backdrop: '#nutritionCalcModalBackdrop',
+    name: '🪄 Калькулятор норм КБЖУ',
+    type: 'Модальная шторка (Modal Sheet)',
+    selector: '#nutritionCalcModalBackdrop',
+    trigger: 'Кнопка «🪄 Рассчитать норму» в настройках питания',
+    description: 'Научный расчет суточной потребности калорий и макросов по формуле Миффлина — Сан-Жеора с учетом пола, возраста, веса, роста, активности и цели (похудение, поддержание, набор).'
+  },
+  {
+    id: 'editMealModalBackdrop',
+    backdrop: '#editMealModalBackdrop',
+    name: 'Редактировать приём пищи',
+    type: 'Модальное окно (Modal Dialog)',
+    selector: '#editMealModalBackdrop',
+    trigger: 'Клик по карандашу или шестеренке рядом с названием приёма пищи (Завтрак, Обед и т.д.)',
+    description: 'Переименование названия приёма пищи, выбор подходящей иконки еды, удаление приёма пищи.'
+  },
+  {
+    id: 'macroColorModalBackdrop',
+    backdrop: '#macroColorModalBackdrop',
+    name: 'Выбор цвета макронутриента (БЖУ)',
+    type: 'Модальное окно (Color Picker Dialog)',
+    selector: '#macroColorModalBackdrop',
+    trigger: 'Долгое нажатие (Long-press) на столбец или кружок Белки / Жиры / Углеводы в Питании',
+    description: 'Кастомизация индивидуальной цветовой палитры графиков и полос макросов.'
+  },
+  {
+    id: 'achievementsModalBackdrop',
+    backdrop: '#achievementsModalBackdrop',
+    name: '🏆 Достижения',
+    type: 'Полноэкранная модальная шторка (Modal Sheet)',
+    selector: '#achievementsModalBackdrop',
+    trigger: 'Клик по трофею в шапке / через настройки / питомца',
+    description: 'Галерея разблокированных и закрытых игровых наград и бейджей с описанием условий получения.'
+  },
+  {
+    id: 'confirmModalBackdrop',
+    backdrop: '#confirmModalBackdrop',
+    name: 'Универсальное подтверждение (Confirm Dialog)',
+    type: 'Модальный диалог подтверждения (Confirm Modal)',
+    selector: '#confirmModalBackdrop',
+    trigger: 'При попытке удалить вкладку, блок, привычку, категорию или сбросить данные',
+    description: 'Окно с вопросом подтверждения («Вы уверены?») и кнопками «Отмена» / «Удалить».'
+  },
+  {
+    id: 'imageLightboxBackdrop',
+    backdrop: '#imageLightboxBackdrop',
+    name: 'Просмотрщик картинок (Lightbox)',
+    type: 'Полноэкранный оверлей просмотра (Lightbox Modal)',
+    selector: '#imageLightboxBackdrop',
+    trigger: 'Клик по прикрепленной фотографии к задаче или заметке',
+    description: 'Полноэкранное увеличение и просмотр изображения на темном фоне с кнопкой закрытия.'
+  },
+  {
+    id: 'petModalBackdrop',
+    backdrop: '#petModalBackdrop',
+    name: 'Виртуальный питомец (Тамагочи)',
+    type: 'Полноэкранная модальная шторка (Modal Sheet)',
+    selector: '#petModalBackdrop',
+    trigger: 'Клик по интерактивному котику на листе или внизу экрана',
+    description: 'Домик котика: статус настроения и сытости, кормление кормом/лакомствами, поглаживание, переименование, гардероб/аксессуары.'
+  },
+  {
+    id: 'petSettingsPopup',
+    backdrop: null,
+    name: 'Выбор окраса шерсти питомца',
+    type: 'Всплывающий поповер настроек (Popup Menu)',
+    selector: '#petSettingsPopup',
+    trigger: 'Кнопка шестерёнки в шапке окна питомца',
+    description: 'Выбор породы/окраса шерсти любимца (рыжий, серый табби, смоки, сиамский и т.д.).'
+  },
+  {
+    id: 'stickersModalBackdrop',
+    backdrop: '#stickersModalBackdrop',
+    name: '✨ Стикеры и декор',
+    type: 'Нижняя шторка каталога (Catalog Sheet)',
+    selector: '#stickersModalBackdrop',
+    trigger: 'Кнопка со стикером/звёздочкой внизу экрана или на листе блокнота',
+    description: 'Каталог стикеров по категориям (котики, уют, растения, васи-ленты/скотчи, эмодзи) для наклеивания на страницы блокнота.'
+  },
+  {
+    id: 'stickerContextPopup',
+    backdrop: null,
+    name: 'Контекстное меню стикера',
+    type: 'Всплывающее контекстное меню (Context Popup)',
+    selector: '#stickerContextPopup',
+    trigger: 'Долгое нажатие (Long-press) или клик правой кнопкой мыши по любому наклеенному стикеру',
+    description: 'Мини-меню прямо над стикером: изменить размер (+/-), повернуть на 15°, отразить по горизонтали (зеркало), слой выше/ниже, удалить.'
+  },
+  {
+    id: 'sheetExportModalBackdrop',
+    backdrop: '#sheetExportModalBackdrop',
+    name: '📸 Поделиться днём (Экспорт листа)',
+    type: 'Модальная шторка (Modal Sheet)',
+    selector: '#sheetExportModalBackdrop',
+    trigger: 'Кнопка с фотоаппаратом «📸» в углу листа блокнота',
+    description: 'Генерация красивого постера/открытки страницы блокнота (со стикерами, задачами и штампами дня), предпросмотр, сохранение картинки или отправка в соцсети.'
+  }
+];
+
+console.log('Total categorized items:', items.length);
+fs.writeFileSync('scratch/catalog.json', JSON.stringify(items, null, 2));

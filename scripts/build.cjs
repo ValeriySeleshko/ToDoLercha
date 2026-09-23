@@ -55,6 +55,7 @@ const jsFiles = [
   'maine_quests_data.js',
   'i18n.js',
   'initial_habits.js',
+  'wife_habits_preset.js',
   'sw.js'
 ];
 

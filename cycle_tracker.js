@@ -417,9 +417,38 @@
       if (!this.storage) return;
       try {
         this.storage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+        if (typeof window !== 'undefined' && window.Plan4UStorage && typeof window.Plan4UStorage.saveFile === 'function') {
+          window.Plan4UStorage.saveFile('cycle.json', this.data);
+        }
       } catch (e) {
         console.warn('[Plan4U CycleTracker] Failed to save cycle data:', e);
       }
+    }
+
+    async hydrateFromStorage() {
+      try {
+        if (typeof window !== 'undefined' && window.Plan4UStorage && typeof window.Plan4UStorage.loadFile === 'function') {
+          const fileData = await window.Plan4UStorage.loadFile('cycle.json', null);
+          if (fileData && typeof fileData === 'object') {
+            const currentHistoryCount = Array.isArray(this.data.history) ? this.data.history.length : 0;
+            const fileHistoryCount = Array.isArray(fileData.history) ? fileData.history.length : 0;
+            if (fileHistoryCount > currentHistoryCount || (fileData.settings && fileData.settings.enabled && !this.data.settings.enabled)) {
+              this.data = {
+                settings: { ...(this.data.settings || {}), ...(fileData.settings || {}) },
+                history: (Array.isArray(fileData.history) && fileData.history.length > 0) ? fileData.history : this.data.history,
+                symptoms: { ...(this.data.symptoms || {}), ...(fileData.symptoms || {}) }
+              };
+              if (this.storage) {
+                this.storage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+              }
+              return true;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('[Plan4U CycleTracker] Hydration error:', e);
+      }
+      return false;
     }
 
     _sortAndSave() {
