@@ -8694,16 +8694,24 @@ class NotebookApp {
 
     this.pendingConfirmCallback = onConfirm;
     this._confirmModalOpenedAt = Date.now();
-    backdrop.classList.add('open');
-    backdrop.setAttribute('aria-hidden', 'false');
-    triggerHaptic(20);
+    if (window.modalManager) {
+      window.modalManager.open(backdrop, { haptic: 20 });
+    } else {
+      backdrop.classList.add('open');
+      backdrop.setAttribute('aria-hidden', 'false');
+      triggerHaptic(20);
+    }
   }
 
   closeConfirmModal() {
     const backdrop = document.getElementById('confirmModalBackdrop') || this.confirmModalBackdrop;
     if (backdrop) {
-      backdrop.classList.remove('open');
-      backdrop.setAttribute('aria-hidden', 'true');
+      if (window.modalManager) {
+        window.modalManager.close(backdrop);
+      } else {
+        backdrop.classList.remove('open');
+        backdrop.setAttribute('aria-hidden', 'true');
+      }
     }
     this.pendingConfirmCallback = null;
   }
@@ -8808,10 +8816,14 @@ class NotebookApp {
     const input = this.newTabNameInput || document.getElementById('newTabNameInput');
     if (input) input.value = '';
     if (backdrop) {
-      backdrop.classList.add('open');
-      backdrop.setAttribute('aria-hidden', 'false');
+      if (window.modalManager) {
+        window.modalManager.open(backdrop, { haptic: 15 });
+      } else {
+        backdrop.classList.add('open');
+        backdrop.setAttribute('aria-hidden', 'false');
+        triggerHaptic(15);
+      }
     }
-    triggerHaptic(15);
   }
 
   // Close New Tab Modal
@@ -8819,8 +8831,12 @@ class NotebookApp {
     const backdrop = this.newTabModalBackdrop || document.getElementById('newTabModalBackdrop');
     const form = this.newTabForm || document.getElementById('newTabForm');
     if (backdrop) {
-      backdrop.classList.remove('open');
-      backdrop.setAttribute('aria-hidden', 'true');
+      if (window.modalManager) {
+        window.modalManager.close(backdrop);
+      } else {
+        backdrop.classList.remove('open');
+        backdrop.setAttribute('aria-hidden', 'true');
+      }
     }
     if (form) form.reset();
   }
@@ -9056,15 +9072,23 @@ class NotebookApp {
     }
     this.editingSectionId = null;
     if (this.newSectionModalBackdrop) {
-      this.newSectionModalBackdrop.classList.add('open');
-      this.newSectionModalBackdrop.setAttribute('aria-hidden', 'false');
+      if (window.modalManager) {
+        window.modalManager.open(this.newSectionModalBackdrop, { haptic: 15 });
+      } else {
+        this.newSectionModalBackdrop.classList.add('open');
+        this.newSectionModalBackdrop.setAttribute('aria-hidden', 'false');
+      }
     }
   }
 
   closeAddSectionModal() {
     if (this.newSectionModalBackdrop) {
-      this.newSectionModalBackdrop.classList.remove('open');
-      this.newSectionModalBackdrop.setAttribute('aria-hidden', 'true');
+      if (window.modalManager) {
+        window.modalManager.close(this.newSectionModalBackdrop);
+      } else {
+        this.newSectionModalBackdrop.classList.remove('open');
+        this.newSectionModalBackdrop.setAttribute('aria-hidden', 'true');
+      }
     }
     if (this.newSectionForm) this.newSectionForm.reset();
     this.editingSectionId = null;
@@ -17460,8 +17484,12 @@ class NotebookApp {
     if (!this.cycleAddModalBackdrop) return;
 
     this._cycleAddModalOpenedAt = Date.now();
-    this.cycleAddModalBackdrop.classList.add('open');
-    this.cycleAddModalBackdrop.setAttribute('aria-hidden', 'false');
+    if (window.modalManager) {
+      window.modalManager.open(this.cycleAddModalBackdrop, { haptic: 15 });
+    } else {
+      this.cycleAddModalBackdrop.classList.add('open');
+      this.cycleAddModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
 
     if (cycleToEdit) {
       this.editingCycleId = cycleToEdit.id;
@@ -17520,8 +17548,12 @@ class NotebookApp {
   closeCycleAddModal() {
     this.editingCycleId = null;
     if (this.cycleAddModalBackdrop) {
-      this.cycleAddModalBackdrop.classList.remove('open');
-      this.cycleAddModalBackdrop.setAttribute('aria-hidden', 'true');
+      if (window.modalManager) {
+        window.modalManager.close(this.cycleAddModalBackdrop);
+      } else {
+        this.cycleAddModalBackdrop.classList.remove('open');
+        this.cycleAddModalBackdrop.setAttribute('aria-hidden', 'true');
+      }
     }
   }
 
@@ -19943,14 +19975,22 @@ class NotebookApp {
     };
 
     this.renderFinanceDatePicker();
-    this.financeDatePickerModalBackdrop.classList.add('open');
-    this.financeDatePickerModalBackdrop.setAttribute('aria-hidden', 'false');
+    if (window.modalManager) {
+      window.modalManager.open(this.financeDatePickerModalBackdrop, { haptic: 15 });
+    } else {
+      this.financeDatePickerModalBackdrop.classList.add('open');
+      this.financeDatePickerModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
   }
 
   closeFinanceDatePicker() {
     if (this.financeDatePickerModalBackdrop) {
-      this.financeDatePickerModalBackdrop.classList.remove('open');
-      this.financeDatePickerModalBackdrop.setAttribute('aria-hidden', 'true');
+      if (window.modalManager) {
+        window.modalManager.close(this.financeDatePickerModalBackdrop);
+      } else {
+        this.financeDatePickerModalBackdrop.classList.remove('open');
+        this.financeDatePickerModalBackdrop.setAttribute('aria-hidden', 'true');
+      }
     }
   }
 
@@ -21313,14 +21353,22 @@ class NotebookApp {
       this.macroCustomColorInput.value = this.tempEditingMacroColor;
     }
 
-    this.macroColorModalBackdrop.classList.add('open');
-    this.macroColorModalBackdrop.setAttribute('aria-hidden', 'false');
+    if (window.modalManager) {
+      window.modalManager.open(this.macroColorModalBackdrop, { haptic: 15 });
+    } else {
+      this.macroColorModalBackdrop.classList.add('open');
+      this.macroColorModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
   }
 
   closeMacroColorPicker() {
     if (this.macroColorModalBackdrop) {
-      this.macroColorModalBackdrop.classList.remove('open');
-      this.macroColorModalBackdrop.setAttribute('aria-hidden', 'true');
+      if (window.modalManager) {
+        window.modalManager.close(this.macroColorModalBackdrop);
+      } else {
+        this.macroColorModalBackdrop.classList.remove('open');
+        this.macroColorModalBackdrop.setAttribute('aria-hidden', 'true');
+      }
     }
     this.activeEditingMacroKey = null;
   }
@@ -24822,8 +24870,12 @@ class NotebookApp {
       });
     }
 
-    this.editMealModalBackdrop.classList.add('open');
-    this.editMealModalBackdrop.setAttribute('aria-hidden', 'false');
+    if (window.modalManager) {
+      window.modalManager.open(this.editMealModalBackdrop, { haptic: 15 });
+    } else {
+      this.editMealModalBackdrop.classList.add('open');
+      this.editMealModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
     setTimeout(() => {
       this.editMealNameInput?.focus();
     }, 120);
@@ -24831,8 +24883,12 @@ class NotebookApp {
 
   closeMealEditModal() {
     if (this.editMealModalBackdrop) {
-      this.editMealModalBackdrop.classList.remove('open');
-      this.editMealModalBackdrop.setAttribute('aria-hidden', 'true');
+      if (window.modalManager) {
+        window.modalManager.close(this.editMealModalBackdrop);
+      } else {
+        this.editMealModalBackdrop.classList.remove('open');
+        this.editMealModalBackdrop.setAttribute('aria-hidden', 'true');
+      }
     }
   }
 
@@ -26080,14 +26136,22 @@ class NotebookApp {
       }).join('');
     }
 
-    this.joyStickerPickerBackdrop.classList.add('open', 'active');
-    this.joyStickerPickerBackdrop.setAttribute('aria-hidden', 'false');
+    if (window.modalManager) {
+      window.modalManager.open(this.joyStickerPickerBackdrop, { haptic: 15 });
+    } else {
+      this.joyStickerPickerBackdrop.classList.add('open', 'active');
+      this.joyStickerPickerBackdrop.setAttribute('aria-hidden', 'false');
+    }
   }
 
   closeJoyStickerPicker() {
     if (!this.joyStickerPickerBackdrop) return;
-    this.joyStickerPickerBackdrop.classList.remove('open', 'active');
-    this.joyStickerPickerBackdrop.setAttribute('aria-hidden', 'true');
+    if (window.modalManager) {
+      window.modalManager.close(this.joyStickerPickerBackdrop);
+    } else {
+      this.joyStickerPickerBackdrop.classList.remove('open', 'active');
+      this.joyStickerPickerBackdrop.setAttribute('aria-hidden', 'true');
+    }
     this.joyPickerTargetDate = null;
   }
 
