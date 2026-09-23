@@ -366,8 +366,6 @@
 .modules-hub-dropdown.is-closing:not(:has(#widgetCycle:not([style*="display: none"]))):not(:has(#widgetJoy:not([style*="display: none"]))) #widgetFinance {
   animation-delay: 0ms !important;
 }
-  animation-delay: 0ms !important;
-}
 
 .modules-hub-dropdown .widget-circle:hover {
   transform: translateY(-2px) scale(1.04);
@@ -377,3 +375,232 @@
 .modules-hub-dropdown .widget-circle:active {
   transform: scale(0.95);
 }
+
+/* ==========================================================================
+   UNIFIED BUTTON DESIGN SYSTEM (PLAN4U BUTTON FRAMEWORK)
+   ========================================================================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  text-decoration: none;
+  user-select: none;
+  white-space: nowrap;
+  border-radius: 10px;
+  padding: 10px 18px;
+  box-sizing: border-box;
+  transition: transform 0.16s cubic-bezier(0.2, 0.9, 0.3, 1),
+              box-shadow 0.16s ease,
+              background-color 0.16s ease,
+              opacity 0.16s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:active,
+.btn.is-pressed {
+  transform: scale(0.96);
+}
+
+.btn:disabled,
+.btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none !important;
+}
+
+/* 1. Primary Action Button */
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary-magenta, #d83a88) 0%, var(--muted-header, #8a2757) 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(var(--primary-rgb, 216, 58, 136), 0.32);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 6px 18px rgba(var(--primary-rgb, 216, 58, 136), 0.42);
+}
+
+.btn-primary:active {
+  transform: scale(0.96);
+  box-shadow: 0 2px 8px rgba(var(--primary-rgb, 216, 58, 136), 0.22);
+}
+
+/* 2. Secondary & Cancel Button */
+.btn-secondary,
+.btn-cancel {
+  background: rgba(0, 0, 0, 0.05);
+  color: #4a4d55;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.btn-secondary:hover,
+.btn-cancel:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: #202226;
+}
+
+.btn-secondary:active,
+.btn-cancel:active {
+  transform: scale(0.96);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+/* 3. Danger / Destructive Action Button */
+.btn-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.28);
+}
+
+.btn-danger:hover {
+  box-shadow: 0 6px 18px rgba(220, 38, 38, 0.38);
+}
+
+.btn-danger:active {
+  transform: scale(0.96);
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);
+}
+
+/* 4. Compact Icon Buttons */
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  transition: transform 0.15s cubic-bezier(0.2, 0.9, 0.3, 1),
+              background-color 0.15s ease,
+              color 0.15s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-icon:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.btn-icon:active {
+  transform: scale(0.92);
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* Modal Close Cross Button Standard */
+.modal-close-btn,
+.sheet-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  color: #555964;
+  cursor: pointer;
+  transition: transform 0.15s cubic-bezier(0.2, 0.9, 0.3, 1),
+              background-color 0.15s ease,
+              color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.modal-close-btn:hover,
+.sheet-close-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #1a1c20;
+}
+
+.modal-close-btn:active,
+.sheet-close-btn:active {
+  transform: scale(0.92);
+}
+
+/* 5. Stepper Increment/Decrement Buttons */
+.btn-stepper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  font-size: 18px;
+  font-weight: 700;
+  color: #2d3139;
+  cursor: pointer;
+  transition: transform 0.14s cubic-bezier(0.2, 0.9, 0.3, 1), background-color 0.14s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-stepper:active {
+  transform: scale(0.90);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+/* Dark Theme Overrides for Button System */
+body.dark-theme .btn-secondary,
+body.dark-theme .btn-cancel,
+.app-frame.theme-dark .btn-secondary,
+.app-frame.theme-dark .btn-cancel {
+  background: rgba(255, 255, 255, 0.09);
+  color: #e4e6eb;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+body.dark-theme .btn-secondary:hover,
+body.dark-theme .btn-cancel:hover,
+.app-frame.theme-dark .btn-secondary:hover,
+.app-frame.theme-dark .btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+body.dark-theme .btn-icon:hover,
+.app-frame.theme-dark .btn-icon:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-theme .modal-close-btn,
+body.dark-theme .sheet-close-btn,
+.app-frame.theme-dark .modal-close-btn,
+.app-frame.theme-dark .sheet-close-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e4e6eb;
+}
+
+body.dark-theme .modal-close-btn:hover,
+body.dark-theme .sheet-close-btn:hover,
+.app-frame.theme-dark .modal-close-btn:hover,
+.app-frame.theme-dark .sheet-close-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+body.dark-theme .btn-stepper,
+.app-frame.theme-dark .btn-stepper {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #f0f2f5;
+}
+
